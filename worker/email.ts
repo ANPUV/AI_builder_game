@@ -38,26 +38,6 @@ async function send(env: Env, to: string, subject: string, text: string): Promis
   }
 }
 
-export function verifyEmail(env: Env, to: string, token: string): Promise<boolean> {
-  const link = `${env.APP_URL}/api/verify?token=${encodeURIComponent(token)}`;
-  return send(
-    env,
-    to,
-    'Confirm your email for AIfor.study',
-    [
-      'Thanks for asking for a place in the AIfor.study beta.',
-      '',
-      'Confirm this address:',
-      link,
-      '',
-      'That puts you in the queue. Access is reviewed by hand, so it will not',
-      'be instant — you will get another mail when your account is opened.',
-      '',
-      'If you did not ask for this, ignore it and nothing happens.',
-    ].join('\n'),
-  );
-}
-
 export function approvedEmail(env: Env, to: string): Promise<boolean> {
   return send(
     env,
@@ -98,6 +78,15 @@ export function signupNotice(env: Env, email: string, note: string | null): Prom
     env,
     env.ADMIN_EMAIL,
     `AIfor.study: new signup (${email})`,
-    [`${email} verified their address and is waiting for review.`, '', `Note: ${note || '(none given)'}`, '', 'Review with: /review-signups'].join('\n'),
+    [
+      `${email} is waiting for review.`,
+      '',
+      `Note: ${note || '(none given)'}`,
+      '',
+      'The address is unverified — nothing has proved they own it. Approving is',
+      'what sends them their first mail, so a typo turns up as a bounce.',
+      '',
+      'Review with: /review-signups',
+    ].join('\n'),
   );
 }

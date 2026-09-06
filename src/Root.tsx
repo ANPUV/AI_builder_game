@@ -18,7 +18,6 @@ export default function Root() {
   const path = window.location.pathname;
   const params = new URLSearchParams(window.location.search);
   const resetToken = path === '/reset' ? params.get('token') : null;
-  const verified = readVerified(params.get('verified'));
 
   // The game's stylesheet locks body scrolling for its canvas; the public
   // pages need it back.
@@ -34,17 +33,11 @@ export default function Root() {
 
   if (state.kind === 'loading') return <div className="site-booting">Loading…</div>;
 
-  if (state.kind === 'anonymous') return <Landing onSignedIn={signedIn} verified={verified} />;
+  if (state.kind === 'anonymous') return <Landing onSignedIn={signedIn} />;
 
   return (
     <Suspense fallback={<div className="site-booting">Starting the simulation…</div>}>
       <Game onSignOut={signOut} />
     </Suspense>
   );
-}
-
-function readVerified(value: string | null): 'ok' | 'invalid' | null {
-  if (value === '1') return 'ok';
-  if (value === 'invalid') return 'invalid';
-  return null;
 }

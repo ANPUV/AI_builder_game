@@ -1,5 +1,5 @@
 import { fail } from './http';
-import { forgot, login, logout, me, register, reset, verify } from './routes';
+import { forgot, login, logout, me, register, reset } from './routes';
 import type { Env } from './types';
 
 type Handler = (request: Request, env: Env) => Promise<Response>;
@@ -7,7 +7,6 @@ type Handler = (request: Request, env: Env) => Promise<Response>;
 /** `${method} ${path}` — flat, explicit, and no router dependency to audit. */
 const ROUTES: Record<string, Handler> = {
   'POST /api/register': register,
-  'GET /api/verify': verify,
   'POST /api/login': login,
   'POST /api/logout': logout,
   'GET /api/me': me,

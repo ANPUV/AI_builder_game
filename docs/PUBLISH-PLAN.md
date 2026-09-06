@@ -391,3 +391,31 @@ the API starts answering "no such table", run `npm run db:migrate:local`.
 
 Resend key and Turnstile secret (`npm run check:secrets` enforces both), the
 `beta.aifor.study` DNS, and the Cloudflare Access policy in front of it.
+
+
+## Email verification removed — 6 Sep 2026
+
+Registration no longer sends a confirmation link. A signup goes straight into
+the review queue, and **approving by hand is what stands in for proving the
+address**. `GET /api/verify` is gone; login gates on `status = 'approved'`
+alone.
+
+**What this costs.** Addresses are unproven, so:
+
+- A typo'd address means the approval mail bounces and that person silently
+  never gets in. Watch for bounces in Resend.
+- Someone can register an address they do not own. They cannot *use* it — the
+  password is theirs, but the mail goes to the real owner, who will be
+  confused rather than compromised.
+- The queue contains addresses that may not be real, so reviewing costs
+  slightly more attention.
+
+Turnstile and the per-IP rate limit are what remain between the form and a
+spam wave. Both matter more now than they did with verification in front.
+
+The admin notice mail says the address is unverified, so this is visible at the
+moment of review rather than only in this document.
+
+`users.email_verified_at` is **kept but unused** — nullable, always null for
+new rows. Leaving the column costs nothing and means re-enabling verification
+later is a code change rather than a migration.

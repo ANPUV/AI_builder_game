@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { Account } from '../auth/api';
 import AuthPanel from './AuthPanel';
 
@@ -35,17 +34,7 @@ const STATS = [
   ['15', 'contracts'],
 ];
 
-export default function Landing({
-  onSignedIn,
-  verified,
-}: {
-  onSignedIn: (account: Account) => void;
-  verified: 'ok' | 'invalid' | null;
-}) {
-  // Landing on the page from a verification link should show the sign-in side,
-  // not ask someone to register a second time.
-  const [initialMode] = useState<'register' | 'login'>(verified === 'ok' ? 'login' : 'register');
-
+export default function Landing({ onSignedIn }: { onSignedIn: (account: Account) => void }) {
   return (
     <div className="site">
       <header className="site-header">
@@ -73,20 +62,6 @@ export default function Landing({
           </p>
         </section>
 
-        {verified === 'ok' && (
-          <div className="notice success" style={{ marginTop: 22 }}>
-            <strong>Email confirmed</strong>
-            You are in the queue. We will email you when your account opens.
-          </div>
-        )}
-        {verified === 'invalid' && (
-          <div className="notice error" style={{ marginTop: 22 }}>
-            <strong>That link did not work</strong>
-            It may have expired or already been used. Request access again below and we will send a fresh
-            one.
-          </div>
-        )}
-
         <h2>What makes it different</h2>
         <div className="grid">
           {PILLARS.map((pillar) => (
@@ -108,7 +83,7 @@ export default function Landing({
         </div>
 
         <h2>Ask for a place</h2>
-        <AuthPanel initialMode={initialMode} onSignedIn={onSignedIn} />
+        <AuthPanel onSignedIn={onSignedIn} />
       </main>
 
       <footer className="site-footer">

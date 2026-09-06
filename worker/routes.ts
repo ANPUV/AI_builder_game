@@ -1,5 +1,5 @@
 import { hashPassword, hashToken, randomToken, uuid, verifyPassword } from './crypto';
-import { approvedEmail, resetEmail, signupNotice, verifyEmail } from './email';
+import { approvedEmail, resetEmail, signupNotice } from './email';
 import { clearedSessionCookie, fail, json, readJson, sessionCookie, str } from './http';
 import {
   clearAttempts,
@@ -14,7 +14,6 @@ import {
 import { createSession, currentUser, destroyAllSessions, destroySession, SESSION_TTL_SECONDS } from './session';
 import type { Env, UserRow } from './types';
 
-const VERIFY_TTL_MS = 24 * 60 * 60 * 1000;
 const RESET_TTL_MS = 60 * 60 * 1000;
 
 /**
@@ -24,7 +23,7 @@ const RESET_TTL_MS = 60 * 60 * 1000;
  */
 const REGISTER_REPLY = {
   ok: true,
-  message: 'Check your email for a confirmation link.',
+  message: 'Your request is in the queue.',
 };
 
 export async function register(request: Request, env: Env): Promise<Response> {
@@ -50,19 +49,13 @@ export async function register(request: Request, env: Env): Promise<Response> {
     return fail(403, 'challenge_failed', 'Could not verify you are human. Reload and try again.');
   }
 
-  const existing = await env.DB.prepare('SELECT id, email_verified_at FROM users WHERE email = ?')
-    .bind(email)
-    .first<{ id: string; email_verified_at: number | null }>();
+  const existing = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first<{ id: string }>();
 
-  if (existing) {
-    // Re-send verification for an address stuck unverified, but never touch
-    // the stored password — otherwise this endpoint would let anyone reset a
-    // pending account by "registering" it again.
-    if (!existing.email_verified_at) {
-      await issueEmailToken(env, existing.id, 'verify', VERIFY_TTL_MS, (token) => verifyEmail(env, email, token));
-    }
-    return json(REGISTER_REPLY);
-  }
+  // Never touch the stored password for an address that already exists —
+  // otherwise this endpoint would let anyone reset a pending account by
+  // "registering" it again. Nothing else happens either: re-registering must
+  // not be a way to nudge the review queue.
+  if (existing) return json(REGISTER_REPLY);
 
   const id = uuid();
   await env.DB.prepare(
@@ -80,44 +73,11 @@ export async function register(request: Request, env: Env): Promise<Response> {
     )
     .run();
 
-  await issueEmailToken(env, id, 'verify', VERIFY_TTL_MS, (token) => verifyEmail(env, email, token));
+  // Straight into the review queue: the address is unproven, and approving by
+  // hand is what stands in for proving it.
+  await signupNotice(env, email, note || null);
 
   return json(REGISTER_REPLY);
-}
-
-export async function verify(request: Request, env: Env): Promise<Response> {
-  const token = new URL(request.url).searchParams.get('token') ?? '';
-  if (!token) return Response.redirect(`${env.APP_URL}/?verified=invalid`, 302);
-
-  const row = await env.DB.prepare(
-    `SELECT t.user_id, t.expires_at, t.used_at, u.email, u.note, u.email_verified_at
-     FROM email_tokens t JOIN users u ON u.id = t.user_id
-     WHERE t.token_hash = ? AND t.purpose = 'verify'`,
-  )
-    .bind(await hashToken(token))
-    .first<{
-      user_id: string;
-      expires_at: number;
-      used_at: number | null;
-      email: string;
-      note: string | null;
-      email_verified_at: number | null;
-    }>();
-
-  if (!row || row.used_at || row.expires_at < Date.now()) {
-    return Response.redirect(`${env.APP_URL}/?verified=invalid`, 302);
-  }
-
-  const now = Date.now();
-  await env.DB.batch([
-    env.DB.prepare('UPDATE email_tokens SET used_at = ? WHERE token_hash = ?').bind(now, await hashToken(token)),
-    env.DB.prepare('UPDATE users SET email_verified_at = ? WHERE id = ?').bind(now, row.user_id),
-  ]);
-
-  // Only tell the reviewer once, however many times the link is opened.
-  if (!row.email_verified_at) await signupNotice(env, row.email, row.note);
-
-  return Response.redirect(`${env.APP_URL}/?verified=1`, 302);
 }
 
 export async function login(request: Request, env: Env): Promise<Response> {
@@ -149,9 +109,6 @@ export async function login(request: Request, env: Env): Promise<Response> {
   }
 
   // Account state is only revealed once the password proved ownership.
-  if (!user.email_verified_at) {
-    return fail(403, 'email_unverified', 'Confirm your email address first — check your inbox for the link.');
-  }
   if (user.status === 'pending') {
     return fail(403, 'pending_approval', 'Your account is waiting to be reviewed. You will get an email when it opens.');
   }
@@ -247,7 +204,7 @@ function publicUser(user: UserRow) {
 async function issueEmailToken(
   env: Env,
   userId: string,
-  purpose: 'verify' | 'reset',
+  purpose: 'reset',
   ttlMs: number,
   sendWith: (token: string) => Promise<boolean>,
 ): Promise<void> {

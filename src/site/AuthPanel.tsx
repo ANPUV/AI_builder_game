@@ -81,10 +81,10 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
   if (sent) {
     return (
       <div className="done">
-        <h3>Check your email</h3>
+        <h3>You are in the queue</h3>
         <p>
-          Confirm your address with the link we sent, and you are in the queue. Access is reviewed by hand,
-          so it will not be instant — you will get another email when your account opens.
+          Your request has been added. Access is reviewed by hand, one at a time, so it will not be instant
+          — you will get an email when your account opens.
         </p>
       </div>
     );
@@ -188,8 +188,8 @@ function LoginForm({
       <div className="done">
         <h3>You are in the queue</h3>
         <p>
-          Your email is confirmed and your request is waiting to be reviewed. Requests are read by a person,
-          so this takes a little while. You will get an email the moment your account opens.
+          Your request is waiting to be reviewed. Requests are read by a person, so this takes a little
+          while. You will get an email the moment your account opens.
         </p>
         <div className="pending-actions">
           <button type="button" onClick={() => setProblem(null)}>
@@ -202,11 +202,7 @@ function LoginForm({
 
   return (
     <form onSubmit={submit}>
-      {problem && (
-        <div className={problem.code === 'email_unverified' ? 'notice info' : 'notice error'}>
-          {problem.message}
-        </div>
-      )}
+      {problem && <div className="notice error">{problem.message}</div>}
 
       <div className="field">
         <label htmlFor="login-email">Email</label>

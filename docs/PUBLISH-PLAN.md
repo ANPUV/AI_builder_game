@@ -286,3 +286,56 @@ A `npm run dev` from before the flatten was still running out of
 the empty nested directory, and later `npm ci` (an `EPERM` on
 `esbuild.exe`). Stopped. If file operations in this repo start failing with
 `EPERM` or "resource busy", look for a dev server first.
+
+
+## Phase 1 status — 6 Sep 2026
+
+Auth backend built and **tested end to end against a local D1** (29 checks).
+Not deployed — that still needs the Cloudflare login.
+
+| File | Holds |
+| --- | --- |
+| `migrations/0001_init.sql` | users, sessions, email_tokens, auth_attempts |
+| `worker/crypto.ts` | PBKDF2 hashing, token generation, constant-time compare |
+| `worker/session.ts` | cookie sessions, lazy expiry, revocation |
+| `worker/security.ts` | validation, rate limiting, Turnstile |
+| `worker/email.ts` | Resend, with a dev mode that logs instead of sending |
+| `worker/routes.ts` | the seven handlers |
+| `worker/index.ts` | router |
+| `tools/check-secrets.mjs` | pre-deploy guard, wired into `npm run deploy` |
+
+### What the tests established
+
+Validation, the verify and reset flows, single-use tokens, enumeration
+resistance, rate limiting (cuts in at the 11th attempt), mid-session
+revocation, routing, and security headers all behave. Two results worth
+recording:
+
+- **Login costs ~200ms.** That is PBKDF2 doing its job, and it confirms the
+  free plan's 10ms CPU cap is not survivable here. Budget the $5/mo plan.
+- **Timing is flat at ~0.21s** whether the address exists or not, so the dummy
+  hash on the unknown-user path genuinely closes that oracle.
+
+### Carried into Phase 4
+
+Revocation is *lazy*: blocking an account deletes its session the next time
+that session is used, not at the moment of blocking. The security property
+holds — a blocked user cannot use the session — but the row lingers. The admin
+CLI must `DELETE FROM sessions WHERE user_id = ?` when it blocks or rejects
+someone, rather than relying on the lazy path.
+
+### Before this can deploy
+
+1. `npm run cf:login`
+2. `npm run db:create` → paste the real `database_id` into `wrangler.jsonc`
+3. `npm run db:migrate` (remote)
+4. Resend account, `aifor.study` domain verified (SPF + DKIM), then
+   `npx wrangler secret put RESEND_API_KEY`
+5. Turnstile widget, then `npx wrangler secret put TURNSTILE_SECRET`
+6. `npm run check:secrets` must pass — it refuses the placeholder database id
+   and missing secrets
+
+Steps 4 and 5 are what stop the quiet-degradation modes: with no Resend key
+mail is only logged, and with no Turnstile secret the bot check passes
+everything. Both are deliberate for local dev and both are dangerous in
+production, which is what the guard is for.

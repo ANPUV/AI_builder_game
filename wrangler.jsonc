@@ -1,46 +1,45 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "aifor-study-beta",
-  "main": "worker/index.ts",
-  "compatibility_date": "2026-09-06",
-
-  "assets": {
-    "directory": "./dist",
-    "binding": "ASSETS",
-    // The game is a single page with no router, so an unmatched path should
-    // hand back index.html rather than a 404.
-    "not_found_handling": "single-page-application",
-    // Without this, the SPA fallback above would answer /api/* with
-    // index.html and the Worker would never run.
-    "run_worker_first": ["/api/*"]
-  },
-
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "aifor-study-beta",
-      // Placeholder. `npm run db:create` prints the real id — paste it here
-      // and commit it. It is an identifier, not a credential.
-      "database_id": "PLACEHOLDER_RUN_DB_CREATE"
-    }
-  ],
-
-  // Plain configuration. Secrets (RESEND_API_KEY, TURNSTILE_SECRET) go in
-  // with `wrangler secret put` and must never appear in this file.
-  "vars": {
-    "APP_URL": "https://beta.aifor.study",
-    "MAIL_FROM": "AIfor.study <hello@aifor.study>",
-    "ADMIN_EMAIL": "anpuv.pham@gmail.com"
-  },
-
-  "routes": [
-    {
-      "pattern": "beta.aifor.study",
-      "custom_domain": true
-    }
-  ],
-
-  "observability": {
-    "enabled": true
-  }
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "aifor-study-beta",
+	"main": "worker/index.ts",
+	"compatibility_date": "2026-09-06",
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS",
+		// The game is a single page with no router, so an unmatched path should
+		// hand back index.html rather than a 404.
+		"not_found_handling": "single-page-application",
+		// Without this, the SPA fallback above would answer /api/* with
+		// index.html and the Worker would never run.
+		"run_worker_first": [
+			"/api/*"
+		]
+	},
+	"d1_databases": [
+		{
+			// The worker reads env.DB. `wrangler d1 create` appends a second
+			// binding of its own rather than filling this in — one binding per
+			// database is what we want, so the real id lives here.
+			// An id is an identifier, not a credential; committing it is fine.
+			"binding": "DB",
+			"database_name": "aifor-study-beta",
+			"database_id": "1b66dc48-c7be-475f-9bcb-e77d849717ef"
+		}
+	],
+	// Plain configuration. Secrets (RESEND_API_KEY, TURNSTILE_SECRET) go in
+	// with `wrangler secret put` and must never appear in this file.
+	"vars": {
+		"APP_URL": "https://beta.aifor.study",
+		"MAIL_FROM": "AIfor.study <hello@aifor.study>",
+		"ADMIN_EMAIL": "anpuv.pham@gmail.com"
+	},
+	"routes": [
+		{
+			"pattern": "beta.aifor.study",
+			"custom_domain": true
+		}
+	],
+	"observability": {
+		"enabled": true
+	}
 }

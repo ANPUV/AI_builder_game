@@ -18,7 +18,7 @@ import UnlockPanel from './UnlockPanel';
 import { money } from './format';
 import { useGame } from './useGame';
 
-export default function App() {
+export default function App({ onSignOut }: { onSignOut?: () => void } = {}) {
   const game = useGame();
   const [selection, setSelection] = useState<Selection>(null);
   const [pending, setPending] = useState<Pending | null>(null);
@@ -80,7 +80,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <TopBar game={game} />
+      <TopBar game={game} onSignOut={onSignOut} />
       <div className="body">
         <Canvas
           game={game}

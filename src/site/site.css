@@ -1,0 +1,351 @@
+/*
+ * The public shell: landing page, sign-in, registration, password reset.
+ *
+ * EVERY rule is scoped under .site on purpose. The game's stylesheet is a flat
+ * namespace with common names in it — .hint is a position:absolute tooltip
+ * pinned to the canvas corner, and .card and .field are taken too — so an
+ * unscoped rule here does not merely lose a specificity fight, it inherits
+ * layout from a completely different UI. Keep the prefix when adding rules.
+ *
+ * .site-booting is the exception: it renders before we know who the visitor
+ * is, outside the .site tree, so it carries its own prefix instead.
+ */
+
+/*
+ * The game locks the page down for its canvas: html, body and #root are all
+ * height:100% with body overflow hidden. A page people read has to undo the
+ * whole chain, not just the overflow — leaving #root at 100% makes the
+ * content spill out of a 720px box instead of laying out and scrolling.
+ */
+body.site-open,
+html:has(body.site-open) {
+  height: auto;
+  min-height: 100%;
+  overflow: auto;
+}
+
+body.site-open #root {
+  height: auto;
+  min-height: 100%;
+}
+
+.site {
+  --site-max: 940px;
+
+  min-height: 100%;
+  font-size: 15px;
+  line-height: 1.6;
+  background:
+    radial-gradient(1100px 520px at 50% -10%, #17222f 0%, transparent 70%),
+    var(--bg);
+}
+
+.site a {
+  color: var(--accent);
+}
+
+.site-booting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--muted);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+
+/* --- chrome ------------------------------------------------------------ */
+
+.site .site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: var(--site-max);
+  margin: 0 auto;
+  padding: 20px 22px;
+}
+
+.site .site-brand {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.site .site-brand span {
+  color: var(--accent);
+}
+
+.site .site-main {
+  max-width: var(--site-max);
+  margin: 0 auto;
+  padding: 0 22px 72px;
+}
+
+.site .site-footer {
+  max-width: var(--site-max);
+  margin: 0 auto;
+  padding: 26px 22px 40px;
+  border-top: 1px solid var(--line-soft);
+  color: var(--muted);
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/* --- hero -------------------------------------------------------------- */
+
+.site .hero {
+  padding: 42px 0 16px;
+}
+
+.site .hero h1 {
+  margin: 0 0 16px;
+  font-size: clamp(30px, 5.2vw, 46px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+.site .hero h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.site .hero p {
+  margin: 0;
+  max-width: 62ch;
+  color: #a9b7c7;
+  font-size: 17px;
+}
+
+.site .hero p.hero-note {
+  margin-top: 22px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* --- reusable blocks --------------------------------------------------- */
+
+.site .panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 22px;
+}
+
+.site h2 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: var(--muted);
+  font-weight: 600;
+  margin: 46px 0 16px;
+}
+
+.site .grid {
+  display: grid;
+  gap: 14px;
+  /* 320px against a 940px column gives two per row, so four cards land 2x2
+     instead of an orphaned fourth. */
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.site .card {
+  /* The game also has a .card; reset what its rules would bring along. */
+  display: block;
+  position: static;
+}
+.site .card h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.site .card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.site .stats {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  text-align: center;
+}
+.site .stat-cell {
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  padding: 14px 8px;
+}
+.site .stat-cell b {
+  display: block;
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--text);
+}
+.site .stat-cell span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+/* --- forms ------------------------------------------------------------- */
+
+.site .auth {
+  max-width: 430px;
+  margin: 0 auto;
+}
+
+.site .auth-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+.site .auth-tabs button {
+  flex: 1;
+  padding: 8px;
+  font-size: 14px;
+}
+
+.site .field {
+  /* Overrides the game's .field, which is a grid row in the inspector. */
+  display: block;
+  margin: 0 0 14px;
+}
+.site .field label {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+/* The game styles only reach input[type=text]; these need the same treatment. */
+.site input[type='email'],
+.site input[type='password'],
+.site input[type='text'],
+.site textarea {
+  font: inherit;
+  font-size: 15px;
+  color: inherit;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 9px 11px;
+  width: 100%;
+}
+.site textarea {
+  resize: vertical;
+  min-height: 76px;
+}
+.site input:focus,
+.site textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.site .form-hint {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.site button.big {
+  width: 100%;
+  padding: 11px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+.site .linkish {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+}
+.site .linkish:hover {
+  text-decoration: underline;
+  background: none;
+}
+
+.site .form-foot {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* --- messages ---------------------------------------------------------- */
+
+.site .notice {
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  border: 1px solid;
+}
+.site .notice.error {
+  background: #2a1614;
+  border-color: #6b2f28;
+  color: #f0b3aa;
+}
+.site .notice.info {
+  background: #13202b;
+  border-color: #2a4a63;
+  color: #a8cfe6;
+}
+.site .notice.success {
+  background: #12291b;
+  border-color: #2c5f3c;
+  color: #a5e0b8;
+}
+.site .notice strong {
+  display: block;
+  margin-bottom: 3px;
+  color: inherit;
+}
+
+/* Sent, waiting, or approved — the whole panel becomes the message. */
+.site .done {
+  text-align: center;
+  padding: 34px 22px;
+}
+.site .done h3 {
+  margin: 0 0 10px;
+  font-size: 19px;
+  font-weight: 600;
+}
+.site .done p {
+  margin: 0 auto;
+  max-width: 44ch;
+  color: var(--muted);
+  font-size: 14.5px;
+}
+
+.site .pending-actions {
+  margin-top: 22px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+@media (max-width: 560px) {
+  .site .site-header {
+    padding: 16px;
+  }
+  .site .site-main {
+    padding: 0 16px 56px;
+  }
+  .site .hero {
+    padding: 26px 0 10px;
+  }
+}

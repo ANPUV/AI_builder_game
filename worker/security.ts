@@ -13,13 +13,20 @@ export function normalizeEmail(raw: string): string | null {
   return email;
 }
 
+/** Shared with the client so both halves state the same number. */
+export const MIN_PASSWORD_LENGTH = 8;
+
 /**
  * Length is the only rule. Composition rules ("one symbol, one digit") push
- * people toward `Password1!` and are no longer recommended by NIST; a 12
- * character floor buys far more than a character-class checklist.
+ * people toward `Password1!` and are no longer recommended by NIST, whose
+ * floor for user-chosen secrets is the 8 used here. Longer resists offline
+ * cracking better, so the form nudges toward a passphrase rather than
+ * enforcing one.
  */
 export function passwordProblem(password: string): string | null {
-  if (password.length < 12) return 'Password must be at least 12 characters.';
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
+  }
   if (password.length > 512) return 'Password must be 512 characters or fewer.';
   return null;
 }

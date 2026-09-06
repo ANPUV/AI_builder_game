@@ -12,7 +12,8 @@ const clock = (seconds: number): string => {
   return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
-export default function TopBar({ game }: { game: Game }) {
+/** `onSignOut` is optional so the game still renders standalone, ungated. */
+export default function TopBar({ game, onSignOut }: { game: Game; onSignOut?: () => void }) {
   const { state, speed, setSpeed, save, reset } = game;
   const { demandKtpm, supplyKtpm, satisfaction } = state.compute;
   // Show the pool that is hurting, not an average that hides it.
@@ -228,6 +229,7 @@ export default function TopBar({ game }: { game: Game }) {
       >
         Reset
       </button>
+      {onSignOut && <button onClick={onSignOut}>Sign out</button>}
     </div>
   );
 }

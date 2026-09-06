@@ -17,8 +17,19 @@ import TopBar from './TopBar';
 import UnlockPanel from './UnlockPanel';
 import { money } from './format';
 import { useGame } from './useGame';
+import { LangProvider, useLang } from '../i18n/useLang';
 
 export default function App({ onSignOut }: { onSignOut?: () => void } = {}) {
+  // The whole game tree reads one language context; nothing below takes a prop.
+  return (
+    <LangProvider>
+      <GameShell onSignOut={onSignOut} />
+    </LangProvider>
+  );
+}
+
+function GameShell({ onSignOut }: { onSignOut?: () => void }) {
+  const { t } = useLang();
   const game = useGame();
   const [selection, setSelection] = useState<Selection>(null);
   const [pending, setPending] = useState<Pending | null>(null);
@@ -97,16 +108,17 @@ export default function App({ onSignOut }: { onSignOut?: () => void } = {}) {
           setSelection={setSelection}
           pending={pending}
           setPending={setPending}
+          onOpenBuild={() => openDialog()}
         >
           <div className="left-rail">
-            <button className="build-fab" onClick={() => openDialog()} title="Build (or press 1-0)">
+            <button className="build-fab" onClick={() => openDialog()} title={t('build.openTitle')}>
               <span>＋</span>
               {hasUnseenOffers(game.state) && <span className="reddot" />}
             </button>
             <button
               className={`rail-btn${treeOpen ? ' active' : ''}`}
               onClick={() => setTreeOpen((open) => !open)}
-              title="Show the tech tree"
+              title={t('side.showTechTree')}
             >
               Tech tree
             </button>
@@ -114,8 +126,8 @@ export default function App({ onSignOut }: { onSignOut?: () => void } = {}) {
           {treeOpen && (
             <div className="left-drawer">
               <div className="drawer-head">
-                <span className="section-title">Tech tree</span>
-                <button className="drawer-close" onClick={() => setTreeOpen(false)} title="Close">
+                <span className="section-title">{t('side.techTree')}</span>
+                <button className="drawer-close" onClick={() => setTreeOpen(false)} title={t('side.close')}>
                   ✕
                 </button>
               </div>
@@ -134,11 +146,11 @@ export default function App({ onSignOut }: { onSignOut?: () => void } = {}) {
         </Canvas>
         <div className="sidebar right">
           <section className="panel">
-            <div className="section-title">Next step</div>
+            <div className="section-title">{t('side.nextStep')}</div>
             <Coach state={game.state} />
           </section>
           <section className="panel panel-grow">
-            <div className="section-title">Inspector</div>
+            <div className="section-title">{t('side.inspector')}</div>
             <Inspector game={game} selection={selection} setSelection={setSelection} />
           </section>
         </div>

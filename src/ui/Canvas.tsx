@@ -1,25 +1,37 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BUILDING_BY_ID, item } from '../data';
+import {
+  BUILDING_BY_ID,
+  RECIPES_BY_BUILDING,
+  buildingCostAt,
+  isWithdrawn,
+  item,
+  makesItems,
+  takesItems,
+} from '../data';
 import {
   addLink,
   copyMachines,
   moveMachine,
   pasteClipboard,
   placeMachine,
+  setRecipe,
   signOffer,
   triggerCraft,
   type Clipboard,
 } from '../engine/factory';
 import {
   inboundPos,
+  inputPortPos,
   linkPath,
   nodeHeight,
   NODE_W,
   outputPortPos,
   type Point,
 } from './geometry';
+import { inkOn, money } from './format';
 import MachineNode from './MachineNode';
 import type { Game } from './useGame';
+import { useLang } from '../i18n/useLang';
 
 /**
  * What the inspector is looking at. Machines are a *set* — a marquee or a
@@ -61,7 +73,7 @@ type Drag =
       moved: boolean;
     }
   | { mode: 'marquee'; start: Point; additive: boolean; base: string[] }
-  | { mode: 'link'; fromId: string; itemId: string }
+  | { mode: 'link'; fromId: string; itemId: string; dir: 'out' | 'in' }
   | null;
 
 interface Props {
@@ -70,6 +82,8 @@ interface Props {
   setSelection: (s: Selection) => void;
   pending: Pending | null;
   setPending: (p: Pending | null) => void;
+  /** Double-clicking empty canvas opens the build dialog here. */
+  onOpenBuild?: () => void;
   /** Floating overlays drawn above the canvas: build button, hotbar. */
   children?: React.ReactNode;
 }
@@ -97,15 +111,25 @@ export default function Canvas({
   setSelection,
   pending,
   setPending,
+  onOpenBuild,
   children,
 }: Props) {
   const { state, act, toast } = game;
+  const { t } = useLang();
   const ref = useRef<HTMLDivElement>(null);
   const dragRef = useRef<Drag>(null);
   const [view, setView] = useState<View>({ x: 120, y: 90, zoom: 1 });
   const [ghost, setGhost] = useState<{ from: Point; to: Point; itemId: string } | null>(null);
   const [marquee, setMarquee] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const [panning, setPanning] = useState(false);
+  /**
+   * A belt dropped on empty canvas. Rather than snapping back, offer the nodes
+   * that could sit on the other end — the player already said what they want
+   * to carry, which is most of the choice a build dialog would ask for.
+   */
+  const [quickBuild, setQuickBuild] = useState<
+    { at: Point; itemId: string; fromId: string; dir: 'out' | 'in' } | null
+  >(null);
 
   /** Last known pointer position in world space, so paste lands under the cursor. */
   const pointerRef = useRef<Point | null>(null);
@@ -123,6 +147,63 @@ export default function Canvas({
   );
 
   const selectedIds = machineIds(selection);
+
+  /**
+   * What could sit on the other end of this belt.
+   *
+   * Dragging out of an output asks "who takes this?", out of an input "who
+   * makes this?". Either way the answer is a short list, which beats sending
+   * the player to a twelve-tab dialog to work it out themselves.
+   */
+  const quickCandidates = (itemId: string, dir: 'out' | 'in') =>
+    Object.values(BUILDING_BY_ID)
+      .filter((b) => state.unlockedBuildings.includes(b.id) && !isWithdrawn(b, state.priceIndex))
+      .filter((b) =>
+        dir === 'out'
+          ? takesItems(b.id, state.unlockedRecipes).includes(itemId)
+          : makesItems(b.id, state.unlockedRecipes).includes(itemId),
+      )
+      .map((b) => ({ b, price: buildingCostAt(b, state.priceIndex) }))
+      .sort((a, b) => a.price - b.price);
+
+  /** Place the picked node where the belt was dropped, and wire it up. */
+  const buildQuick = (buildingId: string) => {
+    const q = quickBuild;
+    if (!q) return;
+    setQuickBuild(null);
+
+    // Drop point is the node's top-left for an output drag; for an input drag
+    // the new node sits to the LEFT of the port it feeds, so shift it back.
+    const x = q.dir === 'out' ? q.at.x : q.at.x - NODE_W;
+    const placed = act((s) => placeMachine(s, buildingId, x, q.at.y - 30));
+    if (!placed.ok) {
+      toast(placed.reason, 'bad');
+      return;
+    }
+    const newId = placed.id;
+    if (!newId) return;
+
+    // Pick the recipe that actually handles this item, or the node lands inert.
+    act((s) => {
+      const m = s.machines[newId];
+      if (m?.recipeId) return;
+      const wanted = (RECIPES_BY_BUILDING[buildingId] ?? []).find(
+        (r) =>
+          s.unlockedRecipes.includes(r.id) &&
+          (q.dir === 'out'
+            ? [...r.inputs, ...(r.catalysts ?? [])].some((i) => i.itemId === q.itemId)
+            : r.outputs.some((o) => o.itemId === q.itemId)),
+      );
+      if (wanted) setRecipe(s, newId, wanted.id);
+    });
+
+    const result =
+      q.dir === 'out'
+        ? act((s) => addLink(s, q.fromId, q.itemId, newId))
+        : act((s) => addLink(s, newId, q.itemId, q.fromId));
+    if (!result.ok) toast(result.reason, 'bad');
+    else setSelection(selectMachines([newId]));
+  };
 
   // --- pointer down -------------------------------------------------------
   const onPointerDown = (e: React.PointerEvent) => {
@@ -149,8 +230,20 @@ export default function Canvas({
     if (port) {
       const fromId = port.dataset.machineId!;
       const itemId = port.dataset.itemId!;
-      dragRef.current = { mode: 'link', fromId, itemId };
+      dragRef.current = { mode: 'link', fromId, itemId, dir: 'out' };
       const from = outputPortPos(state.machines[fromId], itemId);
+      setGhost({ from, to: toWorld(e.clientX, e.clientY), itemId });
+      return;
+    }
+
+    // Dragging out of an INPUT port asks the opposite question: what could
+    // feed this? Same gesture, same menu, reversed.
+    const inPort = target.closest<HTMLElement>('[data-port="in"]');
+    if (inPort) {
+      const fromId = inPort.dataset.machineId!;
+      const itemId = inPort.dataset.itemId!;
+      dragRef.current = { mode: 'link', fromId, itemId, dir: 'in' };
+      const from = inputPortPos(state.machines[fromId], itemId);
       setGhost({ from, to: toWorld(e.clientX, e.clientY), itemId });
       return;
     }
@@ -302,12 +395,28 @@ export default function Canvas({
     if (drag.mode !== 'link') return;
 
     const under = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
-    const port = under?.closest<HTMLElement>('[data-port="in"]');
-    if (!port) return;
+    const wanted = drag.dir === 'out' ? 'in' : 'out';
+    const port = under?.closest<HTMLElement>(`[data-port="${wanted}"]`);
 
-    const toId = port.dataset.machineId!;
-    const result = act((s) => addLink(s, drag.fromId, drag.itemId, toId));
-    if (!result.ok) toast(result.reason, 'bad');
+    if (port) {
+      const otherId = port.dataset.machineId!;
+      const result =
+        drag.dir === 'out'
+          ? act((s) => addLink(s, drag.fromId, drag.itemId, otherId))
+          : act((s) => addLink(s, otherId, drag.itemId, drag.fromId));
+      if (!result.ok) toast(result.reason, 'bad');
+      return;
+    }
+
+    // Dropped on nothing. Offer what could go there instead of silently
+    // discarding the gesture.
+    if (under?.closest('[data-node-id]')) return;
+    setQuickBuild({
+      at: toWorld(e.clientX, e.clientY),
+      itemId: drag.itemId,
+      fromId: drag.fromId,
+      dir: drag.dir,
+    });
   };
 
   // --- zoom ---------------------------------------------------------------
@@ -440,6 +549,14 @@ export default function Canvas({
     <div
       ref={ref}
       className={`canvas${panning ? ' panning' : ''}${pending ? ' placing' : ''}`}
+      onDoubleClick={(e) => {
+        // Only on bare canvas: double-clicking a node or a port means
+        // something else entirely.
+        const target = e.target as HTMLElement;
+        if (target.closest('[data-node-id]') || target.closest('[data-port]')) return;
+        if (target.closest('.canvas-overlay')) return;
+        onOpenBuild?.();
+      }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -458,7 +575,11 @@ export default function Canvas({
             const from = state.machines[link.fromId];
             const to = state.machines[link.toId];
             if (!from || !to) return null;
-            const d = linkPath(outputPortPos(from, link.itemId), inboundPos(to, link.itemId));
+            const d = linkPath(
+              outputPortPos(from, link.itemId),
+              inboundPos(to, link.itemId),
+              link.shape,
+            );
             const flowing = (from.outputs[link.itemId] ?? 0) > 0.001;
             const isSelected = selection?.kind === 'link' && selection.id === link.id;
             return (
@@ -572,6 +693,48 @@ export default function Canvas({
         */}
       <div className="canvas-overlay" onPointerDown={(e) => e.stopPropagation()}>
         {children}
+        {quickBuild && (() => {
+          const options = quickCandidates(quickBuild.itemId, quickBuild.dir);
+          const screenX = quickBuild.at.x * view.zoom + view.x;
+          const screenY = quickBuild.at.y * view.zoom + view.y;
+          return (
+            <div
+              className="quick-build"
+              style={{ left: Math.max(8, screenX), top: Math.max(8, screenY) }}
+            >
+              <div className="quick-head">
+                <span style={{ color: item(quickBuild.itemId).color }}>
+                  {item(quickBuild.itemId).icon} {item(quickBuild.itemId).name}
+                </span>
+                <span className="quick-dim">
+                  {t(quickBuild.dir === 'out' ? 'quick.goesTo' : 'quick.comesFrom')}
+                </span>
+                <button className="drawer-close" onClick={() => setQuickBuild(null)}>
+                  ✕
+                </button>
+              </div>
+              {options.length === 0 && (
+                <div className="quick-empty">
+                  {t(quickBuild.dir === 'out' ? 'quick.noTakers' : 'quick.noMakers')}
+                </div>
+              )}
+              {options.map(({ b, price }) => (
+                <button
+                  key={b.id}
+                  className="quick-row"
+                  disabled={state.credits < price}
+                  onClick={() => buildQuick(b.id)}
+                >
+                  <span className="glyph" style={{ background: b.color, color: inkOn(b.color) }}>
+                    {b.icon}
+                  </span>
+                  <span className="quick-name">{b.name}</span>
+                  <span className="mono quick-dim">{money(price)}</span>
+                </button>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       <div className="toasts">

@@ -1,5 +1,5 @@
 import { recipe } from '../data';
-import type { Machine } from '../engine/types';
+import type { LinkShape, Machine } from '../engine/types';
 import { inputPorts, outputPorts } from '../engine/factory';
 
 export const NODE_W = 196;
@@ -37,7 +37,22 @@ export function inboundPos(m: Machine, itemId: string): Point {
   return inputPortPos(m, itemId);
 }
 
-export function linkPath(from: Point, to: Point): string {
+export function linkPath(from: Point, to: Point, shape: LinkShape = 'curve'): string {
+  if (shape === 'straight') return `M ${from.x} ${from.y} L ${to.x} ${to.y}`;
+
+  if (shape === 'elbow') {
+    // Leave each port horizontally before turning, so the corner never lands
+    // on the node edge and the belt reads as leaving the port it belongs to.
+    const stub = 22;
+    const ax = from.x + stub;
+    const bx = to.x - stub;
+    const mid = Math.abs(bx - ax) < 1 ? ax : (ax + bx) / 2;
+    return (
+      `M ${from.x} ${from.y} L ${ax} ${from.y} L ${mid} ${from.y} ` +
+      `L ${mid} ${to.y} L ${bx} ${to.y} L ${to.x} ${to.y}`
+    );
+  }
+
   const dx = Math.min(160, Math.max(45, Math.abs(to.x - from.x) * 0.5));
   return `M ${from.x} ${from.y} C ${from.x + dx} ${from.y}, ${to.x - dx} ${to.y}, ${to.x} ${to.y}`;
 }

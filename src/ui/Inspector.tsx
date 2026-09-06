@@ -12,6 +12,7 @@ import {
 } from '../data';
 import {
   removeLink,
+  setLinkShape,
   currentCost,
   groupMachines,
   groupOf,
@@ -37,6 +38,7 @@ import { onSiteCount } from '../engine/simulate';
 import { money, tpm } from './format';
 import type { Selection } from './Canvas';
 import type { Game } from './useGame';
+import { useLang } from '../i18n/useLang';
 
 interface Props {
   game: Game;
@@ -48,39 +50,56 @@ const round = (n: number): string => (Math.round(n * 10) / 10).toString();
 
 export default function Inspector({ game, selection, setSelection }: Props) {
   const { state, act, toast } = game;
+  const { t } = useLang();
 
   if (!selection) {
     return (
       <p className="empty">
-        Select a machine to set its recipe, clock speed and power draw. Select a belt to remove it.
+        {t('inspector.empty')}
       </p>
     );
   }
 
   if (selection.kind === 'link') {
     const link = state.links[selection.id];
-    if (!link) return <p className="empty">Belt is gone.</p>;
+    if (!link) return <p className="empty">{t('inspector.beltGone')}</p>;
     const from = state.machines[link.fromId];
     const to = state.machines[link.toId];
     return (
       <>
         <div className="field">
-          <label>Belt</label>
+          <label>{t('inspector.belt')}</label>
           <div className="kv">
-            <span className="k">Carrying</span>
+            <span className="k">{t('inspector.carrying')}</span>
             <span>{item(link.itemId).name}</span>
           </div>
           <div className="kv">
-            <span className="k">From</span>
+            <span className="k">{t('inspector.from')}</span>
             <span>{building(from?.buildingId ?? '')?.name ?? '—'}</span>
           </div>
           <div className="kv">
-            <span className="k">To</span>
+            <span className="k">{t('inspector.to')}</span>
             <span>{building(to?.buildingId ?? '')?.name ?? '—'}</span>
           </div>
           <div className="kv">
-            <span className="k">Capacity</span>
+            <span className="k">{t('inspector.capacity')}</span>
             <span className="mono">{BALANCE.linkRatePerMin}/min</span>
+          </div>
+        </div>
+        <div className="field">
+          <label>{t('inspector.shape')}</label>
+          {/* Routing is cosmetic — throughput does not change — but forty
+              crossing curves are unreadable, so let the player straighten. */}
+          <div className="seg">
+            {(['curve', 'straight', 'elbow'] as const).map((shape) => (
+              <button
+                key={shape}
+                className={(link.shape ?? 'curve') === shape ? 'active' : ''}
+                onClick={() => act((s) => setLinkShape(s, link.id, shape))}
+              >
+                {t(shape === 'curve' ? 'inspector.curve' : shape === 'straight' ? 'inspector.straight' : 'inspector.elbow')}
+              </button>
+            ))}
           </div>
         </div>
         <button
@@ -91,7 +110,7 @@ export default function Inspector({ game, selection, setSelection }: Props) {
             setSelection(null);
           }}
         >
-          Remove belt
+          {t('inspector.removeBelt')}
         </button>
       </>
     );

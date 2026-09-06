@@ -12,7 +12,7 @@ import {
 } from '../data';
 import { nextId } from './ids';
 import { seedMarket, takeOffer } from './market';
-import type { GameState, Link, Machine } from './types';
+import type { GameState, Link, Machine, LinkShape } from './types';
 
 export const STATE_VERSION = 4;
 
@@ -388,6 +388,12 @@ export function addLink(
   const link: Link = { id: nextId('l'), fromId, toId, itemId };
   state.links[link.id] = link;
   return OK;
+}
+
+/** Change how one belt is drawn. Cosmetic; nothing in the sim reads it. */
+export function setLinkShape(state: GameState, id: string, shape: LinkShape): void {
+  const link = state.links[id];
+  if (link) link.shape = shape;
 }
 
 export function removeLink(state: GameState, id: string): void {

@@ -20,6 +20,7 @@ import type { Pending } from './Canvas';
 import { inkOn, money, recipeFlow, tpm } from './format';
 import { MarketplaceBody } from './Marketplace';
 import Tip from './Tip';
+import { useLang } from '../i18n/useLang';
 
 /** Tab order. 'Contracts' is special: it renders the contract board. */
 const TABS = [
@@ -38,12 +39,12 @@ export type BuildTab = (typeof TABS)[number];
  */
 type Group = 'online' | 'local' | 'generated' | 'other';
 
-const GROUP_LABEL: Record<Group, string> = {
-  online: 'Online — provider APIs',
-  local: 'Local — your own hardware',
-  generated: 'AI-generated content',
-  other: 'Everything else',
-};
+const GROUP_KEY = {
+  online: 'build.groupOnline',
+  local: 'build.groupLocal',
+  generated: 'build.groupGenerated',
+  other: 'build.groupOther',
+} as const;
 const GROUP_ORDER: Group[] = ['online', 'local', 'generated', 'other'];
 
 function groupOf(b: Building, unlockedRecipes: string[]): Group {
@@ -164,6 +165,7 @@ export default function BuildDialog({
   onSign,
   onAssign,
 }: Props) {
+  const { t } = useLang();
   const unlocked = useMemo(
     () =>
       BUILDINGS.filter(
@@ -185,8 +187,8 @@ export default function BuildDialog({
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal wide build-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
-          <span className="badge">Build</span>
-          <h2>{active === 'Contracts' ? 'Contract offers' : active}</h2>
+          <span className="badge">{t('build.title')}</span>
+          <h2>{active === 'Contracts' ? t('build.contracts') : active}</h2>
         </div>
 
         <div className="build-split">
@@ -225,7 +227,7 @@ export default function BuildDialog({
                 const showHeads = groups.length > 1;
                 return groups.map(({ g, members }) => (
                   <div className="build-group" key={g}>
-                    {showHeads && <div className="build-group-head">{GROUP_LABEL[g]}</div>}
+                    {showHeads && <div className="build-group-head">{t(GROUP_KEY[g])}</div>}
                     <div className="build-grid">
               {members
                 .map((b) => {
@@ -302,7 +304,7 @@ export default function BuildDialog({
         </div>
         </div>
 
-        <button className="offer-close" onClick={onClose}>Close</button>
+        <button className="offer-close" onClick={onClose}>{t('build.close')}</button>
       </div>
     </div>
   );

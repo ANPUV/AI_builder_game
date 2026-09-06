@@ -29,6 +29,13 @@
   --float-soft: rgba(20, 26, 35, 0.85);
   --backdrop: rgba(6, 9, 13, 0.72);
   --row-on: rgba(255, 255, 255, 0.04);
+  --tip-bg: #0f151d;
+  --danger-fill: #4a2020;
+  --danger-edge: #7a3030;
+  --warn-fill: #3a1f1c;
+  --warn-edge: #6b2f28;
+  --warn-ink: #f0a89e;
+  --good-fill: #12311d;
 
   color-scheme: dark;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -67,6 +74,13 @@
   --float-soft: rgba(255, 255, 255, 0.9);
   --backdrop: rgba(28, 38, 52, 0.38);
   --row-on: rgba(20, 32, 48, 0.06);
+  --tip-bg: #ffffff;
+  --danger-fill: #fbe3e0;
+  --danger-edge: #e0aaa2;
+  --warn-fill: #fdece8;
+  --warn-edge: #e8bcb2;
+  --warn-ink: #8c3423;
+  --good-fill: #dff0e3;
 
   color-scheme: light;
 }
@@ -96,8 +110,8 @@ button:hover:not(:disabled) { background: var(--btn-hover); border-color: var(--
 button:disabled { opacity: 0.4; cursor: not-allowed; }
 button.primary { background: var(--accent-fill); border-color: var(--accent-edge); }
 button.primary:hover:not(:disabled) { background: var(--accent-fill-hover); }
-button.danger:hover:not(:disabled) { background: #4a2020; border-color: #7a3030; }
-button.active { background: var(--accent-fill); border-color: #4aa3d8; }
+button.danger:hover:not(:disabled) { background: var(--danger-fill); border-color: var(--danger-edge); }
+button.active { background: var(--accent-fill); border-color: var(--accent); }
 
 select, input[type='text'] {
   font: inherit;
@@ -167,6 +181,38 @@ select, input[type='text'] {
 .spacer { flex: 1; }
 .speeds { display: flex; gap: 4px; }
 .speeds button { min-width: 34px; text-align: center; padding: 4px 6px; }
+/* Belt dropped on empty canvas: the short list of what could go there. */
+.quick-build {
+  position: absolute; z-index: 40; width: 232px;
+  max-height: 300px; overflow-y: auto;
+  background: var(--float); border: 1px solid var(--accent);
+  border-radius: 8px; padding: 6px;
+  box-shadow: 0 10px 34px var(--shadow);
+}
+.quick-head {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; padding: 2px 4px 6px;
+  border-bottom: 1px solid var(--line-soft); margin-bottom: 5px;
+}
+.quick-dim { color: var(--muted); font-size: 10px; }
+.quick-head .drawer-close { margin-left: auto; padding: 0 4px; }
+.quick-empty { font-size: 11px; color: var(--muted); padding: 6px 4px; line-height: 1.5; }
+.quick-row {
+  display: flex; align-items: center; gap: 7px; width: 100%;
+  padding: 5px 6px; margin-bottom: 3px; text-align: left;
+  background: transparent; border: 1px solid transparent;
+}
+.quick-row:hover:not(:disabled) { background: var(--btn-hover); border-color: var(--btn-hover-edge); }
+.quick-row .glyph {
+  width: 22px; height: 22px; flex: 0 0 22px; display: grid; place-items: center;
+  border-radius: 5px; font-weight: 700; font-size: 12px;
+}
+.quick-name { flex: 1; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* A segmented control: one choice out of a few, shown as a single strip. */
+.seg { display: flex; gap: 3px; }
+.seg button { flex: 1; padding: 4px 6px; font-size: 11px; }
+
 .saved-at { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 
 .powerbar {
@@ -323,9 +369,9 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 .tip-host { display: contents; }
 .tip {
   position: fixed;
-  z-index: 200;
+  z-index: 400;
   pointer-events: none;
-  background: #0f151d;
+  background: var(--tip-bg);
   border: 1px solid var(--line);
   border-radius: 7px;
   padding: 10px 11px;
@@ -345,7 +391,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 .tip-dim { color: var(--muted); }
 .tip-warn {
   margin-top: 8px; padding: 6px 8px; border-radius: 5px;
-  background: #3a1f1c; border: 1px solid #6b2f28; color: #f0a89e;
+  background: var(--warn-fill); border: 1px solid var(--warn-edge); color: var(--warn-ink);
 }
 
 /* --- build bar additions ------------------------------------------------ */
@@ -424,7 +470,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 }
 .modal-head h2 { margin: 8px 0 4px; font-size: 19px; }
 .modal-head p { margin: 0 0 10px; color: var(--muted); font-size: 12px; line-height: 1.5; }
-.badge.good { background: #12311d; color: var(--good); }
+.badge.good { background: var(--good-fill); color: var(--good); }
 
 .unlock-row { display: flex; gap: 9px; align-items: flex-start; padding: 7px 0; border-bottom: 1px solid var(--line-soft); }
 .unlock-row:last-child { border-bottom: none; }

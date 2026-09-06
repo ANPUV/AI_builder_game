@@ -40,12 +40,21 @@ export interface Machine {
   strikes?: number;
 }
 
+/**
+ * How a belt is drawn. Cosmetic only — routing does not affect throughput —
+ * but a dense factory is unreadable when forty curves cross each other, so
+ * the player gets to pick per belt.
+ */
+export type LinkShape = 'curve' | 'straight' | 'elbow';
+
 /** A link carrying one item type from a node's output to another's input. */
 export interface Link {
   id: string;
   fromId: string;
   toId: string;
   itemId: string;
+  /** Undefined on links saved before shapes existed; treated as 'curve'. */
+  shape?: LinkShape;
 }
 
 /** Why a node is not currently producing. Recomputed every tick, for UI. */

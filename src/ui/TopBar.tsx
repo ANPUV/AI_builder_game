@@ -2,6 +2,8 @@ import { useRef } from 'react';
 import { BALANCE, VENDORS, poolColor, poolName, type Pool } from '../data';
 import Tip from './Tip';
 import { useTheme } from './useTheme';
+import { LANGUAGES, type Lang } from '../i18n';
+import { useLang } from '../i18n/useLang';
 import type { Game } from './useGame';
 import { money, tpm } from './format';
 
@@ -20,6 +22,7 @@ export default function TopBar({ game, onSignOut }: { game: Game; onSignOut?: ()
     game;
   const fileInput = useRef<HTMLInputElement>(null);
   const { theme, toggleTheme } = useTheme();
+  const { lang, setLang, t } = useLang();
   const paused = speed === 0;
   const { demandKtpm, supplyKtpm, satisfaction } = state.compute;
   // Show the pool that is hurting, not an average that hides it.
@@ -44,7 +47,7 @@ export default function TopBar({ game, onSignOut }: { game: Game; onSignOut?: ()
       </div>
 
       <div className="stat">
-        <span className="label">Cash</span>
+        <span className="label">{t('top.cash')}</span>
         <span
           className="value mono"
           style={{ color: state.credits < 0 ? 'var(--bad)' : undefined }}
@@ -54,7 +57,7 @@ export default function TopBar({ game, onSignOut }: { game: Game; onSignOut?: ()
       </div>
 
       <div className="stat">
-        <span className="label">Net / min</span>
+        <span className="label">{t('top.netPerMin')}</span>
         <span
           className="value mono"
           style={{ color: netPerMin >= 0 ? 'var(--good)' : 'var(--bad)' }}
@@ -64,7 +67,7 @@ export default function TopBar({ game, onSignOut }: { game: Game; onSignOut?: ()
       </div>
 
       <div className="stat">
-        <span className="label">Net margin</span>
+        <span className="label">{t('top.netMargin')}</span>
         <span
           className="value mono"
           style={{ color: margin >= 0.4 ? 'var(--good)' : margin > 0 ? 'var(--warn)' : 'var(--bad)' }}
@@ -75,7 +78,10 @@ export default function TopBar({ game, onSignOut }: { game: Game; onSignOut?: ()
 
       <div className="stat">
         <span className="label">
-          Exposure{state.breachFreeze > 0 && <span style={{ color: 'var(--bad)' }}> · BREACH</span>}
+          {t('top.exposure')}
+          {state.breachFreeze > 0 && (
+            <span style={{ color: 'var(--bad)' }}> · {t('top.breach')}</span>
+          )}
         </span>
         <span
           className="value mono"
@@ -109,7 +115,7 @@ export default function TopBar({ game, onSignOut }: { game: Game; onSignOut?: ()
           }
         >
           <div className="stat">
-            <span className="label">Slop</span>
+            <span className="label">{t('top.slop')}</span>
             <span
               className="value mono"
               style={{ color: state.slop > 20 ? 'var(--bad)' : state.slop > 8 ? 'var(--warn)' : 'var(--muted)' }}
@@ -151,7 +157,7 @@ export default function TopBar({ game, onSignOut }: { game: Game; onSignOut?: ()
           }
         >
           <div className="stat">
-            <span className="label">Hardware</span>
+            <span className="label">{t('top.hardware')}</span>
             <span
               className="value mono"
               style={{ color: state.priceIndex > 2.5 ? 'var(--bad)' : 'var(--warn)' }}
@@ -188,10 +194,11 @@ export default function TopBar({ game, onSignOut }: { game: Game; onSignOut?: ()
       >
         <div className="stat">
           <span className="label">
-            Compute{' '}
+            {t('top.compute')}{' '}
             {tightCount > 0 && (
               <span style={{ color: 'var(--bad)' }}>
-                · {tightCount} pool{tightCount === 1 ? '' : 's'} tight
+                ·{' '}
+                {t(tightCount === 1 ? 'top.poolTight' : 'top.poolsTight', { n: tightCount })}
               </span>
             )}
           </span>
@@ -212,7 +219,7 @@ export default function TopBar({ game, onSignOut }: { game: Game; onSignOut?: ()
       </Tip>
 
       <div className="stat">
-        <span className="label">Uptime</span>
+        <span className="label">{t('top.uptime')}</span>
         <span className="value mono">{clock(state.elapsed)}</span>
       </div>
 
@@ -224,7 +231,7 @@ export default function TopBar({ game, onSignOut }: { game: Game; onSignOut?: ()
         <button
           className={paused ? 'active' : ''}
           onClick={togglePause}
-          title={paused ? 'Resume (Space)' : 'Pause (Space)'}
+          title={`${paused ? t('top.resume') : t('top.pause')} (Space)`}
         >
           {paused ? '▶' : '❚❚'}
         </button>
@@ -239,16 +246,16 @@ export default function TopBar({ game, onSignOut }: { game: Game; onSignOut?: ()
 
       {savedAt !== null && (
         <span className="saved-at" title={new Date(savedAt).toLocaleTimeString()}>
-          Saved
+          {t('top.saved')}
         </span>
       )}
 
-      <button onClick={save}>Save</button>
-      <button onClick={exportFile} title="Download this factory as a .json file">
-        Export
+      <button onClick={save}>{t('top.save')}</button>
+      <button onClick={exportFile} title={t('top.exportTitle')}>
+        {t('top.export')}
       </button>
-      <button onClick={() => fileInput.current?.click()} title="Load a factory from a .json file">
-        Import
+      <button onClick={() => fileInput.current?.click()} title={t('top.importTitle')}>
+        {t('top.import')}
       </button>
       <input
         ref={fileInput}
@@ -262,21 +269,34 @@ export default function TopBar({ game, onSignOut }: { game: Game; onSignOut?: ()
           if (file) void importFile(file);
         }}
       />
+      <select
+        className="lang-select"
+        value={lang}
+        title={t('top.language')}
+        aria-label={t('top.language')}
+        onChange={(e) => setLang(e.target.value as Lang)}
+      >
+        {LANGUAGES.map((l) => (
+          <option key={l.code} value={l.code}>
+            {l.label}
+          </option>
+        ))}
+      </select>
       <button
         onClick={toggleTheme}
-        title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        title={theme === 'dark' ? t('top.toLight') : t('top.toDark')}
       >
         {theme === 'dark' ? '☀' : '☾'}
       </button>
       <button
         className="danger"
         onClick={() => {
-          if (confirm('Wipe the factory and start over?')) reset();
+          if (confirm(t('top.resetConfirm'))) reset();
         }}
       >
-        Reset
+        {t('top.reset')}
       </button>
-      {onSignOut && <button onClick={onSignOut}>Sign out</button>}
+      {onSignOut && <button onClick={onSignOut}>{t('top.signOut')}</button>}
     </div>
   );
 }

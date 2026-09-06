@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "aifor-study-beta",
+  "compatibility_date": "2026-09-06",
+
+  // Phase 0 is static assets only — no Worker script yet. Phase 1 adds
+  // "main": "worker/index.ts" alongside this and the auth routes with it.
+  "assets": {
+    "directory": "./dist",
+    // The game is a single page with no router, so anything that is not a
+    // built asset should still hand back index.html rather than a 404.
+    "not_found_handling": "single-page-application"
+  },
+
+  "routes": [
+    {
+      "pattern": "beta.aifor.study",
+      "custom_domain": true
+    }
+  ],
+
+  "observability": {
+    "enabled": true
+  }
+}

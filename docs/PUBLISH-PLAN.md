@@ -339,3 +339,55 @@ Steps 4 and 5 are what stop the quiet-degradation modes: with no Resend key
 mail is only logged, and with no Turnstile secret the bot check passes
 everything. Both are deliberate for local dev and both are dangerous in
 production, which is what the guard is for.
+
+
+## Phase 2 status — 6 Sep 2026
+
+Landing page and auth UI built, verified in a browser against local D1. The
+remote database is created and migrated; nothing is deployed yet.
+
+| File | Holds |
+| --- | --- |
+| `src/Root.tsx` | the gate — loading, landing, or game |
+| `src/auth/api.ts` | typed client, carries the error `code` through |
+| `src/auth/useAuth.ts` | one `/api/me` on mount decides what the page is |
+| `src/site/Landing.tsx` | the public pitch |
+| `src/site/AuthPanel.tsx` | register / sign in / forgot |
+| `src/site/ResetPage.tsx` | `/reset?token=` |
+| `src/site/Turnstile.tsx` | renders only when a site key is configured |
+
+**Password minimum is 8**, matching NIST's floor for user-chosen secrets. The
+server is the check that decides (`MIN_PASSWORD_LENGTH` in
+`worker/security.ts`); the forms mirror it.
+
+### Two traps the game's stylesheet set
+
+- **Its class namespace is flat**, and `.hint`, `.card` and `.field` are all
+  taken. `.hint` is a `position: absolute` canvas tooltip, so an unscoped rule
+  did not lose a specificity fight — it teleported the password hint to the
+  corner of the viewport. Every rule in `site.css` is now scoped under `.site`.
+  **Keep the prefix when adding rules.**
+- **`html`, `body` and `#root` are all `height: 100%`** with `body` overflow
+  hidden. Right for a canvas, wrong for a page you scroll: the whole chain has
+  to be undone, not just the overflow, or content spills out of a fixed box
+  instead of laying out.
+
+### The game is now a lazy chunk
+
+A signed-out visitor downloads 207kB rather than 358kB and never fetches the
+game. This is a **build split, not a security boundary** — the chunk is still a
+public URL to anyone who reads the manifest. It is what makes Phase 3 cheap.
+
+`src/main.tsx` loads its dev console with a dynamic import for the same reason;
+a static one would pull the whole engine back into the shell.
+
+### Gotcha for later: local D1 is keyed by database_id
+
+Changing `database_id` in `wrangler.jsonc` gives you a **fresh, unmigrated
+local database** — the old local state is still on disk under the old id. If
+the API starts answering "no such table", run `npm run db:migrate:local`.
+
+### Still before deploy
+
+Resend key and Turnstile secret (`npm run check:secrets` enforces both), the
+`beta.aifor.study` DNS, and the Cloudflare Access policy in front of it.

@@ -46,11 +46,22 @@ async function call<T>(path: string, body?: unknown): Promise<T> {
 
   if (!response.ok) {
     const error = (data as { error?: { code?: string; message?: string } } | null)?.error;
-    throw new ApiError(
-      response.status,
-      error?.code ?? 'unknown',
-      error?.message ?? 'Something went wrong. Try again.',
-    );
+
+    // No JSON error body means whatever answered was not our Worker. In dev
+    // that is almost always the Vite server handling /api itself because the
+    // Worker is not running — say so rather than shrugging.
+    if (!error) {
+      const unreachable = response.status === 404 || response.status === 502;
+      throw new ApiError(
+        response.status,
+        unreachable ? 'api_unreachable' : 'unknown',
+        unreachable && import.meta.env.DEV
+          ? `The API did not answer (${response.status}). Is the Worker running? \`npm run dev\` starts it alongside Vite.`
+          : 'Something went wrong. Try again.',
+      );
+    }
+
+    throw new ApiError(response.status, error.code ?? 'unknown', error.message ?? 'Something went wrong. Try again.');
   }
 
   return data as T;

@@ -130,6 +130,32 @@ export const BALANCE = {
 
   /** Seconds between autosaves. */
   autosaveSeconds: 10,
+
+  /**
+   * Multiplier on every milestone's `reward` that is actually paid in cash on
+   * completion. 0: tech-tree unlocks no longer hand you free money outright —
+   * funding has to come from contracts, or (Venture Capital addon) be raised
+   * against future revenue. Milestone `reward` values are kept in the data
+   * either way, both for display and as the input to that addon's math.
+   */
+  milestoneRewardMultiplier: 0,
+
+  // --- Venture Capital addon -----------------------------------------------
+  /** Capital offered on a raise = milestone.reward * this. Bigger than the old flat reward — that's the pitch, funded by giving something up. */
+  vcCapitalMultiplier: 3,
+  /** Revenue share offered on the FIRST raise. Later raises offer less new share as the cap table fills — see vcMaxTotalSharePct. */
+  vcBaseSharePct: 0.08,
+  /** Cumulative revenue share can never exceed this, however many rounds are taken. The player always keeps at least this much of revenue. */
+  vcMaxTotalSharePct: 0.6,
+
+  /** Bank loan interest, per sim-month, locked in at draw time. ~27% APR — venture debt in reality runs well above prime; steep enough to be a bridge, not a subsidy. */
+  bankLoanRatePerMonth: 0.02,
+  /** Sim-months a loan amortizes over. Short enough that a careless draw is felt before the next milestone, typically. */
+  bankLoanTermMonths: 6,
+  /** Size of any one new draw at milestone 0. Grows with progress — see bankLoanCapGrowthPerMilestone. Not a lifetime cap: multiple loans can be outstanding at once. */
+  bankLoanCapBase: 5_000,
+  /** Per completed milestone, the draw cap grows by this fraction of its base. */
+  bankLoanCapGrowthPerMilestone: 0.4,
 } as const;
 
 /** Convenience: a link's throughput in units per second. */

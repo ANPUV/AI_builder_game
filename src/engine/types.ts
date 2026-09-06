@@ -122,6 +122,33 @@ export interface FinanceReport {
   revenuePerMin: number;
   /** Rolling $ per minute spent on per-token API costs. */
   cogsPerMin: number;
+  /** revenuePerMin - cogsPerMin - rentPerMin. Gates the Venture Capital revenue share: investors collect nothing while this is <= 0. */
+  netPerMin: number;
+}
+
+/** One accepted funding round, under the Venture Capital addon. */
+export interface VentureRaise {
+  milestoneId: string;
+  capital: number;
+  /** Share of revenuePerMin this round costs, permanently, while net income is positive. */
+  sharePct: number;
+}
+
+/** Venture Capital addon state. Present even when the addon is off — cheap, and avoids nullable checks everywhere. */
+export interface VentureState {
+  raises: VentureRaise[];
+  /** Sum of raises[].sharePct, cached for the per-tick charge. Never exceeds BALANCE.vcMaxTotalSharePct. */
+  totalSharePct: number;
+  /** Milestone ids whose raise offer was declined — permanent, so it is never re-offered. */
+  declined: string[];
+}
+
+/** One outstanding bank loan, under the Venture Capital addon. Multiple can be open at once, each at the rate it was drawn at. */
+export interface Loan {
+  id: string;
+  principal: number;
+  ratePerMonth: number;
+  monthsRemaining: number;
 }
 
 export interface GameState {
@@ -180,6 +207,10 @@ export interface GameState {
    * where the spread in loadState leaves the default (everything on) in place.
    */
   addons: AddonSettings;
+
+  // --- Venture Capital addon ------------------------------------------------
+  vc: VentureState;
+  loans: Loan[];
 
   /** Per-tick derived values; not persisted meaningfully but harmless. */
   compute: ComputeReport;

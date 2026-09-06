@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { BALANCE, VENDORS, poolColor, poolName, type Pool } from '../data';
+import { BALANCE, VENDORS, featureEnabled, poolColor, poolName, type Pool } from '../data';
 import Tip from './Tip';
 import { useTheme } from './useTheme';
 import { LANGUAGES, type Lang } from '../i18n';
@@ -21,10 +21,12 @@ export default function TopBar({
   game,
   onSignOut,
   onOpenSettings,
+  onOpenBank,
 }: {
   game: Game;
   onSignOut?: () => void;
   onOpenSettings: () => void;
+  onOpenBank: () => void;
 }) {
   const { state, speed, setSpeed, save, reset, togglePause, exportFile, importFile, savedAt } =
     game;
@@ -41,12 +43,16 @@ export default function TopBar({
   const worstPool = state.compute.tight[0] ?? null;
   const load = supplyKtpm > 0 ? Math.min(1, demandKtpm / supplyKtpm) : demandKtpm > 0 ? 1 : 0;
   const short = satisfaction < 0.999;
-  const { burnPerMonth, revenuePerMin, cogsPerMin } = state.finance;
-  const burnPerMin = burnPerMonth / BALANCE.monthSeconds * 60;
-  const netPerMin = revenuePerMin - cogsPerMin - burnPerMin;
+  const { revenuePerMin, netPerMin } = state.finance;
   const margin = revenuePerMin > 0 ? netPerMin / revenuePerMin : 0;
   const exposure = state.exposure;
   const risky = exposure > 30;
+  const vcActive = state.vc.totalSharePct > 0 || state.loans.length > 0;
+  const loanBalance = state.loans.reduce((sum, l) => sum + l.principal, 0);
+  const loanMonthlyDue = state.loans.reduce(
+    (sum, l) => sum + l.principal * l.ratePerMonth + l.principal / Math.max(l.monthsRemaining, 1 / BALANCE.monthSeconds),
+    0,
+  );
 
   return (
     <div className="topbar">
@@ -83,6 +89,46 @@ export default function TopBar({
           {revenuePerMin > 0 ? `${Math.round(margin * 100)}%` : '—'}
         </span>
       </div>
+
+      {featureEnabled('ventureCapital', state.addons) && vcActive && (
+        <Tip
+          width={280}
+          content={
+            <>
+              <div className="tip-title">{t('vc.tipTitle')}</div>
+              {state.vc.totalSharePct > 0 && (
+                <div className="tip-body">
+                  {t('vc.tipShare', { pct: Math.round(state.vc.totalSharePct * 100) })}
+                </div>
+              )}
+              {state.loans.length > 0 && (
+                <>
+                  <div className="tip-kv">
+                    <span>{t('vc.loanBalance')}</span>
+                    <span className="mono">{money(loanBalance)}</span>
+                  </div>
+                  <div className="tip-kv">
+                    <span>{t('vc.loanDue')}</span>
+                    <span className="mono">{money(loanMonthlyDue)}/mo</span>
+                  </div>
+                </>
+              )}
+              <button className="offer-close" style={{ marginTop: 8 }} onClick={onOpenBank}>
+                {t('vc.openBank')}
+              </button>
+            </>
+          }
+        >
+          <div className="stat">
+            <span className="label">{t('vc.label')}</span>
+            <span className="value mono" style={{ color: 'var(--warn)' }}>
+              {state.vc.totalSharePct > 0 ? `${Math.round(state.vc.totalSharePct * 100)}%` : ''}
+              {state.vc.totalSharePct > 0 && state.loans.length > 0 ? ' · ' : ''}
+              {state.loans.length > 0 ? money(loanBalance) : ''}
+            </span>
+          </div>
+        </Tip>
+      )}
 
       <div className="stat">
         <span className="label">
@@ -296,6 +342,11 @@ export default function TopBar({
       >
         {theme === 'dark' ? '☀' : '☾'}
       </button>
+      {featureEnabled('ventureCapital', state.addons) && (
+        <button onClick={onOpenBank} title={t('vc.openBank')} aria-label={t('vc.openBank')}>
+          🏦
+        </button>
+      )}
       <button onClick={onOpenSettings} title={t('top.settings')} aria-label={t('top.settings')}>
         ⚙
       </button>

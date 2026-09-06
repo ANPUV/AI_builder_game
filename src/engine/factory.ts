@@ -15,7 +15,10 @@ import { nextId } from './ids';
 import { seedMarket, takeOffer } from './market';
 import type { GameState, Link, Machine, LinkShape } from './types';
 
-export const STATE_VERSION = 4;
+// 4 -> 5: GameState gained `vc` and `loans` (Venture Capital addon). Per
+// convention, a save from an older version is discarded on load rather than
+// merged — see save.ts.
+export const STATE_VERSION = 5;
 
 export function createInitialState(): GameState {
   const state: GameState = {
@@ -40,8 +43,10 @@ export function createInitialState(): GameState {
     slop: 0,
     slopFines: 0,
     slopExposureSpike: 0,
+    vc: { raises: [], totalSharePct: 0, declined: [] },
+    loans: [],
     compute: { pools: {}, demandKtpm: 0, supplyKtpm: 0, satisfaction: 1, tight: [] },
-    finance: { burnPerMonth: 0, revenuePerMin: 0, cogsPerMin: 0 },
+    finance: { burnPerMonth: 0, revenuePerMin: 0, cogsPerMin: 0, netPerMin: 0 },
     status: {},
   };
   seedMarket(state);

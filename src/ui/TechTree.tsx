@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  BALANCE,
   BUILDING_BY_ID,
   MILESTONES,
   RECIPE_BY_ID,
@@ -212,10 +213,12 @@ export default function TechTree({ state }: { state: GameState }) {
         {Object.entries(current.requires).map(([itemId, need]) => (
           <Requirement key={itemId} itemId={itemId} need={need} state={state} locked={false} />
         ))}
-        <div className="kv" style={{ marginTop: 7 }}>
-          <span className="k">Reward</span>
-          <span className="mono">{money(current.reward)}</span>
-        </div>
+        {BALANCE.milestoneRewardMultiplier > 0 && (
+          <div className="kv" style={{ marginTop: 7 }}>
+            <span className="k">Reward</span>
+            <span className="mono">{money(current.reward * BALANCE.milestoneRewardMultiplier)}</span>
+          </div>
+        )}
         <UnlockList milestone={current} />
       </div>
 
@@ -235,10 +238,12 @@ export default function TechTree({ state }: { state: GameState }) {
           {Object.entries(m.requires).map(([itemId, need]) => (
             <Requirement key={itemId} itemId={itemId} need={need} state={state} locked />
           ))}
-          <div className="kv" style={{ marginTop: 7 }}>
-            <span className="k">Reward</span>
-            <span className="mono">{money(m.reward)}</span>
-          </div>
+          {BALANCE.milestoneRewardMultiplier > 0 && (
+            <div className="kv" style={{ marginTop: 7 }}>
+              <span className="k">Reward</span>
+              <span className="mono">{money(m.reward * BALANCE.milestoneRewardMultiplier)}</span>
+            </div>
+          )}
           <UnlockList milestone={m} />
         </div>
       ))}

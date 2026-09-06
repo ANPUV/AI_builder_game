@@ -17,8 +17,9 @@ import {
   saveState,
 } from '../engine/save';
 import { advance } from '../engine/simulate';
+import { acceptRaise, declineRaise, drawLoan, raiseOfferFor } from '../engine/venture';
 import type { GameState } from '../engine/types';
-import type { AddonTrack } from '../data/addons';
+import type { AddonId } from '../data/addons';
 import { money } from './format';
 
 export interface Toast {
@@ -65,6 +66,12 @@ export function useGame() {
   /** Milestone awaiting its unlock panel, and what it made available. */
   const [pendingUnlock, setPendingUnlock] = useState<string | null>(null);
   const [freshUnlocks, setFreshUnlocks] = useState<string[]>([]);
+  /**
+   * Milestone awaiting its Venture Capital raise offer. Rendered after
+   * `pendingUnlock` clears for the same milestone, not alongside it — see
+   * what you unlocked, then decide whether to fund it.
+   */
+  const [pendingRaise, setPendingRaise] = useState<string | null>(null);
 
   const repaint = useCallback(() => bump(), []);
 
@@ -107,6 +114,7 @@ export function useGame() {
     stateRef.current = createInitialState();
     setPendingUnlock(null);
     setFreshUnlocks([]);
+    setPendingRaise(null);
     if (import.meta.env.DEV) {
       const bridge = (window as unknown as { __ai?: Record<string, unknown> }).__ai;
       if (bridge) bridge.state = stateRef.current;
@@ -145,6 +153,7 @@ export function useGame() {
         if (!milestone) continue;
         setPendingUnlock(id);
         setFreshUnlocks(milestone.unlocksBuildings);
+        if (raiseOfferFor(stateRef.current!, id)) setPendingRaise(id);
       }
 
       // Common leads only get the red dot; interrupting play for a $100
@@ -218,6 +227,37 @@ export function useGame() {
     pendingUnlock,
     dismissUnlock: () => setPendingUnlock(null),
     freshUnlocks,
+    pendingRaise,
+
+    /** Accept or decline the pending raise offer. Declining is permanent. */
+    resolveRaise: useCallback((accept: boolean) => {
+      const state = stateRef.current!;
+      const id = pendingRaise;
+      if (!id) return;
+      if (accept) {
+        const result = acceptRaise(state, id);
+        if (result.ok) toast('Funding round closed', 'good');
+      } else {
+        declineRaise(state, id);
+      }
+      setPendingRaise(null);
+      persist();
+      bump();
+    }, [pendingRaise, persist, toast]),
+
+    /** Draw a new bank loan. Multiple can be outstanding at once. */
+    drawLoan: useCallback((amount: number) => {
+      const state = stateRef.current!;
+      const result = drawLoan(state, amount);
+      if (!result.ok) {
+        toast(result.reason, 'bad');
+        return;
+      }
+      toast(`Borrowed ${money(amount)}`, 'good');
+      persist();
+      bump();
+    }, [persist, toast]),
+
     state: stateRef.current!,
     act,
     repaint,
@@ -241,9 +281,9 @@ export function useGame() {
      * this is a preference, and losing it to a crash before the next autosave
      * would be a small but pointless annoyance.
      */
-    setAddon: useCallback((track: AddonTrack, on: boolean) => {
+    setAddon: useCallback((id: AddonId, on: boolean) => {
       const state = stateRef.current!;
-      state.addons = { ...state.addons, [track]: on };
+      state.addons = { ...state.addons, [id]: on };
       persist();
       bump();
     }, []),
@@ -285,6 +325,7 @@ export function useGame() {
         stateRef.current = result.state;
         setPendingUnlock(null);
         setFreshUnlocks([]);
+        setPendingRaise(null);
         if (import.meta.env.DEV) {
           const bridge = (window as unknown as { __ai?: Record<string, unknown> }).__ai;
           if (bridge) bridge.state = stateRef.current;

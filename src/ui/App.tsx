@@ -7,6 +7,7 @@ import {
   setHotkey,
 } from '../engine/factory';
 import { hasUnseenOffers, markOffersSeen } from '../engine/market';
+import BankDialog from './BankDialog';
 import BuildDialog, { type BuildTab } from './BuildDialog';
 import SettingsDialog from './SettingsDialog';
 import Canvas, { machineIds, type Pending, type Selection } from './Canvas';
@@ -16,6 +17,7 @@ import Hotbar from './Hotbar';
 import TechTree from './TechTree';
 import TopBar from './TopBar';
 import UnlockPanel from './UnlockPanel';
+import VentureCapitalOffer from './VentureCapitalOffer';
 import { money } from './format';
 import { useGame } from './useGame';
 import { LangProvider, useLang } from '../i18n/useLang';
@@ -37,6 +39,7 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
   /** The build dialog, and which tab it should land on. */
   const [dialog, setDialog] = useState<BuildTab | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [bankOpen, setBankOpen] = useState(false);
   /** The tech tree lives in a left drawer now, closed until asked for. */
   const [treeOpen, setTreeOpen] = useState(false);
 
@@ -102,7 +105,12 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
 
   return (
     <div className="app">
-      <TopBar game={game} onSignOut={onSignOut} onOpenSettings={() => setSettingsOpen(true)} />
+      <TopBar
+        game={game}
+        onSignOut={onSignOut}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenBank={() => setBankOpen(true)}
+      />
       <div className="body">
         <Canvas
           game={game}
@@ -165,6 +173,17 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
         />
       )}
 
+      {bankOpen && (
+        <BankDialog
+          state={game.state}
+          onDraw={(amount) => {
+            game.drawLoan(amount);
+            setBankOpen(false);
+          }}
+          onClose={() => setBankOpen(false)}
+        />
+      )}
+
       {dialog && (
         <BuildDialog
           state={game.state}
@@ -186,8 +205,17 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
           }}
         />
       )}
-      {game.pendingUnlock && (
+      {game.pendingUnlock ? (
         <UnlockPanel milestoneId={game.pendingUnlock} onClose={game.dismissUnlock} />
+      ) : (
+        game.pendingRaise && (
+          <VentureCapitalOffer
+            state={game.state}
+            milestoneId={game.pendingRaise}
+            onAccept={() => game.resolveRaise(true)}
+            onDecline={() => game.resolveRaise(false)}
+          />
+        )
       )}
     </div>
   );

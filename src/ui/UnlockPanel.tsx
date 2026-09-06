@@ -1,4 +1,4 @@
-import { BUILDING_BY_ID, MILESTONE_BY_ID, RECIPE_BY_ID } from '../data';
+import { BALANCE, BUILDING_BY_ID, MILESTONE_BY_ID, RECIPE_BY_ID } from '../data';
 import { inkOn, money, recipeFlow } from './format';
 import { useContent } from '../i18n/useLang';
 
@@ -20,6 +20,7 @@ export default function UnlockPanel({
 
   const buildings = m.unlocksBuildings.map((id) => BUILDING_BY_ID[id]).filter(Boolean);
   const recipes = m.unlocksRecipes.map((id) => RECIPE_BY_ID[id]).filter(Boolean);
+  const funding = m.reward * BALANCE.milestoneRewardMultiplier;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -28,10 +29,12 @@ export default function UnlockPanel({
           <span className="badge good">Milestone complete</span>
           <h2>{m.name}</h2>
           <p>{m.blurb}</p>
-          <div className="kv">
-            <span className="k">Funding</span>
-            <span className="mono" style={{ color: 'var(--good)' }}>+{money(m.reward)}</span>
-          </div>
+          {funding > 0 && (
+            <div className="kv">
+              <span className="k">Funding</span>
+              <span className="mono" style={{ color: 'var(--good)' }}>+{money(funding)}</span>
+            </div>
+          )}
         </div>
 
         {buildings.length > 0 && (

@@ -1,12 +1,12 @@
-import { ADDONS, type AddonSettings, type AddonTrack } from '../data';
+import { ADDONS, type AddonId, type AddonSettings } from '../data';
 import { useLang } from '../i18n/useLang';
 
 /**
  * Settings.
  *
- * Only the optional content tracks for now. Language and theme already have
- * controls in the top bar; duplicating them here would give the same setting
- * two homes.
+ * The optional content tracks, plus any feature addons (Venture Capital).
+ * Language and theme already have controls in the top bar; duplicating them
+ * here would give the same setting two homes.
  */
 export default function SettingsDialog({
   addons,
@@ -14,7 +14,7 @@ export default function SettingsDialog({
   onClose,
 }: {
   addons: AddonSettings;
-  onToggleAddon: (track: AddonTrack, on: boolean) => void;
+  onToggleAddon: (id: AddonId, on: boolean) => void;
   onClose: () => void;
 }) {
   const { t } = useLang();
@@ -30,11 +30,11 @@ export default function SettingsDialog({
         <p className="settings-note">{t('settings.addonsNote')}</p>
 
         {ADDONS.map((addon) => (
-          <label key={addon.track} className="settings-row">
+          <label key={addon.id} className="settings-row">
             <input
               type="checkbox"
-              checked={addons[addon.track]}
-              onChange={(e) => onToggleAddon(addon.track, e.target.checked)}
+              checked={addons[addon.id]}
+              onChange={(e) => onToggleAddon(addon.id, e.target.checked)}
             />
             <span className="settings-row-text">
               <span className="settings-row-name">{addon.name}</span>

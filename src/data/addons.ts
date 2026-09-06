@@ -2,34 +2,65 @@ import { BUILDINGS, type BuildingTier } from './buildings';
 import { MILESTONES, type Track } from './milestones';
 
 /**
- * The optional content tracks.
+ * Optional addons, of two different shapes.
  *
- * These are not a new concept — the milestone data already splits into `main`,
- * `homelab` and `slop`, and each advances independently. An addon is simply a
- * non-main track the player can switch off, so this derives its membership
- * from the milestones rather than maintaining a second list that would drift.
+ * **Track addons** are not a new concept — the milestone data already splits
+ * into `main`, `homelab` and `slop`, and each advances independently. A track
+ * addon is simply a non-main track the player can switch off, so this derives
+ * its membership from the milestones rather than maintaining a second list
+ * that would drift. `main` is deliberately absent: it is the game.
  *
- * `main` is deliberately absent: it is the game.
+ * **Feature addons** don't gate a content branch at all — Venture Capital
+ * reacts to every track's milestones and touches the economy directly, so it
+ * doesn't fit the track shape. It's declared here anyway so the settings
+ * dialog, save format and toggle plumbing are shared rather than duplicated
+ * for what is otherwise a very similar on/off switch.
+ *
+ * The two kinds default differently. A track absent from a save means ON —
+ * an old run should not silently lose Home Lab progress. A feature absent
+ * from a save means OFF — a brand-new financial mechanic must not retroactively
+ * start charging a save that predates it. `defaultOn` on each entry carries
+ * that instead of a single blanket assumption.
  */
 export const ADDONS = [
   {
-    track: 'homelab' as const,
+    id: 'homelab' as const,
+    kind: 'track' as const,
     name: 'Home Lab',
     blurb: 'Build your own machines: parts, quantization, racks, and a hardware market that prices you out.',
+    defaultOn: true,
   },
   {
-    track: 'slop' as const,
+    id: 'slop' as const,
+    kind: 'track' as const,
     name: 'AI Slop',
     blurb: 'Content mills, pSEO and NSFW work. Pays well, raises the Slop Index, and invites fines.',
+    defaultOn: true,
+  },
+  {
+    id: 'ventureCapital' as const,
+    kind: 'feature' as const,
+    name: 'Venture Capital',
+    blurb:
+      'Milestones no longer pay a cash reward on their own. Raise a funding round against each one instead — a lump sum for a permanent slice of revenue — or borrow from the bank at interest.',
+    defaultOn: false,
   },
 ] as const;
 
-export type AddonTrack = (typeof ADDONS)[number]['track'];
+export type AddonId = (typeof ADDONS)[number]['id'];
+export type AddonTrack = Extract<(typeof ADDONS)[number], { kind: 'track' }>['id'];
+export type FeatureAddonId = Extract<(typeof ADDONS)[number], { kind: 'feature' }>['id'];
 
-/** Which addon tracks are on. Absent from a save means on, so old runs are unchanged. */
-export type AddonSettings = Record<AddonTrack, boolean>;
+export type AddonSettings = Record<AddonId, boolean>;
 
-export const DEFAULT_ADDONS: AddonSettings = { homelab: true, slop: true };
+export const DEFAULT_ADDONS: AddonSettings = Object.fromEntries(
+  ADDONS.map((a) => [a.id, a.defaultOn]),
+) as AddonSettings;
+
+/** Whether a feature addon (not a content track) is switched on. Unlike a track, a key missing at runtime means off. */
+export function featureEnabled(id: FeatureAddonId, addons: AddonSettings): boolean {
+  return addons[id] === true;
+}
 
 function collect(track: Track, key: 'unlocksBuildings' | 'unlocksRecipes'): Set<string> {
   const ids = new Set<string>();
@@ -39,6 +70,10 @@ function collect(track: Track, key: 'unlocksBuildings' | 'unlocksRecipes'): Set<
   }
   return ids;
 }
+
+const TRACK_ADDONS = ADDONS.filter(
+  (a): a is Extract<(typeof ADDONS)[number], { kind: 'track' }> => a.kind === 'track',
+);
 
 /**
  * Membership needs both signals.
@@ -55,14 +90,14 @@ const TIER_TRACK: Partial<Record<BuildingTier, AddonTrack>> = {
 };
 
 const BUILDINGS_BY_TRACK = new Map<AddonTrack, Set<string>>(
-  ADDONS.map((a) => {
-    const ids = collect(a.track, 'unlocksBuildings');
-    for (const b of BUILDINGS) if (TIER_TRACK[b.tier] === a.track) ids.add(b.id);
-    return [a.track, ids];
+  TRACK_ADDONS.map((a) => {
+    const ids = collect(a.id, 'unlocksBuildings');
+    for (const b of BUILDINGS) if (TIER_TRACK[b.tier] === a.id) ids.add(b.id);
+    return [a.id, ids];
   }),
 );
 const RECIPES_BY_TRACK = new Map<AddonTrack, Set<string>>(
-  ADDONS.map((a) => [a.track, collect(a.track, 'unlocksRecipes')]),
+  TRACK_ADDONS.map((a) => [a.id, collect(a.id, 'unlocksRecipes')]),
 );
 
 /** The addon a building belongs to, or null when it is part of the main game. */

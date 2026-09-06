@@ -89,6 +89,30 @@ const en = {
     'Side branches off the main spine. Switching one off hides its nodes and stops its milestones advancing.',
   'settings.addonsKeep':
     'Anything already on the canvas keeps running, and progress is kept — switching a track back on resumes it.',
+
+  'vc.label': 'Investors',
+  'vc.tipTitle': 'Venture Capital',
+  'vc.tipShare': 'Investors take {pct}% of revenue while the company is profitable.',
+  'vc.loanBalance': 'Loan balance',
+  'vc.loanDue': 'Due',
+  'vc.openBank': 'Bank',
+  'vc.offerBadge': 'Funding offer',
+  'vc.offerTitle': 'Raise a round on {milestone}?',
+  'vc.offerBlurb':
+    'One lump sum now, for a permanent slice of revenue. Investors collect nothing in any month the company runs at a loss.',
+  'vc.capital': 'Capital',
+  'vc.share': 'Revenue share',
+  'vc.totalAfter': 'Total after this round',
+  'vc.decline': 'Decline',
+  'vc.accept': 'Take the deal',
+  'vc.bankTitle': 'The Bank',
+  'vc.bankBlurb':
+    'Borrow against the company, at {rate}% a month. Repaid automatically out of cash on hand, whether or not the company is profitable.',
+  'vc.bankOutstanding': 'Outstanding loans',
+  'vc.bankRemaining': '({months} mo left)',
+  'vc.bankDraw': 'Draw a new loan',
+  'vc.bankCap': 'Bank will lend up to',
+  'vc.bankBorrow': 'Borrow',
 } as const;
 
 export type Key = keyof typeof en;
@@ -163,6 +187,30 @@ const vi: Partial<Record<Key, string>> = {
     'Các nhánh phụ ngoài mạch chính. Tắt một nhánh sẽ ẩn node của nó và dừng tiến trình cột mốc.',
   'settings.addonsKeep':
     'Những gì đã đặt trên canvas vẫn chạy, và tiến trình được giữ — bật lại nhánh sẽ tiếp tục từ chỗ cũ.',
+
+  'vc.label': 'Nhà đầu tư',
+  'vc.tipTitle': 'Vốn đầu tư mạo hiểm',
+  'vc.tipShare': 'Nhà đầu tư nhận {pct}% doanh thu khi công ty còn lãi.',
+  'vc.loanBalance': 'Dư nợ vay',
+  'vc.loanDue': 'Phải trả',
+  'vc.openBank': 'Ngân hàng',
+  'vc.offerBadge': 'Đề nghị gọi vốn',
+  'vc.offerTitle': 'Gọi vốn nhân cột mốc {milestone}?',
+  'vc.offerBlurb':
+    'Nhận một khoản vốn lớn ngay bây giờ, đổi lại một phần doanh thu vĩnh viễn. Nhà đầu tư không nhận gì trong những tháng công ty lỗ.',
+  'vc.capital': 'Vốn nhận được',
+  'vc.share': 'Chia sẻ doanh thu',
+  'vc.totalAfter': 'Tổng cộng sau vòng này',
+  'vc.decline': 'Từ chối',
+  'vc.accept': 'Nhận khoản đầu tư',
+  'vc.bankTitle': 'Ngân hàng',
+  'vc.bankBlurb':
+    'Vay vốn cho công ty với lãi suất {rate}%/tháng. Tự động trừ vào tiền mặt, dù công ty có lãi hay không.',
+  'vc.bankOutstanding': 'Khoản vay hiện có',
+  'vc.bankRemaining': '(còn {months} tháng)',
+  'vc.bankDraw': 'Vay khoản mới',
+  'vc.bankCap': 'Ngân hàng cho vay tối đa',
+  'vc.bankBorrow': 'Vay',
 };
 
 const DICTS: Record<Lang, Partial<Record<Key, string>>> = { en, vi };

@@ -14,6 +14,7 @@ import type { Track } from '../data';
 import type { Recipe } from '../data';
 import { SHARED, type Pool } from '../data/vendors';
 import { spawnOffer, tickMarket } from './market';
+import { tickVenture } from './venture';
 import type { ContractOffer, GameState, Machine, MachineStatus, PoolReport } from './types';
 
 export interface TickEvents {
@@ -531,11 +532,18 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
   // with an EMA (~8s window) so the top bar reads as a trend, not a strobe.
   const k = Math.min(1, dt / 8);
   const prev = state.finance;
+  const smoothedRevenue = prev.revenuePerMin + (revenuePerMin - prev.revenuePerMin) * k;
+  const smoothedCogs = prev.cogsPerMin + (cogsPerMin - prev.cogsPerMin) * k;
   state.finance = {
     burnPerMonth,
-    revenuePerMin: prev.revenuePerMin + (revenuePerMin - prev.revenuePerMin) * k,
-    cogsPerMin: prev.cogsPerMin + (cogsPerMin - prev.cogsPerMin) * k,
+    revenuePerMin: smoothedRevenue,
+    cogsPerMin: smoothedCogs,
+    netPerMin: smoothedRevenue - smoothedCogs - (burnPerMonth / BALANCE.monthSeconds) * 60,
   };
+
+  // 4b --- Venture Capital addon: revenue-share charge, loan repayment ------
+  // Reads state.finance, so it has to run after the block above.
+  tickVenture(state, dt);
 
   // 5 --- move items along links -------------------------------------------
   transfer(state, dt);
@@ -630,7 +638,7 @@ function completeIfMet(
   if (!met) return;
 
   state.completedMilestones.push(next.id);
-  state.credits += next.reward;
+  state.credits += next.reward * BALANCE.milestoneRewardMultiplier;
   for (const id of next.unlocksBuildings) {
     if (!state.unlockedBuildings.includes(id)) state.unlockedBuildings.push(id);
     // A newly unlocked contract tier gets a lead immediately. Otherwise the

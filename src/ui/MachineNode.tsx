@@ -1,0 +1,180 @@
+import {
+  BALANCE,
+  VENDORS,
+  building,
+  item,
+  poolColor,
+  recipe,
+  type Pool,
+  type Vendor,
+} from '../data';
+import { inputPorts, outputPorts } from '../engine/factory';
+import { machineComputeSupply, statusLabel } from '../engine/simulate';
+import { craftProgress, NODE_W, ROW_H } from './geometry';
+import type { Machine, MachineStatus } from '../engine/types';
+import { money, tpm } from './format';
+
+const STATUS_COLOR: Record<MachineStatus, string> = {
+  running: 'var(--good)',
+  idle: 'var(--muted)',
+  disabled: '#4a5464',
+  starved: 'var(--warn)',
+  blocked: 'var(--warn)',
+  throttled: 'var(--bad)',
+  broke: 'var(--bad)',
+  audited: '#c46f6f',
+  awaiting: '#c9a13d',
+  broken: '#ff4d4d',
+};
+
+interface Props {
+  machine: Machine;
+  status: MachineStatus;
+  selected: boolean;
+  /** Item being dragged from an output port, so valid targets can light up. */
+  pendingItemId: string | null;
+  /** Press Generate on a manual node. The click IS the mechanic. */
+  onGenerate: (id: string) => void;
+}
+
+export default function MachineNode({
+  machine,
+  status,
+  selected,
+  pendingItemId,
+  onGenerate,
+}: Props) {
+  const b = building(machine.buildingId);
+  const r = recipe(machine.recipeId);
+  if (!b) return null;
+
+  const ins = inputPorts(machine);
+  const outs = outputPorts(machine);
+  const rows = Math.max(1, ins.length, outs.length);
+  const isCapacity = b.kind === 'capacity';
+
+  const highlight = (itemId: string): boolean =>
+    pendingItemId !== null && itemId === pendingItemId;
+
+  return (
+    <div
+      className={`node${selected ? ' selected' : ''}${machine.enabled ? '' : ' off'}${
+        machine.broken ? ' broken' : ''
+      }${machine.groupId ? ' grouped' : ''}`}
+      style={{ left: machine.x, top: machine.y, width: NODE_W }}
+      data-node-id={machine.id}
+    >
+      <div className="node-header" style={{ background: b.color }}>
+        <span className="glyph">{b.icon}</span>
+        <span className="title">{b.name}</span>
+        <span
+          className="dot"
+          style={{ background: STATUS_COLOR[status] }}
+          title={statusLabel[status]}
+        />
+      </div>
+
+      <div className="node-rows">
+        {Array.from({ length: rows }, (_, i) => {
+          const inId = ins[i];
+          const outId = outs[i];
+          const inItem = inId ? item(inId) : null;
+          const outItem = outId ? item(outId) : null;
+          const inColor = inItem?.color ?? 'transparent';
+
+          return (
+            <div className="node-row" key={i} style={{ height: ROW_H }}>
+              <span className="side">
+                {inId && (
+                  <>
+                    <span className="amt mono">{Math.floor(machine.inputs[inId] ?? 0)}</span>
+                    <span className="name">{inItem?.name}</span>
+                  </>
+                )}
+              </span>
+              <span className="side">
+                {outItem && (
+                  <>
+                    <span className="name">{outItem.name}</span>
+                    <span className="amt mono">{Math.floor(machine.outputs[outId] ?? 0)}</span>
+                  </>
+                )}
+              </span>
+
+              {inId && (
+                <div
+                  className={`port in${highlight(inId) ? ' target' : ''}`}
+                  style={{ background: inColor }}
+                  data-port="in"
+                  data-machine-id={machine.id}
+                  data-item-id={inId}
+                />
+              )}
+              {outItem && (
+                <div
+                  className="port out"
+                  style={{ background: outItem.color }}
+                  data-port="out"
+                  data-machine-id={machine.id}
+                  data-item-id={outId}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="node-footer">
+        <div className="row">
+          <span>
+            {r ? r.name : 'No recipe'}
+            {b.vendorScoped && (
+              <span
+                className="vendor-tag"
+                style={{
+                  color: machine.vendor ? poolColor(machine.vendor as Pool) : 'var(--warn)',
+                }}
+              >
+                {machine.vendor ? VENDORS[machine.vendor as Vendor].short : 'SET?'}
+              </span>
+            )}
+          </span>
+          <span className="mono">
+            {isCapacity
+              ? `+${tpm(machineComputeSupply(machine))}`
+              : r?.payout
+                ? money(r.payout)
+                : `${Math.round(machine.clock * 100)}%`}
+          </span>
+        </div>
+        {status === 'awaiting' && (
+          <button
+            type="button"
+            className="generate"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onGenerate(machine.id);
+            }}
+          >
+            ⚡ Generate
+          </button>
+        )}
+        {machine.broken && (
+          <div className="blown-tag">
+            {machine.repairing ? `Repairing… ${Math.ceil(machine.repairing)}s` : 'Blown'}
+          </div>
+        )}
+        <div className="progress">
+          <div
+            style={{
+              width: `${craftProgress(machine) * 100}%`,
+              background: machine.clock > 1 ? 'var(--warn)' : 'var(--good)',
+              transition: `width ${BALANCE.tickSeconds}s linear`,
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

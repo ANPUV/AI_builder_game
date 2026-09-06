@@ -1,0 +1,1662 @@
+<title>AIfor.study Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  --ground:#e9ecf1; --surface:#ffffff; --surface-2:#f3f6f9; --sunk:#dee3ea;
+  --line:#ccd4de; --line-soft:#e2e8ef;
+  --ink:#111b25; --ink-2:#3a4956; --muted:#66757f;
+  --accent:#1f6f9e; --accent-soft:#d7e8f3;
+  --bad:#b0473f; --warn:#a06a2a; --good:#1f7a52;
+  --shadow:0 1px 2px rgba(17,27,37,.07), 0 8px 22px -14px rgba(17,27,37,.30);
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:#0d141b; --surface:#151f29; --surface-2:#1a2530; --sunk:#101922;
+    --line:#2a3a48; --line-soft:#22303c;
+    --ink:#dde6ee; --ink-2:#b3c2d0; --muted:#7d8e9c;
+    --accent:#5cb3e4; --accent-soft:#183345;
+    --bad:#e0776f; --warn:#d3a353; --good:#4cc47f;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 26px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"] {
+  --ground:#0d141b; --surface:#151f29; --surface-2:#1a2530; --sunk:#101922;
+  --line:#2a3a48; --line-soft:#22303c;
+  --ink:#dde6ee; --ink-2:#b3c2d0; --muted:#7d8e9c;
+  --accent:#5cb3e4; --accent-soft:#183345;
+  --bad:#e0776f; --warn:#d3a353; --good:#4cc47f;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 26px -16px rgba(0,0,0,.8);
+}
+
+* { box-sizing:border-box; }
+body { background:var(--ground); color:var(--ink); font-family:var(--sans); font-size:14px; line-height:1.5; }
+.wrap { max-width:1160px; margin:0 auto; padding:28px 20px 80px; display:flex; flex-direction:column; gap:34px; }
+h1,h2,h3 { margin:0; text-wrap:balance; }
+p { margin:0; }
+a { color:var(--accent); }
+
+/* --- masthead --- */
+.mast { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:18px;
+  border-bottom:2px solid var(--ink); padding-bottom:14px; }
+.mast h1 { font-size:30px; font-weight:600; letter-spacing:-.02em; }
+.mast .sub { color:var(--muted); font-size:13px; max-width:56ch; margin-top:6px; }
+.stampline { font-family:var(--mono); font-size:11px; color:var(--muted); text-align:right; line-height:1.8; }
+.stampline b { color:var(--ink-2); font-weight:500; }
+
+/* --- search --- */
+.searchbar { position:sticky; top:0; z-index:20; background:var(--ground);
+  padding:10px 0 12px; margin-bottom:-14px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.searchbar input { flex:1 1 260px; min-width:0; font-family:var(--mono); font-size:13px;
+  padding:9px 12px; border-radius:6px; border:1px solid var(--line); background:var(--surface); color:var(--ink); }
+.searchbar input:focus-visible { outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+.searchbar .hint { font-family:var(--mono); font-size:11px; color:var(--muted); }
+
+/* --- section --- */
+.sec { display:flex; flex-direction:column; gap:14px; }
+.sec > header { display:flex; flex-direction:column; gap:4px; border-top:1px solid var(--line); padding-top:12px; }
+.eyebrow { font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
+.sec h2 { font-size:19px; font-weight:600; letter-spacing:-.01em; }
+.sec .lede { color:var(--muted); font-size:13px; max-width:74ch; }
+
+/* --- meters --- */
+.meters { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+.meter { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:16px 16px 14px;
+  box-shadow:var(--shadow); display:flex; flex-direction:column; gap:9px; border-top:3px solid var(--m,var(--accent)); }
+.meter h3 { font-size:15px; font-weight:600; display:flex; align-items:baseline; gap:8px; }
+.meter h3 span { font-family:var(--mono); font-size:11px; color:var(--muted); font-weight:400; letter-spacing:.04em; }
+.meter p { font-size:13px; color:var(--ink-2); }
+.meter .fx { font-family:var(--mono); font-size:12px; background:var(--sunk); border-radius:5px; padding:7px 9px; color:var(--ink); overflow-x:auto; }
+.meter ul { margin:0; padding-left:16px; font-size:12.5px; color:var(--muted); display:flex; flex-direction:column; gap:3px; }
+
+/* --- spine --- */
+.spine { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:18px; box-shadow:var(--shadow);
+  display:flex; flex-direction:column; gap:16px; overflow-x:auto; }
+.lane { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.lane .laneName { font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.1em;
+  color:var(--muted); min-width:82px; }
+.step { display:flex; align-items:center; gap:8px; }
+.arrow { font-family:var(--mono); color:var(--muted); font-size:11px; white-space:nowrap;
+  display:flex; flex-direction:column; align-items:center; line-height:1.1; }
+.arrow em { font-style:normal; font-size:10px; letter-spacing:.03em; }
+
+/* --- chips --- */
+.chip { display:inline-flex; align-items:center; gap:5px; font-size:12px; padding:3px 8px 3px 6px;
+  border-radius:5px; border:1px solid color-mix(in srgb, var(--c,var(--line)) 45%, transparent);
+  background:color-mix(in srgb, var(--c,var(--line)) 12%, transparent); white-space:nowrap; }
+.chip b { color:var(--c,var(--ink)); font-size:13px; font-weight:600; }
+.chip i { font-family:var(--mono); font-style:normal; font-size:11px; color:var(--muted); }
+.chip i::before { content:"×"; }
+.stacks { display:inline-flex; gap:5px; flex-wrap:wrap; }
+.none { color:var(--muted); font-style:italic; font-size:12px; }
+
+/* --- tables --- */
+.tablewrap { overflow-x:auto; background:var(--surface); border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow); }
+table { border-collapse:collapse; width:100%; font-size:13px; }
+th { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);
+  text-align:left; font-weight:500; padding:10px 12px; border-bottom:1px solid var(--line); white-space:nowrap; background:var(--surface-2); }
+td { padding:9px 12px; border-bottom:1px solid var(--line-soft); vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+td.num, th.num { font-family:var(--mono); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.nm { font-weight:600; display:flex; align-items:center; gap:7px; white-space:nowrap; }
+.nm .g { font-size:15px; color:var(--gc,var(--muted)); width:16px; text-align:center; }
+.sub2 { color:var(--muted); font-size:11.5px; font-family:var(--mono); }
+.desc { color:var(--ink-2); font-size:12.5px; min-width:22ch; }
+
+/* --- risk + kind pills --- */
+.risk { font-family:var(--mono); font-size:11px; padding:2px 6px; border-radius:4px; font-weight:500; }
+.risk.zero { color:var(--muted); background:var(--sunk); }
+.risk.warn { color:var(--warn); background:color-mix(in srgb,var(--warn) 15%,transparent); }
+.risk.bad  { color:var(--bad);  background:color-mix(in srgb,var(--bad) 16%,transparent); }
+.risk.good { color:var(--good); background:color-mix(in srgb,var(--good) 15%,transparent); }
+.kind { font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);
+  border:1px solid var(--line); border-radius:4px; padding:1px 5px; }
+
+/* --- ceiling bar --- */
+.ceil { display:flex; align-items:center; gap:8px; min-width:130px; }
+.ceil .track { flex:1; height:7px; border-radius:4px; background:var(--sunk); overflow:hidden; }
+.ceil .fill { height:100%; background:var(--bad); border-radius:4px; }
+.ceil .v { font-family:var(--mono); font-size:12px; font-variant-numeric:tabular-nums; width:2.4ch; text-align:right; }
+
+/* --- steps / traps --- */
+.cols2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px; align-items:start; }
+ol.steps { margin:0; padding:0; list-style:none; counter-reset:s; display:flex; flex-direction:column; gap:11px; }
+ol.steps li { counter-increment:s; display:grid; grid-template-columns:26px 1fr; gap:11px; font-size:13.5px; color:var(--ink-2); }
+ol.steps li::before { content:counter(s,decimal-leading-zero); font-family:var(--mono); font-size:11px; color:var(--accent);
+  padding-top:2px; }
+ol.steps b { color:var(--ink); font-weight:600; }
+ul.traps { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:10px; }
+ul.traps li { font-size:13.5px; color:var(--ink-2); padding-left:14px; border-left:2px solid var(--bad); }
+ul.traps b { color:var(--ink); display:block; font-weight:600; }
+.panel { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:16px 18px; box-shadow:var(--shadow);
+  display:flex; flex-direction:column; gap:12px; }
+.panel h3 { font-size:14px; font-weight:600; display:flex; gap:8px; align-items:baseline; }
+.panel h3 span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+
+/* --- milestones --- */
+.track2 { display:flex; flex-direction:column; gap:0; }
+.ms { display:grid; grid-template-columns:78px 1fr auto; gap:14px; padding:11px 0; border-bottom:1px solid var(--line-soft); align-items:baseline; }
+.ms:last-child { border-bottom:none; }
+.ms .act { font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--accent); }
+.ms .name { font-weight:600; font-size:13.5px; }
+.ms .req { margin-top:5px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.ms .req .lbl { font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
+.ms .rw { font-family:var(--mono); font-size:12.5px; color:var(--good); font-variant-numeric:tabular-nums; }
+
+.hidden { display:none !important; }
+.empty { color:var(--muted); font-size:13px; font-style:italic; padding:10px 0; }
+footer { border-top:1px solid var(--line); padding-top:14px; color:var(--muted); font-size:12px; display:flex;
+  flex-wrap:wrap; gap:10px; justify-content:space-between; font-family:var(--mono); }
+
+@media print {
+  .searchbar { display:none; }
+  body { background:#fff; }
+  .wrap { max-width:none; padding:0; gap:22px; }
+  .meter, .panel, .tablewrap, .spine { box-shadow:none; break-inside:avoid; }
+  .sec { break-inside:avoid-page; }
+}
+@media (prefers-reduced-motion:no-preference) { .chip, .meter { transition:none; } }
+
+.nodelist { background:var(--surface); border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow); padding:2px 18px; }
+.node { display:grid; grid-template-columns:225px 1fr; gap:16px; padding:13px 0; border-bottom:1px solid var(--line-soft); }
+.node:last-child { border-bottom:none; }
+.node .id { display:flex; flex-direction:column; gap:3px; }
+.node .id .t { display:flex; align-items:center; gap:8px; font-weight:600; font-size:13.5px; }
+.node .id .t .g { font-size:16px; color:var(--gc,var(--muted)); width:18px; text-align:center; }
+.node .id .m { font-family:var(--mono); font-size:10.5px; color:var(--muted); padding-left:26px; }
+.node .body { display:flex; flex-direction:column; gap:8px; min-width:0; }
+.node .body p { font-size:13px; color:var(--ink-2); }
+.stat { display:flex; flex-wrap:wrap; gap:4px 16px; font-family:var(--mono); font-size:11px; color:var(--muted); }
+.stat span b { color:var(--ink-2); font-weight:500; }
+.io { display:flex; flex-wrap:wrap; gap:6px; align-items:center; font-family:var(--mono); font-size:10.5px;
+  text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
+@media (max-width:640px) { .node { grid-template-columns:1fr; gap:8px; } .node .id .m { padding-left:0; } }
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div>
+      <h1>AIfor.study Field Guide</h1>
+      <p class="sub">Every node, price and exposure ceiling in the game, generated straight from <code>src/data/</code>. Money only ever comes from contract nodes; everything else is cost.</p>
+    </div>
+    <div class="stampline">
+      <b>53</b> items · <b>103</b> buildings<br>
+      <b>135</b> recipes · <b>24</b> milestones · <b>18</b> contracts<br>
+      generated 2026-09-06 · <span style="color:var(--bad)">1 content problems</span>
+    </div>
+  </header>
+
+  <div class="searchbar">
+    <input id="q" type="search" placeholder="Filter nodes and items — try “verified”, “deepseek”, “capacity”" autocomplete="off" aria-label="Filter the catalog">
+    <span class="hint" id="qhint">103 nodes · 53 items</span>
+  </div>
+
+  
+<section class="sec">
+  <header><p class="eyebrow">The three meters</p><h2>What you are actually playing against</h2><p class="lede">Cash, compute and exposure move independently, and a node can be stopped by any one of them. The status label tells you which.</p></header>
+  
+<div class="meters">
+  <div class="meter" style="--m:var(--good)">
+    <h3>Cash <span>drains three ways at once</span></h3>
+    <p>A one-off place cost, a monthly bill charged continuously, and per-craft API spend debited the moment a craft <em>starts</em>.</p>
+    <div class="fx">1 billing month = 300s of play · $25/mo ≈ 8¢ per game-second</div>
+    <ul><li>Start with $2,000</li><li>Demolish refunds 50% of the place cost</li><li>Zero cash → node reads <b>Out of cash</b> and stops</li></ul>
+  </div>
+  <div class="meter" style="--m:var(--accent)">
+    <h3>Compute <span>thousands of tokens / min</span></h3>
+    <p>Every node draws it; only Capacity nodes supply it. Short of supply, everything runs at <b>supply ÷ demand</b> speed and reads <b>throttled (429)</b>.</p>
+    <div class="fx">satisfaction = min(1, supply / demand) · draw = computeDraw × clock<sup>1.6</sup></div>
+    <ul><li>It degrades smoothly — it never cliffs</li><li>Capacity nodes are exempt, so they always run</li><li>Overclocking to 2× costs ≈3.0× the throughput</li></ul>
+  </div>
+  <div class="meter" style="--m:var(--bad)">
+    <h3>Exposure <span>architectural, not behavioural</span></h3>
+    <p>The sum of <code>dataRisk</code> across every enabled node that has a recipe assigned. Wiring a risky provider in exposes you whether or not it is mid-craft.</p>
+    <div class="fx">breach/min = 2.4 × (exposure / 100)²</div>
+    <ul><li>Quadratic: 20 is nothing, 80 is fatal</li><li>A breach takes 12% of cash (min $500)</li><li>…and freezes every contract for 20s</li><li>Each contract also refuses to run above its own ceiling</li></ul>
+  </div>
+</div>
+<div class="panel" style="margin-top:2px">
+  <h3>The rule that catches everyone <span>milestones</span></h3>
+  <p style="font-size:13px;color:var(--ink-2)">Milestone progress records contract <b>inputs</b>, not production. A thousand answers you never route to a customer advance nothing. Links carry 240 units/min and each node holds 400 units per slot, so a starved link and a backed-up buffer look identical until you read the status.</p>
+</div>
+</section>
+  
+<section class="sec">
+  <header><p class="eyebrow">Production spine</p><h2>What turns into what</h2><p class="lede">Link colours are item colours: an output dot only drops onto an input dot of the same item.</p></header>
+  <div class="spine">
+<div class="lane"><span class="laneName">Act I</span><span class="step"><span class="chip" style="--c:#6b7f9e" title="User Request — Someone typed something into your product. Worthless until answered."><b>◌</b>User Request</span></span><span class="arrow">→<em>draft model</em></span><span class="step"><span class="chip" style="--c:#8f9bb3" title="Draft Answer — Ungraded output from a cheap model. Needs a judge before you can ship it."><b>○</b>Draft Answer</span></span><span class="arrow">→<em>judge</em></span><span class="step"><span class="chip" style="--c:#4aa3d8" title="Answer — Ship-quality output: a mid-tier model, or a cheap model plus an LLM judge."><b>●</b>Answer</span></span><span class="arrow">→<em>eval gate</em></span><span class="step"><span class="chip" style="--c:#35c9c0" title="Verified Answer — Passed evals and guardrails. What a paying business will actually accept."><b>✓</b>Verified Answer</span></span><span class="arrow">→<em>contract</em></span></div>
+<div class="lane"><span class="laneName">Grounding</span><span class="step"><span class="chip" style="--c:#8a7f6b" title="Customer Document — The private corpus. This is what makes RAG worth building."><b>▤</b>Customer Document</span></span><span class="arrow">→<em>chunker</em></span><span class="step"><span class="chip" style="--c:#7a6b9e" title="Chunk — A document split for embedding. Chunking strategy is most of RAG quality."><b>▪</b>Chunk</span></span><span class="arrow">→<em>embedder</em></span><span class="step"><span class="chip" style="--c:#c957a8" title="Embedding — text-embedding-3-small is $0.02/1M tokens. Storing them is what costs you."><b>⌗</b>Embedding</span></span><span class="arrow">→<em>vector DB</em></span><span class="step"><span class="chip" style="--c:#3d8fc4" title="Grounded Prompt — Request + retrieved context. Grounding is why enterprises pay more than consumers."><b>⌬</b>Grounded Prompt</span></span></div>
+<div class="lane"><span class="laneName">Agents</span><span class="step"><span class="chip" style="--c:#3d8fc4" title="Grounded Prompt — Request + retrieved context. Grounding is why enterprises pay more than consumers."><b>⌬</b>Grounded Prompt</span></span><span class="arrow">→<em>frontier</em></span><span class="step"><span class="chip" style="--c:#9a5fd8" title="Reasoning Answer — Long-horizon planning from a frontier model. The only thing agents can plan with."><b>◉</b>Reasoning Answer</span></span><span class="arrow">→<em>harness</em></span><span class="step"><span class="chip" style="--c:#e08a3c" title="Agent Run — One task completed end to end. Costs many model calls; sells for one outcome."><b>✦</b>Agent Run</span></span><span class="arrow">→<em>agent graph</em></span><span class="step"><span class="chip" style="--c:#f26d3d" title="Agent Workflow — Multi-agent: planner, workers, critic. Quality up, token burn up faster."><b>✧</b>Agent Workflow</span></span></div>
+<div class="lane"><span class="laneName">Sovereign</span><span class="step"><span class="chip" style="--c:#8a8f9e" title="Open Weights — Llama, Qwen, DeepSeek, Mistral Large 3. Free to download. Expensive to serve."><b>⬡</b>Open Weights</span></span><span class="arrow">→<em>fine-tune</em></span><span class="step"><span class="chip" style="--c:#4ce07a" title="Tuned Model — Your domain, your weights. Fine-tuning is cheap; serving what you tuned is where the money goes."><b>❖</b>Tuned Model</span></span><span class="arrow">→<em>vLLM / air-gap</em></span><span class="step"><span class="chip" style="--c:#4ce07a" title="Sovereign Answer — Produced on hardware you control. Never left your perimeter. Defence and health buy only this."><b>⛨</b>Sovereign Answer</span></span></div>
+<div class="lane"><span class="laneName">Silicon</span><span class="step"><span class="chip" style="--c:#9e8a6b" title="Polysilicon — The cheapest thing in the entire supply chain, and the start of all of it."><b>◆</b>Polysilicon</span></span><span class="arrow">→<em>wafer fab</em></span><span class="step"><span class="chip" style="--c:#d8b04a" title="Blank Wafer — 300mm of polished silicon. Everything expensive happens to it later."><b>▬</b>Blank Wafer</span></span><span class="arrow">→<em>EUV</em></span><span class="step"><span class="chip" style="--c:#e0d13c" title="Patterned Wafer — TSMC N2 runs about $30,000 a wafer. N5 is ~$18.5k. The node is the price."><b>▭</b>Patterned Wafer</span></span><span class="arrow">→<em>die test</em></span><span class="step"><span class="chip" style="--c:#e08a3c" title="Logic Die — Under 13% of a GPU bill of materials. The compute die is NOT what makes GPUs expensive."><b>◫</b>Logic Die</span></span><span class="arrow">→<em>CoWoS</em></span><span class="step"><span class="chip" style="--c:#ff6d3d" title="Packaged GPU — CoWoS packaging, not lithography, is the real supply ceiling. Booking window: 52-78 weeks."><b>▤</b>Packaged GPU</span></span><span class="arrow">→<em>integration</em></span><span class="step"><span class="chip" style="--c:#ffd24a" title="NVL72 Rack — 72 GPUs, ~120kW, about $3M. Roughly $25,000 of capex per kW of rack load."><b>⛁</b>NVL72 Rack</span></span></div>
+</div>
+</section>
+  
+<section class="sec">
+  <header><p class="eyebrow">Customers</p><h2>The contract ladder</h2><p class="lede">The better the customer, the less risk they tolerate. Read the ceiling column top to bottom — that column is the entire progression of the game.</p></header>
+  <div class="tablewrap"><table>
+<thead><tr><th>Customer</th><th>Wants, per cycle</th><th class="num">Payout</th><th class="num">$ / min</th><th>Exposure ceiling</th></tr></thead>
+<tbody><tr data-search="post to feed post to feed generated text generated image">
+    <td><div class="nm" style="--gc:#7d8b9c"><span class="g">⌇</span>Post To Feed</div>
+        <div class="sub2" style="padding-left:23px">Post To Feed</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#9e8fa8" title="Generated Text — Roughly 57% of sentences on the open web are already machine-translated. The slop is not coming; it arrived."><b>≡</b>Generated Text<i>10</i></span><span class="chip" style="--c:#c47fd0" title="Generated Image — About $0.04 an image at standard quality. Four cents is less than the cost of deciding whether you wanted it."><b>▩</b>Generated Image<i>4</i></span></span></td>
+    <td class="num">—</td>
+    <td class="num">—</td>
+    <td><span class="none">no audit</span></td>
+  </tr><tr data-search="consumer app freemium tier draft answer">
+    <td><div class="nm" style="--gc:#8a8f9e"><span class="g">◎</span>Consumer App</div>
+        <div class="sub2" style="padding-left:23px">Freemium Tier</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#8f9bb3" title="Draft Answer — Ungraded output from a cheap model. Needs a judge before you can ship it."><b>○</b>Draft Answer<i>8</i></span></span></td>
+    <td class="num">$9</td>
+    <td class="num">$45</td>
+    <td><div class="ceil"><div class="track"><div class="fill" style="width:90%"></div></div><span class="v">90</span></div></td>
+  </tr><tr data-search="consumer app prosumer subs answer">
+    <td><div class="nm" style="--gc:#8a8f9e"><span class="g">◎</span>Consumer App</div>
+        <div class="sub2" style="padding-left:23px">Prosumer Subs</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#4aa3d8" title="Answer — Ship-quality output: a mid-tier model, or a cheap model plus an LLM judge."><b>●</b>Answer<i>6</i></span></span></td>
+    <td class="num">$17</td>
+    <td class="num">$85</td>
+    <td><div class="ceil"><div class="track"><div class="fill" style="width:70%"></div></div><span class="v">70</span></div></td>
+  </tr><tr data-search="smb pilot smb pilot verified answer">
+    <td><div class="nm" style="--gc:#7a9fb8"><span class="g">◐</span>SMB Pilot</div>
+        <div class="sub2" style="padding-left:23px">SMB Pilot</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#35c9c0" title="Verified Answer — Passed evals and guardrails. What a paying business will actually accept."><b>✓</b>Verified Answer<i>8</i></span></span></td>
+    <td class="num">$56</td>
+    <td class="num">$210</td>
+    <td><div class="ceil"><div class="track"><div class="fill" style="width:45%"></div></div><span class="v">45</span></div></td>
+  </tr><tr data-search="sme on-prem pilot sme on-prem pilot on-prem answer">
+    <td><div class="nm" style="--gc:#4a9f6a"><span class="g">◍</span>SME On-Prem Pilot</div>
+        <div class="sub2" style="padding-left:23px">SME On-Prem Pilot</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#3fc46a" title="On-Prem Answer — Generated on a box in the customer's own building. Never crossed a network they do not own — which is the entire product."><b>◈</b>On-Prem Answer<i>10</i></span></span></td>
+    <td class="num">$190</td>
+    <td class="num">$570</td>
+    <td><div class="ceil"><div class="track"><div class="fill" style="width:55%"></div></div><span class="v">55</span></div></td>
+  </tr><tr data-search="mid-market saas mid-market saas verified answer soc 2 type ii">
+    <td><div class="nm" style="--gc:#5f8fc4"><span class="g">◑</span>Mid-Market SaaS</div>
+        <div class="sub2" style="padding-left:23px">Mid-Market SaaS</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#35c9c0" title="Verified Answer — Passed evals and guardrails. What a paying business will actually accept."><b>✓</b>Verified Answer<i>20</i></span><span class="chip" style="--c:#a8a05b" title="SOC 2 Type II — Real cost $15k-50k plus a 3-12 month observation window you cannot buy past."><b>⛊</b>SOC 2 Type II<i>1</i></span></span></td>
+    <td class="num">$270</td>
+    <td class="num">$540</td>
+    <td><div class="ceil"><div class="track"><div class="fill" style="width:30%"></div></div><span class="v">30</span></div></td>
+  </tr><tr data-search="content mill content mill order generated text generated image">
+    <td><div class="nm" style="--gc:#c98a5f"><span class="g">✍</span>Content Mill</div>
+        <div class="sub2" style="padding-left:23px">Content Mill Order</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#9e8fa8" title="Generated Text — Roughly 57% of sentences on the open web are already machine-translated. The slop is not coming; it arrived."><b>≡</b>Generated Text<i>12</i></span><span class="chip" style="--c:#c47fd0" title="Generated Image — About $0.04 an image at standard quality. Four cents is less than the cost of deciding whether you wanted it."><b>▩</b>Generated Image<i>3</i></span></span></td>
+    <td class="num">$340</td>
+    <td class="num">$2,040</td>
+    <td><div class="ceil"><div class="track"><div class="fill" style="width:75%"></div></div><span class="v">75</span></div></td>
+  </tr><tr data-search="programmatic seo programmatic seo content pack">
+    <td><div class="nm" style="--gc:#b8923d"><span class="g">⌸</span>Programmatic SEO</div>
+        <div class="sub2" style="padding-left:23px">Programmatic SEO</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#c98a3d" title="Content Pack — Text, images and video assembled into something a buyer will actually take delivery of."><b>❑</b>Content Pack<i>6</i></span></span></td>
+    <td class="num">$780</td>
+    <td class="num">$1,800</td>
+    <td><div class="ceil"><div class="track"><div class="fill" style="width:60%"></div></div><span class="v">60</span></div></td>
+  </tr><tr data-search="enterprise enterprise seats verified answer agent run iso 42001">
+    <td><div class="nm" style="--gc:#4a6fa8"><span class="g">◒</span>Enterprise</div>
+        <div class="sub2" style="padding-left:23px">Enterprise Seats</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#35c9c0" title="Verified Answer — Passed evals and guardrails. What a paying business will actually accept."><b>✓</b>Verified Answer<i>24</i></span><span class="chip" style="--c:#e08a3c" title="Agent Run — One task completed end to end. Costs many model calls; sells for one outcome."><b>✦</b>Agent Run<i>4</i></span><span class="chip" style="--c:#b0904a" title="ISO 42001 — The only AI-management certificate you can hand a procurement officer. 40-60% cheaper if you hold ISO 27001."><b>⌸</b>ISO 42001<i>1</i></span></span></td>
+    <td class="num">$1,050</td>
+    <td class="num">$1,575</td>
+    <td><div class="ceil"><div class="track"><div class="fill" style="width:18%"></div></div><span class="v">18</span></div></td>
+  </tr><tr data-search="managed on-prem managed on-prem on-prem answer verified answer">
+    <td><div class="nm" style="--gc:#3f9f8a"><span class="g">◎</span>Managed On-Prem</div>
+        <div class="sub2" style="padding-left:23px">Managed On-Prem</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#3fc46a" title="On-Prem Answer — Generated on a box in the customer's own building. Never crossed a network they do not own — which is the entire product."><b>◈</b>On-Prem Answer<i>30</i></span><span class="chip" style="--c:#35c9c0" title="Verified Answer — Passed evals and guardrails. What a paying business will actually accept."><b>✓</b>Verified Answer<i>6</i></span></span></td>
+    <td class="num">$1,150</td>
+    <td class="num">$1,971</td>
+    <td><div class="ceil"><div class="track"><div class="fill" style="width:35%"></div></div><span class="v">35</span></div></td>
+  </tr><tr data-search="enterprise enterprise agents agent workflow iso 42001">
+    <td><div class="nm" style="--gc:#4a6fa8"><span class="g">◒</span>Enterprise</div>
+        <div class="sub2" style="padding-left:23px">Enterprise Agents</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#f26d3d" title="Agent Workflow — Multi-agent: planner, workers, critic. Quality up, token burn up faster."><b>✧</b>Agent Workflow<i>6</i></span><span class="chip" style="--c:#b0904a" title="ISO 42001 — The only AI-management certificate you can hand a procurement officer. 40-60% cheaper if you hold ISO 27001."><b>⌸</b>ISO 42001<i>1</i></span></span></td>
+    <td class="num">$1,800</td>
+    <td class="num">$2,700</td>
+    <td><div class="ceil"><div class="track"><div class="fill" style="width:18%"></div></div><span class="v">18</span></div></td>
+  </tr><tr data-search="adult platform adult platform adult content">
+    <td><div class="nm" style="--gc:#a03d5f"><span class="g">◐</span>Adult Platform</div>
+        <div class="sub2" style="padding-left:23px">Adult Platform</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#b03d5f" title="Adult Content — Pays like a regulated contract with none of the paperwork, and every incentive in the payment stack is pointed at you."><b>◉</b>Adult Content<i>20</i></span></span></td>
+    <td class="num">$4,200</td>
+    <td class="num">$11,455</td>
+    <td><div class="ceil"><div class="track"><div class="fill" style="width:60%"></div></div><span class="v">60</span></div></td>
+  </tr><tr data-search="health / finance health / finance verified answer hipaa baa soc 2 type ii">
+    <td><div class="nm" style="--gc:#c46f6f"><span class="g">✚</span>Health / Finance</div>
+        <div class="sub2" style="padding-left:23px">Health / Finance</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#35c9c0" title="Verified Answer — Passed evals and guardrails. What a paying business will actually accept."><b>✓</b>Verified Answer<i>40</i></span><span class="chip" style="--c:#c46f6f" title="HIPAA BAA — Azure OpenAI includes one by default. DeepSeek offers none — its policy excludes health data."><b>✚</b>HIPAA BAA<i>1</i></span><span class="chip" style="--c:#a8a05b" title="SOC 2 Type II — Real cost $15k-50k plus a 3-12 month observation window you cannot buy past."><b>⛊</b>SOC 2 Type II<i>1</i></span></span></td>
+    <td class="num">$5,400</td>
+    <td class="num">$7,200</td>
+    <td><div class="ceil"><div class="track"><div class="fill" style="width:10%"></div></div><span class="v">10</span></div></td>
+  </tr><tr data-search="regional msp regional msp on-prem answer">
+    <td><div class="nm" style="--gc:#3a8fa8"><span class="g">◉</span>Regional MSP</div>
+        <div class="sub2" style="padding-left:23px">Regional MSP</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#3fc46a" title="On-Prem Answer — Generated on a box in the customer's own building. Never crossed a network they do not own — which is the entire product."><b>◈</b>On-Prem Answer<i>80</i></span></span></td>
+    <td class="num">$6,400</td>
+    <td class="num">$8,533</td>
+    <td><div class="ceil"><div class="track"><div class="fill" style="width:25%"></div></div><span class="v">25</span></div></td>
+  </tr><tr data-search="federal / dod federal program sovereign answer fedramp cert">
+    <td><div class="nm" style="--gc:#6f8fc4"><span class="g">★</span>Federal / DoD</div>
+        <div class="sub2" style="padding-left:23px">Federal Program</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#4ce07a" title="Sovereign Answer — Produced on hardware you control. Never left your perimeter. Defence and health buy only this."><b>⛨</b>Sovereign Answer<i>60</i></span><span class="chip" style="--c:#6f8fc4" title="FedRAMP Cert — Legacy path: $250k-2M and 12-18 months. The 20x fast lane cut agency review to ~5 weeks."><b>★</b>FedRAMP Cert<i>1</i></span></span></td>
+    <td class="num">$22,000</td>
+    <td class="num">$22,000</td>
+    <td><div class="ceil"><div class="track"><div class="fill" style="width:4%"></div></div><span class="v">4</span></div></td>
+  </tr><tr data-search="hyperscaler deal sell accelerators packaged gpu">
+    <td><div class="nm" style="--gc:#ffb03d"><span class="g">⛁</span>Hyperscaler Deal</div>
+        <div class="sub2" style="padding-left:23px">Sell Accelerators</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#ff6d3d" title="Packaged GPU — CoWoS packaging, not lithography, is the real supply ceiling. Booking window: 52-78 weeks."><b>▤</b>Packaged GPU<i>40</i></span></span></td>
+    <td class="num">$1.5M</td>
+    <td class="num">$3.6M</td>
+    <td><span class="none">no audit</span></td>
+  </tr><tr data-search="hyperscaler deal sell racks nvl72 rack">
+    <td><div class="nm" style="--gc:#ffb03d"><span class="g">⛁</span>Hyperscaler Deal</div>
+        <div class="sub2" style="padding-left:23px">Sell Racks</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#ffd24a" title="NVL72 Rack — 72 GPUs, ~120kW, about $3M. Roughly $25,000 of capex per kW of rack load."><b>⛁</b>NVL72 Rack<i>1</i></span></span></td>
+    <td class="num">$3.1M</td>
+    <td class="num">$6.2M</td>
+    <td><span class="none">no audit</span></td>
+  </tr><tr data-search="api platform run api platform frontier model sovereign answer">
+    <td><div class="nm" style="--gc:#ffd24a"><span class="g">⬢</span>API Platform</div>
+        <div class="sub2" style="padding-left:23px">Run API Platform</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#ffd24a" title="Frontier Model — Grok-3 cost ~$218M. GPT-5-class runs are estimated $1.5-3B. Training cost is doubling every ~8 months."><b>✵</b>Frontier Model<i>1</i></span><span class="chip" style="--c:#4ce07a" title="Sovereign Answer — Produced on hardware you control. Never left your perimeter. Defence and health buy only this."><b>⛨</b>Sovereign Answer<i>300</i></span></span></td>
+    <td class="num">$11M</td>
+    <td class="num">$11M</td>
+    <td><div class="ceil"><div class="track"><div class="fill" style="width:20%"></div></div><span class="v">20</span></div></td>
+  </tr></tbody></table></div>
+</section>
+  
+<section class="sec">
+  <header><p class="eyebrow">Opening</p><h2>First five minutes</h2></header>
+  <div class="cols2">
+  <div class="panel">
+    <h3>Opening moves <span>you start with $2,000</span></h3>
+    <ol class="steps">
+      <li><b>Place Free Tier first</b> and give it the <em>Free Tier</em> recipe. Without capacity, satisfaction is 0 and every node reports 429 — which hides whatever is actually wrong.</li>
+      <li>Place <b>Landing Page</b> → <em>Organic Signups</em>, <b>GPT-5.6 Luna</b> → <em>Luna Draft</em>, and <b>Consumer App</b> → <em>Freemium Tier</em>.</li>
+      <li>Drag the <b>User Request</b> output dot to GPT-5.6 Luna, then its output dot to Consumer App. Colours must match.</li>
+      <li>Sell <b>40 Draft Answer</b> to clear <em>First Users</em> — $1,500 and 8 new nodes.</li>
+    </ol>
+    <p style="font-size:12.5px;color:var(--muted)">Known pacing quirk: one Landing Page makes <b>30/min</b> and one GPT-5.6 Luna eats <b>48/min</b>, so a single source starves a single model node. The starting kit draws 126k against 150k supplied — room for 0 more model node(s) before you need a bigger tier.</p>
+  </div>
+  <div class="panel">
+    <h3>Four traps <span>each costs a run</span></h3>
+    <ul class="traps">
+      <li><b>Placing a model before capacity.</b> Everything reads 429 and you blame the model.</li>
+      <li><b>Producing without selling.</b> Milestones read contract inputs only. Unsold output is a buffer, not progress.</li>
+      <li><b>Adding a cheap high-risk provider late.</b> The per-craft saving is real; the +8 Exposure silently pushes you over an existing contract's ceiling and that contract quietly stops paying.</li>
+      <li><b>Overclocking.</b> Draw scales as clock<sup>1.6</sup>, so 2× speed costs 3.0× the throughput. Usually cheaper to place a second node.</li>
+    </ul>
+  </div>
+</div>
+</section>
+  
+<section class="sec">
+  <header><p class="eyebrow">Models</p><h2>What a token actually costs you</h2><p class="lede">Every model chassis is free to place and free per month. You pay only per craft, so the recipe you assign is the whole cost decision. Sorted cheapest first.</p></header>
+  <div class="cols2" style="grid-template-columns:1fr"><div class="panel" style="padding:0;gap:0;overflow:hidden">
+    <div style="padding:13px 16px 11px;border-bottom:1px solid var(--line);background:var(--surface-2)">
+      <h3>Draft tier</h3><p style="font-size:12.5px;color:var(--muted);margin-top:3px">user_request → draft_answer. Cheap and ungraded; needs a judge before anyone will pay for it.</p></div>
+    <div class="tablewrap" style="border:none;border-radius:0;box-shadow:none"><table>
+      <thead><tr><th>Model</th><th>Recipe</th><th class="num">$ / craft</th><th class="num">$ / unit out</th><th class="num">Units / min</th><th class="num">Draw</th><th class="num">Risk</th></tr></thead>
+      <tbody></tbody></table></div></div><div class="panel" style="padding:0;gap:0;overflow:hidden">
+    <div style="padding:13px 16px 11px;border-bottom:1px solid var(--line);background:var(--surface-2)">
+      <h3>Judge tier</h3><p style="font-size:12.5px;color:var(--muted);margin-top:3px">draft_answer → answer. An LLM grades the drafts. You lose some of them and you pay for the grading — and it is still far under frontier.</p></div>
+    <div class="tablewrap" style="border:none;border-radius:0;box-shadow:none"><table>
+      <thead><tr><th>Model</th><th>Recipe</th><th class="num">$ / craft</th><th class="num">$ / unit out</th><th class="num">Units / min</th><th class="num">Draw</th><th class="num">Risk</th></tr></thead>
+      <tbody></tbody></table></div></div><div class="panel" style="padding:0;gap:0;overflow:hidden">
+    <div style="padding:13px 16px 11px;border-bottom:1px solid var(--line);background:var(--surface-2)">
+      <h3>Answer tier</h3><p style="font-size:12.5px;color:var(--muted);margin-top:3px">Straight to shippable in one hop. Most production traffic belongs here.</p></div>
+    <div class="tablewrap" style="border:none;border-radius:0;box-shadow:none"><table>
+      <thead><tr><th>Model</th><th>Recipe</th><th class="num">$ / craft</th><th class="num">$ / unit out</th><th class="num">Units / min</th><th class="num">Draw</th><th class="num">Risk</th></tr></thead>
+      <tbody></tbody></table></div></div><div class="panel" style="padding:0;gap:0;overflow:hidden">
+    <div style="padding:13px 16px 11px;border-bottom:1px solid var(--line);background:var(--surface-2)">
+      <h3>Reasoning tier</h3><p style="font-size:12.5px;color:var(--muted);margin-top:3px">grounded_prompt → reasoning_answer. Frontier only. The only thing an agent can plan with.</p></div>
+    <div class="tablewrap" style="border:none;border-radius:0;box-shadow:none"><table>
+      <thead><tr><th>Model</th><th>Recipe</th><th class="num">$ / craft</th><th class="num">$ / unit out</th><th class="num">Units / min</th><th class="num">Draw</th><th class="num">Risk</th></tr></thead>
+      <tbody></tbody></table></div></div></div>
+</section>
+  
+<section class="sec">
+  <header><p class="eyebrow">Capacity</p><h2>The throughput ladder</h2><p class="lede">Capacity nodes are exempt from throttling, so they always run. The last column is what renting a million tokens per minute costs you each month.</p></header>
+  <div class="tablewrap"><table>
+<thead><tr><th>Node</th><th class="num">Supplies</th><th class="num">Place</th><th class="num">Per month</th><th class="num">Rent / 1M TPM</th><th>Why you would</th></tr></thead>
+<tbody><tr data-search="byo rack bay capacity">
+    <td><div class="nm" style="--gc:#7fa860"><span class="g">▣</span>BYO Rack Bay</div></td>
+    <td class="num">—</td>
+    <td class="num">$350</td>
+    <td class="num">$34</td>
+    <td class="num">$InfinityB</td>
+    <td class="desc">A bare rig, a graphics card and a power supply. Cheapest throughput you can own — until the power supply decides otherwise.</td>
+  </tr><tr data-search="mac mini m4 pro capacity">
+    <td><div class="nm" style="--gc:#a8a8b0"><span class="g">▢</span>Mac Mini M4 Pro</div></td>
+    <td class="num">70k</td>
+    <td class="num">$2,199</td>
+    <td class="num">$9</td>
+    <td class="num">$129</td>
+    <td class="desc">64GB unified at 273 GB/s. Slow, silent, and it holds models a 5090 cannot.</td>
+  </tr><tr data-search="gaming pc capacity">
+    <td><div class="nm" style="--gc:#5b8f4a"><span class="g">▤</span>Gaming PC</div></td>
+    <td class="num">90k</td>
+    <td class="num">$1,200</td>
+    <td class="num">$28</td>
+    <td class="num">$311</td>
+    <td class="desc">One used 3090 and 24GB of VRAM. The cheapest way to run an 8B at speed, and 24GB is the wall every hobbyist hits.</td>
+  </tr><tr data-search="framework desktop capacity">
+    <td><div class="nm" style="--gc:#e07a3c"><span class="g">▥</span>Framework Desktop</div></td>
+    <td class="num">95k</td>
+    <td class="num">$1,999</td>
+    <td class="num">$14</td>
+    <td class="num">$147</td>
+    <td class="desc">Strix Halo, 128GB unified with 96GB allocatable to the GPU, 256 GB/s. Best dollars per gigabyte on the shelf.</td>
+  </tr><tr data-search="dgx spark capacity">
+    <td><div class="nm" style="--gc:#76b900"><span class="g">◧</span>DGX Spark</div></td>
+    <td class="num">130k</td>
+    <td class="num">$3,999</td>
+    <td class="num">$16</td>
+    <td class="num">$123</td>
+    <td class="desc">About 1 PFLOP of FP4 against 273 GB/s of feed. Launched at $3,999 and was repriced to $4,699 in February 2026 on memory supply alone.</td>
+  </tr><tr data-search="free tier capacity">
+    <td><div class="nm" style="--gc:#5b7f5b"><span class="g">○</span>Free Tier</div></td>
+    <td class="num">150k</td>
+    <td class="num">—</td>
+    <td class="num">—</td>
+    <td class="num">—</td>
+    <td class="desc">Enough to prove the idea works and nothing more. Every provider gives you one.</td>
+  </tr><tr data-search="mac studio 256gb capacity">
+    <td><div class="nm" style="--gc:#b8b8c0"><span class="g">◪</span>Mac Studio 256GB</div></td>
+    <td class="num">380k</td>
+    <td class="num">$7,499</td>
+    <td class="num">$20</td>
+    <td class="num">$53</td>
+    <td class="desc">What is left after the withdrawal. The 96GB to 256GB upgrade went from $1,600 to $2,000 the same week.</td>
+  </tr><tr data-search="mac studio 512gb capacity">
+    <td><div class="nm" style="--gc:#c8c8d0"><span class="g">◫</span>Mac Studio 512GB</div></td>
+    <td class="num">420k</td>
+    <td class="num">$9,499</td>
+    <td class="num">$22</td>
+    <td class="num">$52</td>
+    <td class="desc">512GB unified at 819 GB/s — the only machine here that runs a 671B model in 4-bit, off a wall socket. Apple withdrew this configuration in March 2026 rather than reprice it.</td>
+  </tr><tr data-search="api tier 1 capacity">
+    <td><div class="nm" style="--gc:#4a8f4a"><span class="g">①</span>API Tier 1</div></td>
+    <td class="num">500k</td>
+    <td class="num">$200</td>
+    <td class="num">—</td>
+    <td class="num">—</td>
+    <td class="desc">Unlocked at $5 paid. 500k TPM, $100/mo spend cap. The real first wall you hit.</td>
+  </tr><tr data-search="prompt cache capacity">
+    <td><div class="nm" style="--gc:#dc382d"><span class="g">◷</span>Prompt Cache</div></td>
+    <td class="num">900k</td>
+    <td class="num">$250</td>
+    <td class="num">$20</td>
+    <td class="num">$22</td>
+    <td class="desc">Cache reads bill at 10% of input across every major provider — 3.3% on DeepSeek. Repeat prefixes become free throughput.</td>
+  </tr><tr data-search="dgx station gb300 capacity">
+    <td><div class="nm" style="--gc:#4a8f2a"><span class="g">▰</span>DGX Station GB300</div></td>
+    <td class="num">3.4M</td>
+    <td class="num">$79,000</td>
+    <td class="num">$340</td>
+    <td class="num">$100</td>
+    <td class="desc">784GB coherent memory — a datacenter node in a deskside box. The price is an estimate; NVIDIA has never published one.</td>
+  </tr><tr data-search="api tier 3 capacity">
+    <td><div class="nm" style="--gc:#4a9f5a"><span class="g">③</span>API Tier 3</div></td>
+    <td class="num">5M</td>
+    <td class="num">$1,800</td>
+    <td class="num">—</td>
+    <td class="num">—</td>
+    <td class="desc">Unlocked at $100 paid. $1,000/mo cap. Tiers are earned by spending, not by asking.</td>
+  </tr><tr data-search="homelab rack capacity">
+    <td><div class="nm" style="--gc:#5a9f3a"><span class="g">⛁</span>Homelab Rack</div></td>
+    <td class="num">6.2M</td>
+    <td class="num">$22,000</td>
+    <td class="num">$780</td>
+    <td class="num">$126</td>
+    <td class="desc">Four ex-datacenter A100 40GB at about $5,000 each. Three years old, fully depreciated, and still the best dollars per kTPM in the game.</td>
+  </tr><tr data-search="batch lane capacity">
+    <td><div class="nm" style="--gc:#3a8f7a"><span class="g">◫</span>Batch Lane</div></td>
+    <td class="num">9M</td>
+    <td class="num">$900</td>
+    <td class="num">—</td>
+    <td class="num">—</td>
+    <td class="desc">Batch APIs are 50% off at OpenAI, Anthropic, Google and Fireworks. Half price, but you wait.</td>
+  </tr><tr data-search="rented h100 node capacity">
+    <td><div class="nm" style="--gc:#76b900"><span class="g">▣</span>Rented H100 Node</div></td>
+    <td class="num">24M</td>
+    <td class="num">—</td>
+    <td class="num">$15,100</td>
+    <td class="num">$629</td>
+    <td class="desc">8x H100 at RunPod ~$2.59/hr. Median across 40 providers is $3.32/hr; GCP charges $11.07. Unlocks self-hosting.</td>
+  </tr><tr data-search="api tier 5 capacity">
+    <td><div class="nm" style="--gc:#4aaf6a"><span class="g">⑤</span>API Tier 5</div></td>
+    <td class="num">40M</td>
+    <td class="num">$14,000</td>
+    <td class="num">—</td>
+    <td class="num">—</td>
+    <td class="desc">Unlocked at $1,000 paid. 40M TPM and a $200,000/mo cap. The ceiling of renting someone else’s compute.</td>
+  </tr><tr data-search="rented b200 pod capacity">
+    <td><div class="nm" style="--gc:#8fd400"><span class="g">▩</span>Rented B200 Pod</div></td>
+    <td class="num">70M</td>
+    <td class="num">—</td>
+    <td class="num">$39,600</td>
+    <td class="num">$566</td>
+    <td class="desc">8x B200 at ~$6.79/hr. Spot cuts it 60-75% but interrupts; 3-year reserved is ~45% off and does not.</td>
+  </tr><tr data-search="colo rack bay capacity">
+    <td><div class="nm" style="--gc:#5a8f3a"><span class="g">⛁</span>Colo Rack Bay</div></td>
+    <td class="num">130M</td>
+    <td class="num">$250k</td>
+    <td class="num">$42,000</td>
+    <td class="num">$323</td>
+    <td class="desc">Burns your own NVL72 racks. ~120kW each, liquid cooling mandatory — air alone cannot cool it.</td>
+  </tr><tr data-search="own datacenter capacity">
+    <td><div class="nm" style="--gc:#3a6f2a"><span class="g">▰</span>Own Datacenter</div></td>
+    <td class="num">2.6B</td>
+    <td class="num">$380M</td>
+    <td class="num">$7.1M</td>
+    <td class="num">$2,723</td>
+    <td class="desc">10MW. All-in capex runs $30-45M per MW, annualised TCO ~$8.5M/MW/yr. Servers are 60% of it; power only ~7%.</td>
+  </tr></tbody></table></div>
+</section>
+  
+<section class="sec">
+  <header><p class="eyebrow">Catalog</p><h2>Every node, and what it means</h2><p class="lede">Grouped the way the build bar groups them. Risk is <code>dataRisk</code>: it lands on your Exposure the moment the node is enabled with a recipe assigned — negative values are the counter-play.</p></header>
+  <div class="sec" data-group>
+    <header style="border-top:none;padding-top:0">
+      <p class="eyebrow">Demand · 5 nodes</p>
+      <p class="lede">No inputs. Runs forever. Everything downstream starves without one.</p>
+    </header>
+    <div class="nodelist"><div class="node" data-search="landing page landing_page demand source free organic signups. slow, but it costs you nothing and never churns. organic signups user request">
+    <div class="id">
+      <div class="t" style="--gc:#5b7fa8"><span class="g">◌</span>Landing Page</div>
+      <div class="m"><span class="kind">Source</span> landing_page</div>
+    </div>
+    <div class="body">
+      <p>Free organic signups. Slow, but it costs you nothing and never churns.</p>
+      <div class="stat"><span>place <b>$120</b></span><span>draws <b>2k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>starting kit</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">makes <span class="stacks"><span class="chip" style="--c:#6b7f9e" title="User Request — Someone typed something into your product. Worthless until answered."><b>◌</b>User Request</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="paid acquisition ad_spend demand source buy demand. works instantly, stops the moment you stop paying. buy traffic user request">
+    <div class="id">
+      <div class="t" style="--gc:#7a5ba8"><span class="g">⌁</span>Paid Acquisition</div>
+      <div class="m"><span class="kind">Source</span> ad_spend</div>
+    </div>
+    <div class="body">
+      <p>Buy demand. Works instantly, stops the moment you stop paying.</p>
+      <div class="stat"><span>place <b>$400</b></span><span>rent <b>$900/mo</b></span><span>draws <b>2k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Product-Market Fit</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">makes <span class="stacks"><span class="chip" style="--c:#6b7f9e" title="User Request — Someone typed something into your product. Worthless until answered."><b>◌</b>User Request</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="support desk support_desk demand source inbound tickets from paying customers. higher value work, real slas. take tickets support ticket">
+    <div class="id">
+      <div class="t" style="--gc:#8a7f6b"><span class="g">✉</span>Support Desk</div>
+      <div class="m"><span class="kind">Source</span> support_desk</div>
+    </div>
+    <div class="body">
+      <p>Inbound tickets from paying customers. Higher value work, real SLAs.</p>
+      <div class="stat"><span>place <b>$700</b></span><span>rent <b>$300/mo</b></span><span>draws <b>3k</b></span><span>risk <span class="risk warn">+1</span></span><span>unlocked by <b>Product-Market Fit</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">makes <span class="stacks"><span class="chip" style="--c:#7d8ba3" title="Support Ticket — Inbound work with an SLA attached. Higher value, less forgiving."><b>✉</b>Support Ticket</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="document ingest doc_ingest demand source customer corpora. unstructured charges $0.015/page; llamaparse ~$0.00125. parse documents customer document">
+    <div class="id">
+      <div class="t" style="--gc:#9e8a6b"><span class="g">▤</span>Document Ingest</div>
+      <div class="m"><span class="kind">Source</span> doc_ingest</div>
+    </div>
+    <div class="body">
+      <p>Customer corpora. Unstructured charges $0.015/page; LlamaParse ~$0.00125.</p>
+      <div class="stat"><span>place <b>$900</b></span><span>rent <b>$150/mo</b></span><span>draws <b>4k</b></span><span>risk <span class="risk warn">+2</span></span><span>unlocked by <b>Shipping Quality</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">makes <span class="stacks"><span class="chip" style="--c:#8a7f6b" title="Customer Document — The private corpus. This is what makes RAG worth building."><b>▤</b>Customer Document</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="search api search_api demand source exa $7/1k queries, tavily $8/1k, brave $5/1k, serpapi up to $25/1k. a 25x spread. web search web page">
+    <div class="id">
+      <div class="t" style="--gc:#5f8a7a"><span class="g">⌘</span>Search API</div>
+      <div class="m"><span class="kind">Source</span> search_api</div>
+    </div>
+    <div class="body">
+      <p>Exa $7/1k queries, Tavily $8/1k, Brave $5/1k, SerpApi up to $25/1k. A 25x spread.</p>
+      <div class="stat"><span>place <b>$300</b></span><span>rent <b>$200/mo</b></span><span>draws <b>4k</b></span><span>risk <span class="risk warn">+1</span></span><span>unlocked by <b>Retrieval</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">makes <span class="stacks"><span class="chip" style="--c:#5f8a7a" title="Web Page — Fetched by a search API. Exa $7/1k, Tavily $8/1k, Brave $5/1k."><b>⌘</b>Web Page</span></span></span></div>
+    </div>
+  </div></div>
+    <p class="empty hidden">Nothing in Demand matches.</p>
+  </div><div class="sec" data-group>
+    <header style="border-top:none;padding-top:0">
+      <p class="eyebrow">Models · 0 nodes</p>
+      <p class="lede">Free to place, free per month. You pay only per craft — so the recipe you assign is the whole cost decision.</p>
+    </header>
+    <div class="nodelist"></div>
+    <p class="empty hidden">Nothing in Models matches.</p>
+  </div><div class="sec" data-group>
+    <header style="border-top:none;padding-top:0">
+      <p class="eyebrow">Retrieval · 6 nodes</p>
+      <p class="lede">Turns a customer corpus into grounded prompts. Same model spend, better output.</p>
+    </header>
+    <div class="nodelist"><div class="node" data-search="chunker chunker retrieval factory splits documents for embedding. free to run, and chunking strategy is most of rag quality. chunk documents chunk web pages chunk customer document web page">
+    <div class="id">
+      <div class="t" style="--gc:#7a6b9e"><span class="g">▪</span>Chunker</div>
+      <div class="m"><span class="kind">Factory</span> chunker</div>
+    </div>
+    <div class="body">
+      <p>Splits documents for embedding. Free to run, and chunking strategy is most of RAG quality.</p>
+      <div class="stat"><span>place <b>$200</b></span><span>draws <b>20k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Shipping Quality</b></span><span><b>2</b> recipes</span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#8a7f6b" title="Customer Document — The private corpus. This is what makes RAG worth building."><b>▤</b>Customer Document</span><span class="chip" style="--c:#5f8a7a" title="Web Page — Fetched by a search API. Exa $7/1k, Tavily $8/1k, Brave $5/1k."><b>⌘</b>Web Page</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#7a6b9e" title="Chunk — A document split for embedding. Chunking strategy is most of RAG quality."><b>▪</b>Chunk</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="embedding model embedder retrieval factory text-embedding-3-small at $0.02/1m tokens. the cheapest model call you will ever make. embed chunks embedding chunk">
+    <div class="id">
+      <div class="t" style="--gc:#c957a8"><span class="g">⌗</span>Embedding Model</div>
+      <div class="m"><span class="kind">Factory</span> embedder</div>
+    </div>
+    <div class="body">
+      <p>text-embedding-3-small at $0.02/1M tokens. The cheapest model call you will ever make.</p>
+      <div class="stat"><span>place <b>$150</b></span><span>draws <b>60k</b></span><span>risk <span class="risk warn">+1</span></span><span>unlocked by <b>Shipping Quality</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#7a6b9e" title="Chunk — A document split for embedding. Chunking strategy is most of RAG quality."><b>▪</b>Chunk</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#c957a8" title="Embedding — text-embedding-3-small is $0.02/1M tokens. Storing them is what costs you."><b>⌗</b>Embedding</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="pgvector pgvector retrieval factory supabase pro is $25/mo. free-ish vectors, but indexes cap at 2,000 dimensions and filters run after the scan. pgvector rag grounded prompt embedding user request">
+    <div class="id">
+      <div class="t" style="--gc:#336791"><span class="g">◱</span>pgvector</div>
+      <div class="m"><span class="kind">Factory</span> pgvector</div>
+    </div>
+    <div class="body">
+      <p>Supabase Pro is $25/mo. Free-ish vectors, but indexes cap at 2,000 dimensions and filters run AFTER the scan.</p>
+      <div class="stat"><span>place <b>$300</b></span><span>rent <b>$25/mo</b></span><span>draws <b>40k</b></span><span>risk <span class="risk warn">+1</span></span><span>unlocked by <b>Shipping Quality</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#c957a8" title="Embedding — text-embedding-3-small is $0.02/1M tokens. Storing them is what costs you."><b>⌗</b>Embedding</span><span class="chip" style="--c:#6b7f9e" title="User Request — Someone typed something into your product. Worthless until answered."><b>◌</b>User Request</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#3d8fc4" title="Grounded Prompt — Request + retrieved context. Grounding is why enterprises pay more than consumers."><b>⌬</b>Grounded Prompt</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="pinecone pinecone retrieval factory standard $50/mo minimum, $0.33/gb-mo, ~$16 per 1m read units. query traffic, not storage, is the bill. pinecone rag grounded prompt embedding user request">
+    <div class="id">
+      <div class="t" style="--gc:#3d8fc4"><span class="g">◲</span>Pinecone</div>
+      <div class="m"><span class="kind">Factory</span> pinecone</div>
+    </div>
+    <div class="body">
+      <p>Standard $50/mo minimum, $0.33/GB-mo, ~$16 per 1M read units. Query traffic, not storage, is the bill.</p>
+      <div class="stat"><span>place <b>$400</b></span><span>rent <b>$50/mo</b></span><span>draws <b>90k</b></span><span>risk <span class="risk warn">+1</span></span><span>unlocked by <b>Retrieval</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#c957a8" title="Embedding — text-embedding-3-small is $0.02/1M tokens. Storing them is what costs you."><b>⌗</b>Embedding</span><span class="chip" style="--c:#6b7f9e" title="User Request — Someone typed something into your product. Worthless until answered."><b>◌</b>User Request</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#3d8fc4" title="Grounded Prompt — Request + retrieved context. Grounding is why enterprises pay more than consumers."><b>⌬</b>Grounded Prompt</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="turbopuffer turbopuffer retrieval factory object-storage-backed. $1/pb scanned, scale tier $256/mo minimum. cheap per query at real volume. turbopuffer rag grounded prompt embedding user request">
+    <div class="id">
+      <div class="t" style="--gc:#2fb0a8"><span class="g">◳</span>turbopuffer</div>
+      <div class="m"><span class="kind">Factory</span> turbopuffer</div>
+    </div>
+    <div class="body">
+      <p>Object-storage-backed. $1/PB scanned, Scale tier $256/mo minimum. Cheap per query at real volume.</p>
+      <div class="stat"><span>place <b>$500</b></span><span>rent <b>$256/mo</b></span><span>draws <b>200k</b></span><span>risk <span class="risk warn">+1</span></span><span>unlocked by <b>The Security Review</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#c957a8" title="Embedding — text-embedding-3-small is $0.02/1M tokens. Storing them is what costs you."><b>⌗</b>Embedding</span><span class="chip" style="--c:#6b7f9e" title="User Request — Someone typed something into your product. Worthless until answered."><b>◌</b>User Request</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#3d8fc4" title="Grounded Prompt — Request + retrieved context. Grounding is why enterprises pay more than consumers."><b>⌬</b>Grounded Prompt</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="prompt cache redis_cache retrieval capacity cache reads bill at 10% of input across every major provider — 3.3% on deepseek. repeat prefixes become free throughput. serve cache">
+    <div class="id">
+      <div class="t" style="--gc:#dc382d"><span class="g">◷</span>Prompt Cache</div>
+      <div class="m"><span class="kind">Capacity</span> redis_cache</div>
+    </div>
+    <div class="body">
+      <p>Cache reads bill at 10% of input across every major provider — 3.3% on DeepSeek. Repeat prefixes become free throughput.</p>
+      <div class="stat"><span>place <b>$250</b></span><span>rent <b>$20/mo</b></span><span>supplies <b>900k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Retrieval</b></span></div>
+      
+    </div>
+  </div></div>
+    <p class="empty hidden">Nothing in Retrieval matches.</p>
+  </div><div class="sec" data-group>
+    <header style="border-top:none;padding-top:0">
+      <p class="eyebrow">Agents · 7 nodes</p>
+      <p class="lede">Orchestration, real tool calls, and the two nodes that cut Exposure instead of raising it.</p>
+    </header>
+    <div class="nodelist"><div class="node" data-search="mcp tool server mcp_server agents factory one socket for every saas system: n x m integrations become n + m. open standard, no licence fee. mcp tool calls tool result user request">
+    <div class="id">
+      <div class="t" style="--gc:#c49a3d"><span class="g">⚙</span>MCP Tool Server</div>
+      <div class="m"><span class="kind">Factory</span> mcp_server</div>
+    </div>
+    <div class="body">
+      <p>One socket for every SaaS system: N x M integrations become N + M. Open standard, no licence fee.</p>
+      <div class="stat"><span>place <b>$350</b></span><span>draws <b>40k</b></span><span>risk <span class="risk warn">+3</span></span><span>unlocked by <b>Frontier Reasoning</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#6b7f9e" title="User Request — Someone typed something into your product. Worthless until answered."><b>◌</b>User Request</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#c49a3d" title="Tool Result — A real action in a real system, via MCP. This is where agents stop being demos."><b>⚙</b>Tool Result</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="notion + slack saas_notion agents factory notion plus $10/user/mo, slack pro $8.75. apis are free with the seat — you pay per human, not per call. workspace actions tool result user request">
+    <div class="id">
+      <div class="t" style="--gc:#000000"><span class="g">▦</span>Notion + Slack</div>
+      <div class="m"><span class="kind">Factory</span> saas_notion</div>
+    </div>
+    <div class="body">
+      <p>Notion Plus $10/user/mo, Slack Pro $8.75. APIs are free with the seat — you pay per human, not per call.</p>
+      <div class="stat"><span>place <b>$400</b></span><span>rent <b>$340/mo</b></span><span>draws <b>30k</b></span><span>risk <span class="risk warn">+3</span></span><span>unlocked by <b>Frontier Reasoning</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#6b7f9e" title="User Request — Someone typed something into your product. Worthless until answered."><b>◌</b>User Request</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#c49a3d" title="Tool Result — A real action in a real system, via MCP. This is where agents stop being demos."><b>⚙</b>Tool Result</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="stripe + billing saas_stripe agents factory 2.9% + $0.30 per charge, no monthly fee. letting an agent touch money is where blast radius gets real. billing actions tool result user request">
+    <div class="id">
+      <div class="t" style="--gc:#635bff"><span class="g">▧</span>Stripe + Billing</div>
+      <div class="m"><span class="kind">Factory</span> saas_stripe</div>
+    </div>
+    <div class="body">
+      <p>2.9% + $0.30 per charge, no monthly fee. Letting an agent touch money is where blast radius gets real.</p>
+      <div class="stat"><span>place <b>$300</b></span><span>draws <b>20k</b></span><span>risk <span class="risk warn">+4</span></span><span>unlocked by <b>Agents In Production</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#6b7f9e" title="User Request — Someone typed something into your product. Worthless until answered."><b>◌</b>User Request</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#c49a3d" title="Tool Result — A real action in a real system, via MCP. This is where agents stop being demos."><b>⚙</b>Tool Result</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="agent harness harness agents factory the loop: call model, parse tool calls, execute, feed back, repeat. the harness is free — the loop iterations are not. run agent agent run reasoning answer answer tool result">
+    <div class="id">
+      <div class="t" style="--gc:#e08a3c"><span class="g">✦</span>Agent Harness</div>
+      <div class="m"><span class="kind">Factory</span> harness</div>
+    </div>
+    <div class="body">
+      <p>The loop: call model, parse tool calls, execute, feed back, repeat. The harness is free — the loop iterations are not.</p>
+      <div class="stat"><span>place <b>$900</b></span><span>draws <b>260k</b></span><span>risk <span class="risk warn">+2</span></span><span>unlocked by <b>Frontier Reasoning</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#9a5fd8" title="Reasoning Answer — Long-horizon planning from a frontier model. The only thing agents can plan with."><b>◉</b>Reasoning Answer</span><span class="chip" style="--c:#4aa3d8" title="Answer — Ship-quality output: a mid-tier model, or a cheap model plus an LLM judge."><b>●</b>Answer</span><span class="chip" style="--c:#c49a3d" title="Tool Result — A real action in a real system, via MCP. This is where agents stop being demos."><b>⚙</b>Tool Result</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#e08a3c" title="Agent Run — One task completed end to end. Costs many model calls; sells for one outcome."><b>✦</b>Agent Run</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="multi-agent graph multi_agent agents factory langgraph is free; langsmith is $39/seat/mo. planner, workers, critic. quality up, token burn up faster. run agent graph agent workflow agent run reasoning answer">
+    <div class="id">
+      <div class="t" style="--gc:#f26d3d"><span class="g">✧</span>Multi-Agent Graph</div>
+      <div class="m"><span class="kind">Factory</span> multi_agent</div>
+    </div>
+    <div class="body">
+      <p>LangGraph is free; LangSmith is $39/seat/mo. Planner, workers, critic. Quality up, token burn up faster.</p>
+      <div class="stat"><span>place <b>$2,400</b></span><span>rent <b>$39/mo</b></span><span>draws <b>700k</b></span><span>risk <span class="risk warn">+2</span></span><span>unlocked by <b>Agents In Production</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#e08a3c" title="Agent Run — One task completed end to end. Costs many model calls; sells for one outcome."><b>✦</b>Agent Run</span><span class="chip" style="--c:#9a5fd8" title="Reasoning Answer — Long-horizon planning from a frontier model. The only thing agents can plan with."><b>◉</b>Reasoning Answer</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#f26d3d" title="Agent Workflow — Multi-agent: planner, workers, critic. Quality up, token burn up faster."><b>✧</b>Agent Workflow</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="eval &amp; guardrails eval_gate agents factory langfuse core $29/mo. turns output into output you are willing to sign a contract about. evaluate &amp; gate gate sovereign gate on-prem harden for federal verified answer sovereign answer answer sovereign answer on-prem answer">
+    <div class="id">
+      <div class="t" style="--gc:#35c9c0"><span class="g">⌾</span>Eval &amp; Guardrails</div>
+      <div class="m"><span class="kind">Factory</span> eval_gate</div>
+    </div>
+    <div class="body">
+      <p>Langfuse Core $29/mo. Turns output into output you are willing to sign a contract about.</p>
+      <div class="stat"><span>place <b>$800</b></span><span>rent <b>$29/mo</b></span><span>draws <b>120k</b></span><span>risk <span class="risk good">-2</span></span><span>unlocked by <b>Product-Market Fit</b></span><span><b>4</b> recipes</span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#4aa3d8" title="Answer — Ship-quality output: a mid-tier model, or a cheap model plus an LLM judge."><b>●</b>Answer</span><span class="chip" style="--c:#4ce07a" title="Sovereign Answer — Produced on hardware you control. Never left your perimeter. Defence and health buy only this."><b>⛨</b>Sovereign Answer</span><span class="chip" style="--c:#3fc46a" title="On-Prem Answer — Generated on a box in the customer's own building. Never crossed a network they do not own — which is the entire product."><b>◈</b>On-Prem Answer</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#35c9c0" title="Verified Answer — Passed evals and guardrails. What a paying business will actually accept."><b>✓</b>Verified Answer</span><span class="chip" style="--c:#4ce07a" title="Sovereign Answer — Produced on hardware you control. Never left your perimeter. Defence and health buy only this."><b>⛨</b>Sovereign Answer</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="observability observability agents factory langfuse pro $199/mo, braintrust pro $249/mo. cuts exposure: you cannot contain what you cannot see. trace everything">
+    <div class="id">
+      <div class="t" style="--gc:#4a8f8f"><span class="g">◔</span>Observability</div>
+      <div class="m"><span class="kind">Factory</span> observability</div>
+    </div>
+    <div class="body">
+      <p>Langfuse Pro $199/mo, Braintrust Pro $249/mo. Cuts Exposure: you cannot contain what you cannot see.</p>
+      <div class="stat"><span>place <b>$600</b></span><span>rent <b>$199/mo</b></span><span>draws <b>30k</b></span><span>risk <span class="risk good">-5</span></span><span>unlocked by <b>Retrieval</b></span></div>
+      
+    </div>
+  </div></div>
+    <p class="empty hidden">Nothing in Agents matches.</p>
+  </div><div class="sec" data-group>
+    <header style="border-top:none;padding-top:0">
+      <p class="eyebrow">Compliance · 4 nodes</p>
+      <p class="lede">Slow, expensive, and the only key to the contracts above Mid-Market. Contracts consume the certificates as an input.</p>
+    </header>
+    <div class="nodelist"><div class="node" data-search="soc 2 program soc2_program compliance factory type ii is $15k-50k in audit fees, but the 3-12 month observation window cannot be bought past. all-in first year ~$147k. maintain soc 2 soc 2 type ii">
+    <div class="id">
+      <div class="t" style="--gc:#a8a05b"><span class="g">⛊</span>SOC 2 Program</div>
+      <div class="m"><span class="kind">Factory</span> soc2_program</div>
+    </div>
+    <div class="body">
+      <p>Type II is $15k-50k in audit fees, but the 3-12 month observation window cannot be bought past. All-in first year ~$147k.</p>
+      <div class="stat"><span>place <b>$30,000</b></span><span>rent <b>$1,200/mo</b></span><span>draws <b>5k</b></span><span>risk <span class="risk good">-3</span></span><span>unlocked by <b>Retrieval</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">makes <span class="stacks"><span class="chip" style="--c:#a8a05b" title="SOC 2 Type II — Real cost $15k-50k plus a 3-12 month observation window you cannot buy past."><b>⛊</b>SOC 2 Type II</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="iso 42001 program iso_program compliance factory $85k-150k from scratch, 4-9 months — but 40-60% cheaper if you already hold soc 2 discipline. maintain iso 42001 iso 42001">
+    <div class="id">
+      <div class="t" style="--gc:#b0904a"><span class="g">⌸</span>ISO 42001 Program</div>
+      <div class="m"><span class="kind">Factory</span> iso_program</div>
+    </div>
+    <div class="body">
+      <p>$85k-150k from scratch, 4-9 months — but 40-60% cheaper if you already hold SOC 2 discipline.</p>
+      <div class="stat"><span>place <b>$85,000</b></span><span>rent <b>$2,500/mo</b></span><span>draws <b>5k</b></span><span>risk <span class="risk good">-3</span></span><span>unlocked by <b>Frontier Reasoning</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">makes <span class="stacks"><span class="chip" style="--c:#b0904a" title="ISO 42001 — The only AI-management certificate you can hand a procurement officer. 40-60% cheaper if you hold ISO 27001."><b>⌸</b>ISO 42001</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="hipaa program hipaa_program compliance factory a baa plus the controls behind it. azure openai includes one by default; deepseek offers none at all. maintain hipaa hipaa baa">
+    <div class="id">
+      <div class="t" style="--gc:#c46f6f"><span class="g">✚</span>HIPAA Program</div>
+      <div class="m"><span class="kind">Factory</span> hipaa_program</div>
+    </div>
+    <div class="body">
+      <p>A BAA plus the controls behind it. Azure OpenAI includes one by default; DeepSeek offers none at all.</p>
+      <div class="stat"><span>place <b>$60,000</b></span><span>rent <b>$3,000/mo</b></span><span>draws <b>5k</b></span><span>risk <span class="risk good">-2</span></span><span>unlocked by <b>Sovereign Inference</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">makes <span class="stacks"><span class="chip" style="--c:#c46f6f" title="HIPAA BAA — Azure OpenAI includes one by default. DeepSeek offers none — its policy excludes health data."><b>✚</b>HIPAA BAA</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="fedramp program fedramp_program compliance factory legacy rev 5: $250k-2m and 12-18 months. the 20x fast lane cut agency review to about five weeks. maintain fedramp fedramp cert">
+    <div class="id">
+      <div class="t" style="--gc:#6f8fc4"><span class="g">★</span>FedRAMP Program</div>
+      <div class="m"><span class="kind">Factory</span> fedramp_program</div>
+    </div>
+    <div class="body">
+      <p>Legacy Rev 5: $250k-2M and 12-18 months. The 20x fast lane cut agency review to about five weeks.</p>
+      <div class="stat"><span>place <b>$900k</b></span><span>rent <b>$25,000/mo</b></span><span>draws <b>5k</b></span><span>risk <span class="risk good">-4</span></span><span>unlocked by <b>Own The Weights</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">makes <span class="stacks"><span class="chip" style="--c:#6f8fc4" title="FedRAMP Cert — Legacy path: $250k-2M and 12-18 months. The 20x fast lane cut agency review to ~5 weeks."><b>★</b>FedRAMP Cert</span></span></span></div>
+    </div>
+  </div></div>
+    <p class="empty hidden">Nothing in Compliance matches.</p>
+  </div><div class="sec" data-group>
+    <header style="border-top:none;padding-top:0">
+      <p class="eyebrow">Capacity · 9 nodes</p>
+      <p class="lede">Supplies throughput. Exempt from throttling, so these always run. Place one before anything else.</p>
+    </header>
+    <div class="nodelist"><div class="node" data-search="free tier free_tier capacity capacity enough to prove the idea works and nothing more. every provider gives you one. free tier">
+    <div class="id">
+      <div class="t" style="--gc:#5b7f5b"><span class="g">○</span>Free Tier</div>
+      <div class="m"><span class="kind">Capacity</span> free_tier</div>
+    </div>
+    <div class="body">
+      <p>Enough to prove the idea works and nothing more. Every provider gives you one.</p>
+      <div class="stat"><span>supplies <b>150k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>starting kit</b></span></div>
+      
+    </div>
+  </div><div class="node" data-search="api tier 1 api_tier1 capacity capacity unlocked at $5 paid. 500k tpm, $100/mo spend cap. the real first wall you hit. tier 1">
+    <div class="id">
+      <div class="t" style="--gc:#4a8f4a"><span class="g">①</span>API Tier 1</div>
+      <div class="m"><span class="kind">Capacity</span> api_tier1</div>
+    </div>
+    <div class="body">
+      <p>Unlocked at $5 paid. 500k TPM, $100/mo spend cap. The real first wall you hit.</p>
+      <div class="stat"><span>place <b>$200</b></span><span>supplies <b>500k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>First Users</b></span></div>
+      
+    </div>
+  </div><div class="node" data-search="api tier 3 api_tier3 capacity capacity unlocked at $100 paid. $1,000/mo cap. tiers are earned by spending, not by asking. tier 3">
+    <div class="id">
+      <div class="t" style="--gc:#4a9f5a"><span class="g">③</span>API Tier 3</div>
+      <div class="m"><span class="kind">Capacity</span> api_tier3</div>
+    </div>
+    <div class="body">
+      <p>Unlocked at $100 paid. $1,000/mo cap. Tiers are earned by spending, not by asking.</p>
+      <div class="stat"><span>place <b>$1,800</b></span><span>supplies <b>5M</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Shipping Quality</b></span></div>
+      
+    </div>
+  </div><div class="node" data-search="api tier 5 api_tier5 capacity capacity unlocked at $1,000 paid. 40m tpm and a $200,000/mo cap. the ceiling of renting someone else’s compute. tier 5">
+    <div class="id">
+      <div class="t" style="--gc:#4aaf6a"><span class="g">⑤</span>API Tier 5</div>
+      <div class="m"><span class="kind">Capacity</span> api_tier5</div>
+    </div>
+    <div class="body">
+      <p>Unlocked at $1,000 paid. 40M TPM and a $200,000/mo cap. The ceiling of renting someone else’s compute.</p>
+      <div class="stat"><span>place <b>$14,000</b></span><span>supplies <b>40M</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Frontier Reasoning</b></span></div>
+      
+    </div>
+  </div><div class="node" data-search="batch lane batch_lane capacity capacity batch apis are 50% off at openai, anthropic, google and fireworks. half price, but you wait. batch queue">
+    <div class="id">
+      <div class="t" style="--gc:#3a8f7a"><span class="g">◫</span>Batch Lane</div>
+      <div class="m"><span class="kind">Capacity</span> batch_lane</div>
+    </div>
+    <div class="body">
+      <p>Batch APIs are 50% off at OpenAI, Anthropic, Google and Fireworks. Half price, but you wait.</p>
+      <div class="stat"><span>place <b>$900</b></span><span>supplies <b>9M</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>The Cheap Provider</b></span></div>
+      
+    </div>
+  </div><div class="node" data-search="rented h100 node rented_h100 capacity capacity 8x h100 at runpod ~$2.59/hr. median across 40 providers is $3.32/hr; gcp charges $11.07. unlocks self-hosting. serve on h100">
+    <div class="id">
+      <div class="t" style="--gc:#76b900"><span class="g">▣</span>Rented H100 Node</div>
+      <div class="m"><span class="kind">Capacity</span> rented_h100</div>
+    </div>
+    <div class="body">
+      <p>8x H100 at RunPod ~$2.59/hr. Median across 40 providers is $3.32/hr; GCP charges $11.07. Unlocks self-hosting.</p>
+      <div class="stat"><span>rent <b>$15,100/mo</b></span><span>supplies <b>24M</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Own The Weights</b></span></div>
+      
+    </div>
+  </div><div class="node" data-search="rented b200 pod rented_b200 capacity capacity 8x b200 at ~$6.79/hr. spot cuts it 60-75% but interrupts; 3-year reserved is ~45% off and does not. serve on b200">
+    <div class="id">
+      <div class="t" style="--gc:#8fd400"><span class="g">▩</span>Rented B200 Pod</div>
+      <div class="m"><span class="kind">Capacity</span> rented_b200</div>
+    </div>
+    <div class="body">
+      <p>8x B200 at ~$6.79/hr. Spot cuts it 60-75% but interrupts; 3-year reserved is ~45% off and does not.</p>
+      <div class="stat"><span>rent <b>$39,600/mo</b></span><span>supplies <b>70M</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Sovereign Inference</b></span></div>
+      
+    </div>
+  </div><div class="node" data-search="colo rack bay colo_rack capacity capacity burns your own nvl72 racks. ~120kw each, liquid cooling mandatory — air alone cannot cool it. run rack nvl72 rack">
+    <div class="id">
+      <div class="t" style="--gc:#5a8f3a"><span class="g">⛁</span>Colo Rack Bay</div>
+      <div class="m"><span class="kind">Capacity</span> colo_rack</div>
+    </div>
+    <div class="body">
+      <p>Burns your own NVL72 racks. ~120kW each, liquid cooling mandatory — air alone cannot cool it.</p>
+      <div class="stat"><span>place <b>$250k</b></span><span>rent <b>$42,000/mo</b></span><span>supplies <b>130M</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>The Chokepoint</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#ffd24a" title="NVL72 Rack — 72 GPUs, ~120kW, about $3M. Roughly $25,000 of capex per kW of rack load."><b>⛁</b>NVL72 Rack</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="own datacenter datacenter capacity capacity 10mw. all-in capex runs $30-45m per mw, annualised tco ~$8.5m/mw/yr. servers are 60% of it; power only ~7%. run datacenter">
+    <div class="id">
+      <div class="t" style="--gc:#3a6f2a"><span class="g">▰</span>Own Datacenter</div>
+      <div class="m"><span class="kind">Capacity</span> datacenter</div>
+    </div>
+    <div class="body">
+      <p>10MW. All-in capex runs $30-45M per MW, annualised TCO ~$8.5M/MW/yr. Servers are 60% of it; power only ~7%.</p>
+      <div class="stat"><span>place <b>$380M</b></span><span>rent <b>$7.1M/mo</b></span><span>supplies <b>2.6B</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Vertical Integration</b></span></div>
+      
+    </div>
+  </div></div>
+    <p class="empty hidden">Nothing in Capacity matches.</p>
+  </div><div class="sec" data-group>
+    <header style="border-top:none;padding-top:0">
+      <p class="eyebrow">Training · 6 nodes</p>
+      <p class="lede">Act III · Lab. Own the weights, drop marginal token cost to zero, and unlock sovereign output.</p>
+    </header>
+    <div class="nodelist"><div class="node" data-search="open weights mirror weights_mirror training source llama, qwen, deepseek, mistral large 3, kimi k2. downloading them is free. serving them is not. pull weights open weights">
+    <div class="id">
+      <div class="t" style="--gc:#8a8f9e"><span class="g">⬡</span>Open Weights Mirror</div>
+      <div class="m"><span class="kind">Source</span> weights_mirror</div>
+    </div>
+    <div class="body">
+      <p>Llama, Qwen, DeepSeek, Mistral Large 3, Kimi K2. Downloading them is free. Serving them is not.</p>
+      <div class="stat"><span>place <b>$200</b></span><span>draws <b>5k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Own The Weights</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">makes <span class="stacks"><span class="chip" style="--c:#8a8f9e" title="Open Weights — Llama, Qwen, DeepSeek, Mistral Large 3. Free to download. Expensive to serve."><b>⬡</b>Open Weights</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="data curation data_curation training factory common crawl is free; licensed corpora are $10m-250m annual lump sums. dedupe and filter or you train on slop. curate corpus training tokens web page customer document">
+    <div class="id">
+      <div class="t" style="--gc:#6b7f6b"><span class="g">≋</span>Data Curation</div>
+      <div class="m"><span class="kind">Factory</span> data_curation</div>
+    </div>
+    <div class="body">
+      <p>Common Crawl is free; licensed corpora are $10M-250M annual lump sums. Dedupe and filter or you train on slop.</p>
+      <div class="stat"><span>place <b>$4,000</b></span><span>rent <b>$800/mo</b></span><span>draws <b>200k</b></span><span>risk <span class="risk warn">+3</span></span><span>unlocked by <b>Own The Weights</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#5f8a7a" title="Web Page — Fetched by a search API. Exa $7/1k, Tavily $8/1k, Brave $5/1k."><b>⌘</b>Web Page</span><span class="chip" style="--c:#8a7f6b" title="Customer Document — The private corpus. This is what makes RAG worth building."><b>▤</b>Customer Document</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#4ce0c8" title="Training Tokens — Chinchilla says ~20 tokens per parameter. Modern frontier runs go far past that to cut serving cost."><b>⁂</b>Training Tokens</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="fine-tune job finetune_job training factory together charges $0.48 per 1m tokens for a &lt;=16b lora. a 7b run on 10m tokens costs about $5. lora fine-tune domain tune lora adapter tuned model open weights training tokens lora adapter">
+    <div class="id">
+      <div class="t" style="--gc:#7ce04c"><span class="g">⟐</span>Fine-Tune Job</div>
+      <div class="m"><span class="kind">Factory</span> finetune_job</div>
+    </div>
+    <div class="body">
+      <p>Together charges $0.48 per 1M tokens for a &lt;=16B LoRA. A 7B run on 10M tokens costs about $5.</p>
+      <div class="stat"><span>place <b>$2,000</b></span><span>draws <b>1.4M</b></span><span>risk <span class="risk warn">+1</span></span><span>unlocked by <b>Own The Weights</b></span><span><b>2</b> recipes</span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#8a8f9e" title="Open Weights — Llama, Qwen, DeepSeek, Mistral Large 3. Free to download. Expensive to serve."><b>⬡</b>Open Weights</span><span class="chip" style="--c:#4ce0c8" title="Training Tokens — Chinchilla says ~20 tokens per parameter. Modern frontier runs go far past that to cut serving cost."><b>⁂</b>Training Tokens</span><span class="chip" style="--c:#7ce04c" title="LoRA Adapter — Megabytes, not gigabytes. A 7B LoRA on 10M tokens costs about $5. Hot-swappable."><b>⟐</b>LoRA Adapter</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#7ce04c" title="LoRA Adapter — Megabytes, not gigabytes. A 7B LoRA on 10M tokens costs about $5. Hot-swappable."><b>⟐</b>LoRA Adapter</span><span class="chip" style="--c:#4ce07a" title="Tuned Model — Your domain, your weights. Fine-tuning is cheap; serving what you tuned is where the money goes."><b>❖</b>Tuned Model</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="vllm server vllm_server training factory zero marginal token cost — you already paid for the gpus. zero data egress. this is the sovereignty node. self-host serve sovereign answer user request">
+    <div class="id">
+      <div class="t" style="--gc:#4ce07a"><span class="g">⬒</span>vLLM Server</div>
+      <div class="m"><span class="kind">Factory</span> vllm_server</div>
+    </div>
+    <div class="body">
+      <p>Zero marginal token cost — you already paid for the GPUs. Zero data egress. This is the sovereignty node.</p>
+      <div class="stat"><span>place <b>$3,000</b></span><span>draws <b>11M</b></span><span>risk <span class="risk good">-3</span></span><span>unlocked by <b>Own The Weights</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#6b7f9e" title="User Request — Someone typed something into your product. Worthless until answered."><b>◌</b>User Request</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#4ce07a" title="Sovereign Answer — Produced on hardware you control. Never left your perimeter. Defence and health buy only this."><b>⛨</b>Sovereign Answer</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="air-gapped deploy airgap_deploy training factory il5/il6 and cmmc territory. ops teams run 2-3x larger and models ship quarterly on physical media. air-gapped serve sovereign answer grounded prompt">
+    <div class="id">
+      <div class="t" style="--gc:#3fc46a"><span class="g">⛨</span>Air-Gapped Deploy</div>
+      <div class="m"><span class="kind">Factory</span> airgap_deploy</div>
+    </div>
+    <div class="body">
+      <p>IL5/IL6 and CMMC territory. Ops teams run 2-3x larger and models ship quarterly on physical media.</p>
+      <div class="stat"><span>place <b>$45,000</b></span><span>rent <b>$18,000/mo</b></span><span>draws <b>13M</b></span><span>risk <span class="risk good">-6</span></span><span>unlocked by <b>Sovereign Inference</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#3d8fc4" title="Grounded Prompt — Request + retrieved context. Grounding is why enterprises pay more than consumers."><b>⌬</b>Grounded Prompt</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#4ce07a" title="Sovereign Answer — Produced on hardware you control. Never left your perimeter. Defence and health buy only this."><b>⛨</b>Sovereign Answer</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="pretraining cluster pretrain_rig training factory llama 3.1 405b took 30.8m h100-hours. deepseek v3 took 2.66m on a fleet that still cost ~$1.6b to assemble. pretrain frontier frontier model training tokens">
+    <div class="id">
+      <div class="t" style="--gc:#ffd24a"><span class="g">⛃</span>Pretraining Cluster</div>
+      <div class="m"><span class="kind">Factory</span> pretrain_rig</div>
+    </div>
+    <div class="body">
+      <p>Llama 3.1 405B took 30.8M H100-hours. DeepSeek V3 took 2.66M on a fleet that still cost ~$1.6B to assemble.</p>
+      <div class="stat"><span>place <b>$12M</b></span><span>rent <b>$900k/mo</b></span><span>draws <b>1.9B</b></span><span>risk <span class="risk warn">+1</span></span><span>unlocked by <b>Vertical Integration</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#4ce0c8" title="Training Tokens — Chinchilla says ~20 tokens per parameter. Modern frontier runs go far past that to cut serving cost."><b>⁂</b>Training Tokens</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#ffd24a" title="Frontier Model — Grok-3 cost ~$218M. GPT-5-class runs are estimated $1.5-3B. Training cost is doubling every ~8 months."><b>✵</b>Frontier Model</span></span></span></div>
+    </div>
+  </div></div>
+    <p class="empty hidden">Nothing in Training matches.</p>
+  </div><div class="sec" data-group>
+    <header style="border-top:none;padding-top:0">
+      <p class="eyebrow">Silicon · 7 nodes</p>
+      <p class="lede">Act III · Fab. Own the supply chain from sand to rack.</p>
+    </header>
+    <div class="nodelist"><div class="node" data-search="polysilicon supply poly_supply silicon source the cheapest input in the entire chain, and the start of every chip on earth. refine polysilicon polysilicon">
+    <div class="id">
+      <div class="t" style="--gc:#9e8a6b"><span class="g">◆</span>Polysilicon Supply</div>
+      <div class="m"><span class="kind">Source</span> poly_supply</div>
+    </div>
+    <div class="body">
+      <p>The cheapest input in the entire chain, and the start of every chip on earth.</p>
+      <div class="stat"><span>place <b>$60,000</b></span><span>rent <b>$9,000/mo</b></span><span>draws <b>30k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Going Upstream</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">makes <span class="stacks"><span class="chip" style="--c:#9e8a6b" title="Polysilicon — The cheapest thing in the entire supply chain, and the start of all of it."><b>◆</b>Polysilicon</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="wafer fab wafer_slicer silicon factory grow the ingot, slice, polish. 300mm blanks are ~$45 before anyone interesting touches them. slice wafers blank wafer polysilicon">
+    <div class="id">
+      <div class="t" style="--gc:#d8b04a"><span class="g">▬</span>Wafer Fab</div>
+      <div class="m"><span class="kind">Factory</span> wafer_slicer</div>
+    </div>
+    <div class="body">
+      <p>Grow the ingot, slice, polish. 300mm blanks are ~$45 before anyone interesting touches them.</p>
+      <div class="stat"><span>place <b>$400k</b></span><span>rent <b>$60,000/mo</b></span><span>draws <b>200k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Going Upstream</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#9e8a6b" title="Polysilicon — The cheapest thing in the entire supply chain, and the start of all of it."><b>◆</b>Polysilicon</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#d8b04a" title="Blank Wafer — 300mm of polished silicon. Everything expensive happens to it later."><b>▬</b>Blank Wafer</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="euv lithography euv_litho silicon factory asml exe:5200b is ~$380m, weighs 150 tonnes and ships in 250 crates. no euv, no sub-7nm. this is the chokepoint. euv patterning patterned wafer blank wafer">
+    <div class="id">
+      <div class="t" style="--gc:#e0d13c"><span class="g">▭</span>EUV Lithography</div>
+      <div class="m"><span class="kind">Factory</span> euv_litho</div>
+    </div>
+    <div class="body">
+      <p>ASML EXE:5200B is ~$380M, weighs 150 tonnes and ships in 250 crates. No EUV, no sub-7nm. This is the chokepoint.</p>
+      <div class="stat"><span>place <b>$380M</b></span><span>rent <b>$4M/mo</b></span><span>draws <b>900k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>The Chokepoint</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#d8b04a" title="Blank Wafer — 300mm of polished silicon. Everything expensive happens to it later."><b>▬</b>Blank Wafer</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#e0d13c" title="Patterned Wafer — TSMC N2 runs about $30,000 a wafer. N5 is ~$18.5k. The node is the price."><b>▭</b>Patterned Wafer</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="die test &amp; dicing die_test silicon factory tsmc n2 yields 70-80% on logic test chips. yield loss here is why the last 20% of a node takes years. test &amp; dice logic die patterned wafer">
+    <div class="id">
+      <div class="t" style="--gc:#e08a3c"><span class="g">◫</span>Die Test &amp; Dicing</div>
+      <div class="m"><span class="kind">Factory</span> die_test</div>
+    </div>
+    <div class="body">
+      <p>TSMC N2 yields 70-80% on logic test chips. Yield loss here is why the last 20% of a node takes years.</p>
+      <div class="stat"><span>place <b>$900k</b></span><span>rent <b>$120k/mo</b></span><span>draws <b>400k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Going Upstream</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#e0d13c" title="Patterned Wafer — TSMC N2 runs about $30,000 a wafer. N5 is ~$18.5k. The node is the price."><b>▭</b>Patterned Wafer</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#e08a3c" title="Logic Die — Under 13% of a GPU bill of materials. The compute die is NOT what makes GPUs expensive."><b>◫</b>Logic Die</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="hbm stacking hbm_stacker silicon factory 12-hi hbm4 runs ~$550 a stack and sk hynix took ~$560/device from nvidia. 2026 supply is sold out. stack hbm4 hbm4 stack blank wafer">
+    <div class="id">
+      <div class="t" style="--gc:#f26d3d"><span class="g">▥</span>HBM Stacking</div>
+      <div class="m"><span class="kind">Factory</span> hbm_stacker</div>
+    </div>
+    <div class="body">
+      <p>12-Hi HBM4 runs ~$550 a stack and SK hynix took ~$560/device from NVIDIA. 2026 supply is sold out.</p>
+      <div class="stat"><span>place <b>$2.4M</b></span><span>rent <b>$300k/mo</b></span><span>draws <b>500k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Going Upstream</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#d8b04a" title="Blank Wafer — 300mm of polished silicon. Everything expensive happens to it later."><b>▬</b>Blank Wafer</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#f26d3d" title="HBM4 Stack — 30-64% of accelerator BOM. SK hynix holds ~58% share and 2026 supply is sold out."><b>▥</b>HBM4 Stack</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="cowos packaging cowos_pack silicon factory the real ceiling on gpu supply. booking window 52-78 weeks; 85%+ of 2026-27 capacity is already locked. cowos package packaged gpu logic die hbm4 stack">
+    <div class="id">
+      <div class="t" style="--gc:#ff6d3d"><span class="g">▤</span>CoWoS Packaging</div>
+      <div class="m"><span class="kind">Factory</span> cowos_pack</div>
+    </div>
+    <div class="body">
+      <p>The real ceiling on GPU supply. Booking window 52-78 weeks; 85%+ of 2026-27 capacity is already locked.</p>
+      <div class="stat"><span>place <b>$6M</b></span><span>rent <b>$700k/mo</b></span><span>draws <b>700k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>The Chokepoint</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#e08a3c" title="Logic Die — Under 13% of a GPU bill of materials. The compute die is NOT what makes GPUs expensive."><b>◫</b>Logic Die</span><span class="chip" style="--c:#f26d3d" title="HBM4 Stack — 30-64% of accelerator BOM. SK hynix holds ~58% share and 2026 supply is sold out."><b>▥</b>HBM4 Stack</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#ff6d3d" title="Packaged GPU — CoWoS packaging, not lithography, is the real supply ceiling. Booking window: 52-78 weeks."><b>▤</b>Packaged GPU</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="rack integration rack_integrator silicon factory 72 accelerators, ~120kw, ~$3m a rack. nvidia captures ~90% of system value; integrators keep the scraps. integrate rack nvl72 rack packaged gpu">
+    <div class="id">
+      <div class="t" style="--gc:#ffd24a"><span class="g">⛁</span>Rack Integration</div>
+      <div class="m"><span class="kind">Factory</span> rack_integrator</div>
+    </div>
+    <div class="body">
+      <p>72 accelerators, ~120kW, ~$3M a rack. NVIDIA captures ~90% of system value; integrators keep the scraps.</p>
+      <div class="stat"><span>place <b>$3M</b></span><span>rent <b>$400k/mo</b></span><span>draws <b>600k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>The Chokepoint</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#ff6d3d" title="Packaged GPU — CoWoS packaging, not lithography, is the real supply ceiling. Booking window: 52-78 weeks."><b>▤</b>Packaged GPU</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#ffd24a" title="NVL72 Rack — 72 GPUs, ~120kW, about $3M. Roughly $25,000 of capex per kW of rack load."><b>⛁</b>NVL72 Rack</span></span></span></div>
+    </div>
+  </div></div>
+    <p class="empty hidden">Nothing in Silicon matches.</p>
+  </div><div class="sec" data-group>
+    <header style="border-top:none;padding-top:0">
+      <p class="eyebrow">Contracts · 15 nodes</p>
+      <p class="lede">The only source of revenue in the game. Each one audits your Exposure before it pays.</p>
+    </header>
+    <div class="nodelist"><div class="node" data-search="consumer app consumer_app contracts contract prosumer subscriptions. pays little per answer, never does security review, churns constantly. freemium tier prosumer subs draft answer answer">
+    <div class="id">
+      <div class="t" style="--gc:#8a8f9e"><span class="g">◎</span>Consumer App</div>
+      <div class="m"><span class="kind">Contract</span> consumer_app</div>
+    </div>
+    <div class="body">
+      <p>Prosumer subscriptions. Pays little per answer, never does security review, churns constantly.</p>
+      <div class="stat"><span>place <b>$100</b></span><span>draws <b>4k</b></span><span>risk <span class="risk warn">+1</span></span><span>unlocked by <b>starting kit</b></span><span><b>2</b> recipes</span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#8f9bb3" title="Draft Answer — Ungraded output from a cheap model. Needs a judge before you can ship it."><b>○</b>Draft Answer</span><span class="chip" style="--c:#4aa3d8" title="Answer — Ship-quality output: a mid-tier model, or a cheap model plus an LLM judge."><b>●</b>Answer</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="smb pilot smb_pilot contracts contract acv under $15k, closes in 14-30 days. about 10-15% of pilots ever reach production. smb pilot verified answer">
+    <div class="id">
+      <div class="t" style="--gc:#7a9fb8"><span class="g">◐</span>SMB Pilot</div>
+      <div class="m"><span class="kind">Contract</span> smb_pilot</div>
+    </div>
+    <div class="body">
+      <p>ACV under $15k, closes in 14-30 days. About 10-15% of pilots ever reach production.</p>
+      <div class="stat"><span>place <b>$600</b></span><span>draws <b>6k</b></span><span>risk <span class="risk warn">+1</span></span><span>unlocked by <b>Product-Market Fit</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#35c9c0" title="Verified Answer — Passed evals and guardrails. What a paying business will actually accept."><b>✓</b>Verified Answer</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="mid-market saas midmarket contracts contract acv $50-100k, 60-90 day cycle. will not sign without soc 2, and will ask who your subprocessors are. mid-market saas verified answer soc 2 type ii">
+    <div class="id">
+      <div class="t" style="--gc:#5f8fc4"><span class="g">◑</span>Mid-Market SaaS</div>
+      <div class="m"><span class="kind">Contract</span> midmarket</div>
+    </div>
+    <div class="body">
+      <p>ACV $50-100k, 60-90 day cycle. Will not sign without SOC 2, and will ask who your subprocessors are.</p>
+      <div class="stat"><span>place <b>$5,000</b></span><span>draws <b>10k</b></span><span>risk <span class="risk warn">+1</span></span><span>unlocked by <b>Retrieval</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#35c9c0" title="Verified Answer — Passed evals and guardrails. What a paying business will actually accept."><b>✓</b>Verified Answer</span><span class="chip" style="--c:#a8a05b" title="SOC 2 Type II — Real cost $15k-50k plus a 3-12 month observation window you cannot buy past."><b>⛊</b>SOC 2 Type II</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="enterprise enterprise contracts contract acv $100k+, 90-180+ days. median b2b cycle is 84 days and rising, driven by security due diligence. enterprise seats enterprise agents verified answer agent run iso 42001 agent workflow">
+    <div class="id">
+      <div class="t" style="--gc:#4a6fa8"><span class="g">◒</span>Enterprise</div>
+      <div class="m"><span class="kind">Contract</span> enterprise</div>
+    </div>
+    <div class="body">
+      <p>ACV $100k+, 90-180+ days. Median B2B cycle is 84 days and rising, driven by security due diligence.</p>
+      <div class="stat"><span>place <b>$40,000</b></span><span>draws <b>20k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Frontier Reasoning</b></span><span><b>2</b> recipes</span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#35c9c0" title="Verified Answer — Passed evals and guardrails. What a paying business will actually accept."><b>✓</b>Verified Answer</span><span class="chip" style="--c:#e08a3c" title="Agent Run — One task completed end to end. Costs many model calls; sells for one outcome."><b>✦</b>Agent Run</span><span class="chip" style="--c:#b0904a" title="ISO 42001 — The only AI-management certificate you can hand a procurement officer. 40-60% cheaper if you hold ISO 27001."><b>⌸</b>ISO 42001</span><span class="chip" style="--c:#f26d3d" title="Agent Workflow — Multi-agent: planner, workers, critic. Quality up, token burn up faster."><b>✧</b>Agent Workflow</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="health / finance regulated contracts contract hipaa, hitrust, ffiec, sr 11-7. pays extremely well and will not let your data leave the building. health / finance verified answer hipaa baa soc 2 type ii">
+    <div class="id">
+      <div class="t" style="--gc:#c46f6f"><span class="g">✚</span>Health / Finance</div>
+      <div class="m"><span class="kind">Contract</span> regulated</div>
+    </div>
+    <div class="body">
+      <p>HIPAA, HITRUST, FFIEC, SR 11-7. Pays extremely well and will not let your data leave the building.</p>
+      <div class="stat"><span>place <b>$120k</b></span><span>draws <b>30k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Sovereign Inference</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#35c9c0" title="Verified Answer — Passed evals and guardrails. What a paying business will actually accept."><b>✓</b>Verified Answer</span><span class="chip" style="--c:#c46f6f" title="HIPAA BAA — Azure OpenAI includes one by default. DeepSeek offers none — its policy excludes health data."><b>✚</b>HIPAA BAA</span><span class="chip" style="--c:#a8a05b" title="SOC 2 Type II — Real cost $15k-50k plus a 3-12 month observation window you cannot buy past."><b>⛊</b>SOC 2 Type II</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="federal / dod federal contracts contract dod took 98.9% of $91.8b in 2026 federal ai award value. cdao ceilings were $200m each to four labs. federal program sovereign answer fedramp cert">
+    <div class="id">
+      <div class="t" style="--gc:#6f8fc4"><span class="g">★</span>Federal / DoD</div>
+      <div class="m"><span class="kind">Contract</span> federal</div>
+    </div>
+    <div class="body">
+      <p>DoD took 98.9% of $91.8B in 2026 federal AI award value. CDAO ceilings were $200M each to four labs.</p>
+      <div class="stat"><span>place <b>$600k</b></span><span>draws <b>40k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Own The Weights</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#4ce07a" title="Sovereign Answer — Produced on hardware you control. Never left your perimeter. Defence and health buy only this."><b>⛨</b>Sovereign Answer</span><span class="chip" style="--c:#6f8fc4" title="FedRAMP Cert — Legacy path: $250k-2M and 12-18 months. The 20x fast lane cut agency review to ~5 weeks."><b>★</b>FedRAMP Cert</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="hyperscaler deal hyperscaler contracts contract sell racks instead of tokens. nvidia runs 75% gross margin because hbm and packaging cost belong to someone else. sell accelerators sell racks packaged gpu nvl72 rack">
+    <div class="id">
+      <div class="t" style="--gc:#ffb03d"><span class="g">⛁</span>Hyperscaler Deal</div>
+      <div class="m"><span class="kind">Contract</span> hyperscaler</div>
+    </div>
+    <div class="body">
+      <p>Sell racks instead of tokens. NVIDIA runs 75% gross margin because HBM and packaging cost belong to someone else.</p>
+      <div class="stat"><span>place <b>$2M</b></span><span>draws <b>50k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>The Chokepoint</b></span><span><b>2</b> recipes</span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#ff6d3d" title="Packaged GPU — CoWoS packaging, not lithography, is the real supply ceiling. Booking window: 52-78 weeks."><b>▤</b>Packaged GPU</span><span class="chip" style="--c:#ffd24a" title="NVL72 Rack — 72 GPUs, ~120kW, about $3M. Roughly $25,000 of capex per kW of rack load."><b>⛁</b>NVL72 Rack</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="api platform api_platform contracts contract be the provider. anthropic reported a $65b run rate; openai $40b+. pure token resale earns 0% — openrouter proves it. run api platform frontier model frontier model sovereign answer">
+    <div class="id">
+      <div class="t" style="--gc:#ffd24a"><span class="g">⬢</span>API Platform</div>
+      <div class="m"><span class="kind">Contract</span> api_platform</div>
+    </div>
+    <div class="body">
+      <p>Be the provider. Anthropic reported a $65B run rate; OpenAI $40B+. Pure token resale earns 0% — OpenRouter proves it.</p>
+      <div class="stat"><span>place <b>$8M</b></span><span>draws <b>80k</b></span><span>risk <span class="risk warn">+2</span></span><span>unlocked by <b>Frontier Lab</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#ffd24a" title="Frontier Model — Grok-3 cost ~$218M. GPT-5-class runs are estimated $1.5-3B. Training cost is doubling every ~8 months."><b>✵</b>Frontier Model</span><span class="chip" style="--c:#4ce07a" title="Sovereign Answer — Produced on hardware you control. Never left your perimeter. Defence and health buy only this."><b>⛨</b>Sovereign Answer</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#ffd24a" title="Frontier Model — Grok-3 cost ~$218M. GPT-5-class runs are estimated $1.5-3B. Training cost is doubling every ~8 months."><b>✵</b>Frontier Model</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="sme on-prem pilot sme_pilot contracts contract a ten-person firm with client confidentiality and no dpo. they cannot use an api and they can afford one box. one to ten concurrent users needs a 24gb card — that is the whole specification. sme on-prem pilot on-prem answer">
+    <div class="id">
+      <div class="t" style="--gc:#4a9f6a"><span class="g">◍</span>SME On-Prem Pilot</div>
+      <div class="m"><span class="kind">Contract</span> sme_pilot</div>
+    </div>
+    <div class="body">
+      <p>A ten-person firm with client confidentiality and no DPO. They cannot use an API and they can afford one box. One to ten concurrent users needs a 24GB card — that is the whole specification.</p>
+      <div class="stat"><span>place <b>$2,500</b></span><span>draws <b>6k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Weights On Your Desk</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#3fc46a" title="On-Prem Answer — Generated on a box in the customer's own building. Never crossed a network they do not own — which is the entire product."><b>◈</b>On-Prem Answer</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="managed on-prem sme_fleet contracts contract you are not selling answers any more. you are selling someone else's server, and you are on the hook when it dies. managed on-prem on-prem answer verified answer">
+    <div class="id">
+      <div class="t" style="--gc:#3f9f8a"><span class="g">◎</span>Managed On-Prem</div>
+      <div class="m"><span class="kind">Contract</span> sme_fleet</div>
+    </div>
+    <div class="body">
+      <p>You are not selling answers any more. You are selling someone else's server, and you are on the hook when it dies.</p>
+      <div class="stat"><span>place <b>$25,000</b></span><span>draws <b>14k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>The Box In The Corner</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#3fc46a" title="On-Prem Answer — Generated on a box in the customer's own building. Never crossed a network they do not own — which is the entire product."><b>◈</b>On-Prem Answer</span><span class="chip" style="--c:#35c9c0" title="Verified Answer — Passed evals and guardrails. What a paying business will actually accept."><b>✓</b>Verified Answer</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="regional msp sme_msp contracts contract every box you have sold is a box you now maintain. the margin is real and so is the pager. gdpr fines reach 4% of global annual turnover. regional msp on-prem answer">
+    <div class="id">
+      <div class="t" style="--gc:#3a8fa8"><span class="g">◉</span>Regional MSP</div>
+      <div class="m"><span class="kind">Contract</span> sme_msp</div>
+    </div>
+    <div class="body">
+      <p>Every box you have sold is a box you now maintain. The margin is real and so is the pager. GDPR fines reach 4% of global annual turnover.</p>
+      <div class="stat"><span>place <b>$150k</b></span><span>draws <b>30k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>The Rack In The Basement</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#3fc46a" title="On-Prem Answer — Generated on a box in the customer's own building. Never crossed a network they do not own — which is the entire product."><b>◈</b>On-Prem Answer</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="post to feed feed_post contracts contract you spent real money to make this and nobody is going to pay you for it. attention was the thing you were buying. post to feed generated text generated image">
+    <div class="id">
+      <div class="t" style="--gc:#7d8b9c"><span class="g">⌇</span>Post To Feed</div>
+      <div class="m"><span class="kind">Contract</span> feed_post</div>
+    </div>
+    <div class="body">
+      <p>You spent real money to make this and nobody is going to pay you for it. Attention was the thing you were buying.</p>
+      <div class="stat"><span>draws <b>2k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Product-Market Fit</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#9e8fa8" title="Generated Text — Roughly 57% of sentences on the open web are already machine-translated. The slop is not coming; it arrived."><b>≡</b>Generated Text</span><span class="chip" style="--c:#c47fd0" title="Generated Image — About $0.04 an image at standard quality. Four cents is less than the cost of deciding whether you wanted it."><b>▩</b>Generated Image</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="content mill content_mill contracts contract over a thousand unreliable ai-generated news sites were being tracked by 2025. they pay per piece, on delivery, and they will not automate for you. content mill order generated text generated image">
+    <div class="id">
+      <div class="t" style="--gc:#c98a5f"><span class="g">✍</span>Content Mill</div>
+      <div class="m"><span class="kind">Contract</span> content_mill</div>
+    </div>
+    <div class="body">
+      <p>Over a thousand unreliable AI-generated news sites were being tracked by 2025. They pay per piece, on delivery, and they will not automate for you.</p>
+      <div class="stat"><span>place <b>$900</b></span><span>draws <b>4k</b></span><span>risk <span class="risk warn">+1</span></span><span>unlocked by <b>Content Is Free</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#9e8fa8" title="Generated Text — Roughly 57% of sentences on the open web are already machine-translated. The slop is not coming; it arrived."><b>≡</b>Generated Text</span><span class="chip" style="--c:#c47fd0" title="Generated Image — About $0.04 an image at standard quality. Four cents is less than the cost of deciding whether you wanted it."><b>▩</b>Generated Image</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="programmatic seo pseo_platform contracts contract less per unit than clicking generate yourself, and it runs while you are asleep. that is the entire argument for building a pipeline. programmatic seo content pack">
+    <div class="id">
+      <div class="t" style="--gc:#b8923d"><span class="g">⌸</span>Programmatic SEO</div>
+      <div class="m"><span class="kind">Contract</span> pseo_platform</div>
+    </div>
+    <div class="body">
+      <p>Less per unit than clicking Generate yourself, and it runs while you are asleep. That is the entire argument for building a pipeline.</p>
+      <div class="stat"><span>place <b>$12,000</b></span><span>draws <b>10k</b></span><span>risk <span class="risk warn">+1</span></span><span>unlocked by <b>Somebody Pays For This</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#c98a3d" title="Content Pack — Text, images and video assembled into something a buyer will actually take delivery of."><b>❑</b>Content Pack</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="adult platform adult_platform contracts contract age-assurance regimes went live in the uk and were upheld for texas at the us supreme court in 2025. payment processors moved on storefronts the same summer. adult platform adult content">
+    <div class="id">
+      <div class="t" style="--gc:#a03d5f"><span class="g">◐</span>Adult Platform</div>
+      <div class="m"><span class="kind">Contract</span> adult_platform</div>
+    </div>
+    <div class="body">
+      <p>Age-assurance regimes went live in the UK and were upheld for Texas at the US Supreme Court in 2025. Payment processors moved on storefronts the same summer.</p>
+      <div class="stat"><span>place <b>$40,000</b></span><span>draws <b>12k</b></span><span>risk <span class="risk warn">+2</span></span><span>unlocked by <b>Ablated</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#b03d5f" title="Adult Content — Pays like a regulated contract with none of the paperwork, and every incentive in the payment stack is pointed at you."><b>◉</b>Adult Content</span></span></span></div>
+    </div>
+  </div></div>
+    <p class="empty hidden">Nothing in Contracts matches.</p>
+  </div>
+</section>
+  
+<section class="sec">
+  <header><p class="eyebrow">Glossary</p><h2>Every item</h2><p class="lede">Reference prices are display only. All income comes from contract payouts, so there is no exploit in routing an expensive item somewhere generic.</p></header>
+  <div class="sec" data-group>
+    <header style="border-top:none;padding-top:0"><p class="eyebrow">Demand — what arrives at your door</p></header>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Item</th><th class="num">Ref. price</th><th>What it is</th><th>Made by</th></tr></thead>
+      <tbody><tr data-search="user request user_request someone typed something into your product. worthless until answered.">
+      <td><span class="chip" style="--c:#6b7f9e" title="User Request — Someone typed something into your product. Worthless until answered."><b>◌</b>User Request</span></td>
+      <td class="num">—</td>
+      <td class="desc">Someone typed something into your product. Worthless until answered.</td>
+      <td class="sub2">Landing Page, Paid Acquisition</td>
+    </tr><tr data-search="support ticket support_ticket inbound work with an sla attached. higher value, less forgiving.">
+      <td><span class="chip" style="--c:#7d8ba3" title="Support Ticket — Inbound work with an SLA attached. Higher value, less forgiving."><b>✉</b>Support Ticket</span></td>
+      <td class="num">—</td>
+      <td class="desc">Inbound work with an SLA attached. Higher value, less forgiving.</td>
+      <td class="sub2">Support Desk</td>
+    </tr><tr data-search="customer document document the private corpus. this is what makes rag worth building.">
+      <td><span class="chip" style="--c:#8a7f6b" title="Customer Document — The private corpus. This is what makes RAG worth building."><b>▤</b>Customer Document</span></td>
+      <td class="num">—</td>
+      <td class="desc">The private corpus. This is what makes RAG worth building.</td>
+      <td class="sub2">Document Ingest</td>
+    </tr><tr data-search="web page web_page fetched by a search api. exa $7/1k, tavily $8/1k, brave $5/1k.">
+      <td><span class="chip" style="--c:#5f8a7a" title="Web Page — Fetched by a search API. Exa $7/1k, Tavily $8/1k, Brave $5/1k."><b>⌘</b>Web Page</span></td>
+      <td class="num">$0.05</td>
+      <td class="desc">Fetched by a search API. Exa $7/1k, Tavily $8/1k, Brave $5/1k.</td>
+      <td class="sub2">Search API</td>
+    </tr></tbody></table></div>
+    <p class="empty hidden">No match.</p>
+  </div><div class="sec" data-group>
+    <header style="border-top:none;padding-top:0"><p class="eyebrow">Data — the answer pipeline</p></header>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Item</th><th class="num">Ref. price</th><th>What it is</th><th>Made by</th></tr></thead>
+      <tbody><tr data-search="draft answer draft_answer ungraded output from a cheap model. needs a judge before you can ship it.">
+      <td><span class="chip" style="--c:#8f9bb3" title="Draft Answer — Ungraded output from a cheap model. Needs a judge before you can ship it."><b>○</b>Draft Answer</span></td>
+      <td class="num">$0.80</td>
+      <td class="desc">Ungraded output from a cheap model. Needs a judge before you can ship it.</td>
+      <td class="sub2">Claude Haiku 4.5, Gemini 3.8 Flash, GPT-5.6 Luna, MiniMax M3 +4</td>
+    </tr><tr data-search="answer answer ship-quality output: a mid-tier model, or a cheap model plus an llm judge.">
+      <td><span class="chip" style="--c:#4aa3d8" title="Answer — Ship-quality output: a mid-tier model, or a cheap model plus an LLM judge."><b>●</b>Answer</span></td>
+      <td class="num">$3</td>
+      <td class="desc">Ship-quality output: a mid-tier model, or a cheap model plus an LLM judge.</td>
+      <td class="sub2">Claude Sonnet 5, GPT-5.6 Terra, Grok 4.6, Mistral Large 3 +8</td>
+    </tr><tr data-search="reasoning answer reasoning_answer long-horizon planning from a frontier model. the only thing agents can plan with.">
+      <td><span class="chip" style="--c:#9a5fd8" title="Reasoning Answer — Long-horizon planning from a frontier model. The only thing agents can plan with."><b>◉</b>Reasoning Answer</span></td>
+      <td class="num">$26</td>
+      <td class="desc">Long-horizon planning from a frontier model. The only thing agents can plan with.</td>
+      <td class="sub2">GPT-6 Astra, Claude Fable 5.1, Claude Opus 5, Gemini 3.1 Pro +5</td>
+    </tr><tr data-search="verified answer verified_answer passed evals and guardrails. what a paying business will actually accept.">
+      <td><span class="chip" style="--c:#35c9c0" title="Verified Answer — Passed evals and guardrails. What a paying business will actually accept."><b>✓</b>Verified Answer</span></td>
+      <td class="num">$8</td>
+      <td class="desc">Passed evals and guardrails. What a paying business will actually accept.</td>
+      <td class="sub2">Eval &amp; Guardrails</td>
+    </tr><tr data-search="sovereign answer sovereign_answer produced on hardware you control. never left your perimeter. defence and health buy only this.">
+      <td><span class="chip" style="--c:#4ce07a" title="Sovereign Answer — Produced on hardware you control. Never left your perimeter. Defence and health buy only this."><b>⛨</b>Sovereign Answer</span></td>
+      <td class="num">$22</td>
+      <td class="desc">Produced on hardware you control. Never left your perimeter. Defence and health buy only this.</td>
+      <td class="sub2">vLLM Server, Air-Gapped Deploy, Eval &amp; Guardrails</td>
+    </tr><tr data-search="chunk chunk a document split for embedding. chunking strategy is most of rag quality.">
+      <td><span class="chip" style="--c:#7a6b9e" title="Chunk — A document split for embedding. Chunking strategy is most of RAG quality."><b>▪</b>Chunk</span></td>
+      <td class="num">$0.10</td>
+      <td class="desc">A document split for embedding. Chunking strategy is most of RAG quality.</td>
+      <td class="sub2">Chunker</td>
+    </tr><tr data-search="embedding embedding text-embedding-3-small is $0.02/1m tokens. storing them is what costs you.">
+      <td><span class="chip" style="--c:#c957a8" title="Embedding — text-embedding-3-small is $0.02/1M tokens. Storing them is what costs you."><b>⌗</b>Embedding</span></td>
+      <td class="num">$0.25</td>
+      <td class="desc">text-embedding-3-small is $0.02/1M tokens. Storing them is what costs you.</td>
+      <td class="sub2">Embedding Model</td>
+    </tr><tr data-search="grounded prompt grounded_prompt request + retrieved context. grounding is why enterprises pay more than consumers.">
+      <td><span class="chip" style="--c:#3d8fc4" title="Grounded Prompt — Request + retrieved context. Grounding is why enterprises pay more than consumers."><b>⌬</b>Grounded Prompt</span></td>
+      <td class="num">$1</td>
+      <td class="desc">Request + retrieved context. Grounding is why enterprises pay more than consumers.</td>
+      <td class="sub2">pgvector, Pinecone, turbopuffer</td>
+    </tr><tr data-search="tool result tool_result a real action in a real system, via mcp. this is where agents stop being demos.">
+      <td><span class="chip" style="--c:#c49a3d" title="Tool Result — A real action in a real system, via MCP. This is where agents stop being demos."><b>⚙</b>Tool Result</span></td>
+      <td class="num">$1</td>
+      <td class="desc">A real action in a real system, via MCP. This is where agents stop being demos.</td>
+      <td class="sub2">MCP Tool Server, Notion + Slack, Stripe + Billing</td>
+    </tr><tr data-search="agent run agent_run one task completed end to end. costs many model calls; sells for one outcome.">
+      <td><span class="chip" style="--c:#e08a3c" title="Agent Run — One task completed end to end. Costs many model calls; sells for one outcome."><b>✦</b>Agent Run</span></td>
+      <td class="num">$90</td>
+      <td class="desc">One task completed end to end. Costs many model calls; sells for one outcome.</td>
+      <td class="sub2">Agent Harness</td>
+    </tr><tr data-search="agent workflow agent_workflow multi-agent: planner, workers, critic. quality up, token burn up faster.">
+      <td><span class="chip" style="--c:#f26d3d" title="Agent Workflow — Multi-agent: planner, workers, critic. Quality up, token burn up faster."><b>✧</b>Agent Workflow</span></td>
+      <td class="num">$420</td>
+      <td class="desc">Multi-agent: planner, workers, critic. Quality up, token burn up faster.</td>
+      <td class="sub2">Multi-Agent Graph</td>
+    </tr><tr data-search="training tokens training_tokens chinchilla says ~20 tokens per parameter. modern frontier runs go far past that to cut serving cost.">
+      <td><span class="chip" style="--c:#4ce0c8" title="Training Tokens — Chinchilla says ~20 tokens per parameter. Modern frontier runs go far past that to cut serving cost."><b>⁂</b>Training Tokens</span></td>
+      <td class="num">$0.90</td>
+      <td class="desc">Chinchilla says ~20 tokens per parameter. Modern frontier runs go far past that to cut serving cost.</td>
+      <td class="sub2">Data Curation</td>
+    </tr><tr data-search="on-prem answer onprem_answer generated on a box in the customer's own building. never crossed a network they do not own — which is the entire product.">
+      <td><span class="chip" style="--c:#3fc46a" title="On-Prem Answer — Generated on a box in the customer's own building. Never crossed a network they do not own — which is the entire product."><b>◈</b>On-Prem Answer</span></td>
+      <td class="num">$11</td>
+      <td class="desc">Generated on a box in the customer's own building. Never crossed a network they do not own — which is the entire product.</td>
+      <td class="sub2">Qwen3 Local 32B, gpt-oss-120b Local</td>
+    </tr></tbody></table></div>
+    <p class="empty hidden">No match.</p>
+  </div><div class="sec" data-group>
+    <header style="border-top:none;padding-top:0"><p class="eyebrow">Paper — what auditors want</p></header>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Item</th><th class="num">Ref. price</th><th>What it is</th><th>Made by</th></tr></thead>
+      <tbody><tr data-search="soc 2 type ii soc2 real cost $15k-50k plus a 3-12 month observation window you cannot buy past.">
+      <td><span class="chip" style="--c:#a8a05b" title="SOC 2 Type II — Real cost $15k-50k plus a 3-12 month observation window you cannot buy past."><b>⛊</b>SOC 2 Type II</span></td>
+      <td class="num">—</td>
+      <td class="desc">Real cost $15k-50k plus a 3-12 month observation window you cannot buy past.</td>
+      <td class="sub2">SOC 2 Program</td>
+    </tr><tr data-search="iso 42001 iso42001 the only ai-management certificate you can hand a procurement officer. 40-60% cheaper if you hold iso 27001.">
+      <td><span class="chip" style="--c:#b0904a" title="ISO 42001 — The only AI-management certificate you can hand a procurement officer. 40-60% cheaper if you hold ISO 27001."><b>⌸</b>ISO 42001</span></td>
+      <td class="num">—</td>
+      <td class="desc">The only AI-management certificate you can hand a procurement officer. 40-60% cheaper if you hold ISO 27001.</td>
+      <td class="sub2">ISO 42001 Program</td>
+    </tr><tr data-search="hipaa baa hipaa_baa azure openai includes one by default. deepseek offers none — its policy excludes health data.">
+      <td><span class="chip" style="--c:#c46f6f" title="HIPAA BAA — Azure OpenAI includes one by default. DeepSeek offers none — its policy excludes health data."><b>✚</b>HIPAA BAA</span></td>
+      <td class="num">—</td>
+      <td class="desc">Azure OpenAI includes one by default. DeepSeek offers none — its policy excludes health data.</td>
+      <td class="sub2">HIPAA Program</td>
+    </tr><tr data-search="fedramp cert fedramp legacy path: $250k-2m and 12-18 months. the 20x fast lane cut agency review to ~5 weeks.">
+      <td><span class="chip" style="--c:#6f8fc4" title="FedRAMP Cert — Legacy path: $250k-2M and 12-18 months. The 20x fast lane cut agency review to ~5 weeks."><b>★</b>FedRAMP Cert</span></td>
+      <td class="num">—</td>
+      <td class="desc">Legacy path: $250k-2M and 12-18 months. The 20x fast lane cut agency review to ~5 weeks.</td>
+      <td class="sub2">FedRAMP Program</td>
+    </tr><tr data-search="takedown notice dmca_notice one ai lab settled a training-data class action for $1.5b over roughly 500,000 works — about $3,000 each. this is one of those.">
+      <td><span class="chip" style="--c:#c4603d" title="Takedown Notice — One AI lab settled a training-data class action for $1.5B over roughly 500,000 works — about $3,000 each. This is one of those."><b>⚖</b>Takedown Notice</span></td>
+      <td class="num">—</td>
+      <td class="desc">One AI lab settled a training-data class action for $1.5B over roughly 500,000 works — about $3,000 each. This is one of those.</td>
+      <td class="sub2">—</td>
+    </tr></tbody></table></div>
+    <p class="empty hidden">No match.</p>
+  </div><div class="sec" data-group>
+    <header style="border-top:none;padding-top:0"><p class="eyebrow">Model — weights you control</p></header>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Item</th><th class="num">Ref. price</th><th>What it is</th><th>Made by</th></tr></thead>
+      <tbody><tr data-search="open weights open_weights llama, qwen, deepseek, mistral large 3. free to download. expensive to serve.">
+      <td><span class="chip" style="--c:#8a8f9e" title="Open Weights — Llama, Qwen, DeepSeek, Mistral Large 3. Free to download. Expensive to serve."><b>⬡</b>Open Weights</span></td>
+      <td class="num">—</td>
+      <td class="desc">Llama, Qwen, DeepSeek, Mistral Large 3. Free to download. Expensive to serve.</td>
+      <td class="sub2">Open Weights Mirror</td>
+    </tr><tr data-search="lora adapter lora_adapter megabytes, not gigabytes. a 7b lora on 10m tokens costs about $5. hot-swappable.">
+      <td><span class="chip" style="--c:#7ce04c" title="LoRA Adapter — Megabytes, not gigabytes. A 7B LoRA on 10M tokens costs about $5. Hot-swappable."><b>⟐</b>LoRA Adapter</span></td>
+      <td class="num">$120</td>
+      <td class="desc">Megabytes, not gigabytes. A 7B LoRA on 10M tokens costs about $5. Hot-swappable.</td>
+      <td class="sub2">Fine-Tune Job</td>
+    </tr><tr data-search="tuned model tuned_model your domain, your weights. fine-tuning is cheap; serving what you tuned is where the money goes.">
+      <td><span class="chip" style="--c:#4ce07a" title="Tuned Model — Your domain, your weights. Fine-tuning is cheap; serving what you tuned is where the money goes."><b>❖</b>Tuned Model</span></td>
+      <td class="num">$900</td>
+      <td class="desc">Your domain, your weights. Fine-tuning is cheap; serving what you tuned is where the money goes.</td>
+      <td class="sub2">Fine-Tune Job</td>
+    </tr><tr data-search="frontier model frontier_model grok-3 cost ~$218m. gpt-5-class runs are estimated $1.5-3b. training cost is doubling every ~8 months.">
+      <td><span class="chip" style="--c:#ffd24a" title="Frontier Model — Grok-3 cost ~$218M. GPT-5-class runs are estimated $1.5-3B. Training cost is doubling every ~8 months."><b>✵</b>Frontier Model</span></td>
+      <td class="num">$90,000</td>
+      <td class="desc">Grok-3 cost ~$218M. GPT-5-class runs are estimated $1.5-3B. Training cost is doubling every ~8 months.</td>
+      <td class="sub2">Pretraining Cluster, API Platform</td>
+    </tr><tr data-search="quantized gguf local_weights q4_k_m lands near 4.8 bits per weight: a 70b drops from 140gb to about 40gb and loses a few points of benchmark. this is what makes local inference possible at all.">
+      <td><span class="chip" style="--c:#f5b942" title="Quantized GGUF — Q4_K_M lands near 4.8 bits per weight: a 70B drops from 140GB to about 40GB and loses a few points of benchmark. This is what makes local inference possible at all."><b>⬢</b>Quantized GGUF</span></td>
+      <td class="num">—</td>
+      <td class="desc">Q4_K_M lands near 4.8 bits per weight: a 70B drops from 140GB to about 40GB and loses a few points of benchmark. This is what makes local inference possible at all.</td>
+      <td class="sub2">Hugging Face Hub, Quantization Bench</td>
+    </tr><tr data-search="abliterated model abliterated_model refusal behaviour in an aligned model is mediated by a single direction in activation space. ablate it and the refusals stop. published research, no retraining required.">
+      <td><span class="chip" style="--c:#a03d6f" title="Abliterated Model — Refusal behaviour in an aligned model is mediated by a single direction in activation space. Ablate it and the refusals stop. Published research, no retraining required."><b>⊘</b>Abliterated Model</span></td>
+      <td class="num">$2,400</td>
+      <td class="desc">Refusal behaviour in an aligned model is mediated by a single direction in activation space. Ablate it and the refusals stop. Published research, no retraining required.</td>
+      <td class="sub2">Abliteration Rig</td>
+    </tr></tbody></table></div>
+    <p class="empty hidden">No match.</p>
+  </div><div class="sec" data-group>
+    <header style="border-top:none;padding-top:0"><p class="eyebrow">Silicon — where compute comes from</p></header>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Item</th><th class="num">Ref. price</th><th>What it is</th><th>Made by</th></tr></thead>
+      <tbody><tr data-search="polysilicon polysilicon the cheapest thing in the entire supply chain, and the start of all of it.">
+      <td><span class="chip" style="--c:#9e8a6b" title="Polysilicon — The cheapest thing in the entire supply chain, and the start of all of it."><b>◆</b>Polysilicon</span></td>
+      <td class="num">$3</td>
+      <td class="desc">The cheapest thing in the entire supply chain, and the start of all of it.</td>
+      <td class="sub2">Polysilicon Supply</td>
+    </tr><tr data-search="blank wafer blank_wafer 300mm of polished silicon. everything expensive happens to it later.">
+      <td><span class="chip" style="--c:#d8b04a" title="Blank Wafer — 300mm of polished silicon. Everything expensive happens to it later."><b>▬</b>Blank Wafer</span></td>
+      <td class="num">$45</td>
+      <td class="desc">300mm of polished silicon. Everything expensive happens to it later.</td>
+      <td class="sub2">Wafer Fab</td>
+    </tr><tr data-search="patterned wafer patterned_wafer tsmc n2 runs about $30,000 a wafer. n5 is ~$18.5k. the node is the price.">
+      <td><span class="chip" style="--c:#e0d13c" title="Patterned Wafer — TSMC N2 runs about $30,000 a wafer. N5 is ~$18.5k. The node is the price."><b>▭</b>Patterned Wafer</span></td>
+      <td class="num">$30,000</td>
+      <td class="desc">TSMC N2 runs about $30,000 a wafer. N5 is ~$18.5k. The node is the price.</td>
+      <td class="sub2">EUV Lithography</td>
+    </tr><tr data-search="logic die logic_die under 13% of a gpu bill of materials. the compute die is not what makes gpus expensive.">
+      <td><span class="chip" style="--c:#e08a3c" title="Logic Die — Under 13% of a GPU bill of materials. The compute die is NOT what makes GPUs expensive."><b>◫</b>Logic Die</span></td>
+      <td class="num">$850</td>
+      <td class="desc">Under 13% of a GPU bill of materials. The compute die is NOT what makes GPUs expensive.</td>
+      <td class="sub2">Die Test &amp; Dicing</td>
+    </tr><tr data-search="hbm4 stack hbm_stack 30-64% of accelerator bom. sk hynix holds ~58% share and 2026 supply is sold out.">
+      <td><span class="chip" style="--c:#f26d3d" title="HBM4 Stack — 30-64% of accelerator BOM. SK hynix holds ~58% share and 2026 supply is sold out."><b>▥</b>HBM4 Stack</span></td>
+      <td class="num">$550</td>
+      <td class="desc">30-64% of accelerator BOM. SK hynix holds ~58% share and 2026 supply is sold out.</td>
+      <td class="sub2">HBM Stacking</td>
+    </tr><tr data-search="packaged gpu accelerator cowos packaging, not lithography, is the real supply ceiling. booking window: 52-78 weeks.">
+      <td><span class="chip" style="--c:#ff6d3d" title="Packaged GPU — CoWoS packaging, not lithography, is the real supply ceiling. Booking window: 52-78 weeks."><b>▤</b>Packaged GPU</span></td>
+      <td class="num">$40,000</td>
+      <td class="desc">CoWoS packaging, not lithography, is the real supply ceiling. Booking window: 52-78 weeks.</td>
+      <td class="sub2">CoWoS Packaging</td>
+    </tr><tr data-search="nvl72 rack gpu_rack 72 gpus, ~120kw, about $3m. roughly $25,000 of capex per kw of rack load.">
+      <td><span class="chip" style="--c:#ffd24a" title="NVL72 Rack — 72 GPUs, ~120kW, about $3M. Roughly $25,000 of capex per kW of rack load."><b>⛁</b>NVL72 Rack</span></td>
+      <td class="num">$3M</td>
+      <td class="desc">72 GPUs, ~120kW, about $3M. Roughly $25,000 of capex per kW of rack load.</td>
+      <td class="sub2">Rack Integration</td>
+    </tr></tbody></table></div>
+    <p class="empty hidden">No match.</p>
+  </div>
+</section>
+  
+<section class="sec">
+  <header><p class="eyebrow">Progression</p><h2>The milestone track</h2><p class="lede">Requirements count units <em>sold into contracts</em>, cumulatively. Milestones complete in order, one at a time.</p></header>
+  <div class="panel"><div class="track2">
+  <div class="ms">
+    <div class="act">Act I</div>
+    <div>
+      <div class="name">First Users</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#8f9bb3" title="Draft Answer — Ungraded output from a cheap model. Needs a judge before you can ship it."><b>○</b>Draft Answer<i>40</i></span></span></div>
+    </div>
+    <div class="rw">+$1,500</div>
+  </div>
+  <div class="ms">
+    <div class="act">Act I</div>
+    <div>
+      <div class="name">Product-Market Fit</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#4aa3d8" title="Answer — Ship-quality output: a mid-tier model, or a cheap model plus an LLM judge."><b>●</b>Answer<i>80</i></span></span></div>
+    </div>
+    <div class="rw">+$4,000</div>
+  </div>
+  <div class="ms">
+    <div class="act">Act I</div>
+    <div>
+      <div class="name">Shipping Quality</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#35c9c0" title="Verified Answer — Passed evals and guardrails. What a paying business will actually accept."><b>✓</b>Verified Answer<i>60</i></span></span></div>
+    </div>
+    <div class="rw">+$12,000</div>
+  </div>
+  <div class="ms">
+    <div class="act">Act II</div>
+    <div>
+      <div class="name">Retrieval</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#35c9c0" title="Verified Answer — Passed evals and guardrails. What a paying business will actually accept."><b>✓</b>Verified Answer<i>220</i></span></span></div>
+    </div>
+    <div class="rw">+$35,000</div>
+  </div>
+  <div class="ms">
+    <div class="act">Act II</div>
+    <div>
+      <div class="name">The Security Review</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#a8a05b" title="SOC 2 Type II — Real cost $15k-50k plus a 3-12 month observation window you cannot buy past."><b>⛊</b>SOC 2 Type II<i>4</i></span></span></div>
+    </div>
+    <div class="rw">+$80,000</div>
+  </div>
+  <div class="ms">
+    <div class="act">Act II</div>
+    <div>
+      <div class="name">Frontier Reasoning</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#35c9c0" title="Verified Answer — Passed evals and guardrails. What a paying business will actually accept."><b>✓</b>Verified Answer<i>600</i></span></span></div>
+    </div>
+    <div class="rw">+$200k</div>
+  </div>
+  <div class="ms">
+    <div class="act">Act II</div>
+    <div>
+      <div class="name">Agents In Production</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#e08a3c" title="Agent Run — One task completed end to end. Costs many model calls; sells for one outcome."><b>✦</b>Agent Run<i>60</i></span></span></div>
+    </div>
+    <div class="rw">+$500k</div>
+  </div>
+  <div class="ms">
+    <div class="act">Act II</div>
+    <div>
+      <div class="name">The Cheap Provider</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#b0904a" title="ISO 42001 — The only AI-management certificate you can hand a procurement officer. 40-60% cheaper if you hold ISO 27001."><b>⌸</b>ISO 42001<i>4</i></span></span></div>
+    </div>
+    <div class="rw">+$1.2M</div>
+  </div>
+  <div class="ms">
+    <div class="act">Act III · Lab</div>
+    <div>
+      <div class="name">Own The Weights</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#f26d3d" title="Agent Workflow — Multi-agent: planner, workers, critic. Quality up, token burn up faster."><b>✧</b>Agent Workflow<i>40</i></span></span></div>
+    </div>
+    <div class="rw">+$3M</div>
+  </div>
+  <div class="ms">
+    <div class="act">Act III · Lab</div>
+    <div>
+      <div class="name">Sovereign Inference</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#4ce07a" title="Sovereign Answer — Produced on hardware you control. Never left your perimeter. Defence and health buy only this."><b>⛨</b>Sovereign Answer<i>200</i></span></span></div>
+    </div>
+    <div class="rw">+$9M</div>
+  </div>
+  <div class="ms">
+    <div class="act">Act III · Lab</div>
+    <div>
+      <div class="name">Cleared</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#c46f6f" title="HIPAA BAA — Azure OpenAI includes one by default. DeepSeek offers none — its policy excludes health data."><b>✚</b>HIPAA BAA<i>4</i></span><span class="chip" style="--c:#4ce07a" title="Sovereign Answer — Produced on hardware you control. Never left your perimeter. Defence and health buy only this."><b>⛨</b>Sovereign Answer<i>800</i></span></span></div>
+    </div>
+    <div class="rw">+$30M</div>
+  </div>
+  <div class="ms">
+    <div class="act">Act III · Fab</div>
+    <div>
+      <div class="name">Going Upstream</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#6f8fc4" title="FedRAMP Cert — Legacy path: $250k-2M and 12-18 months. The 20x fast lane cut agency review to ~5 weeks."><b>★</b>FedRAMP Cert<i>4</i></span></span></div>
+    </div>
+    <div class="rw">+$80M</div>
+  </div>
+  <div class="ms">
+    <div class="act">Act III · Fab</div>
+    <div>
+      <div class="name">The Chokepoint</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#4ce07a" title="Sovereign Answer — Produced on hardware you control. Never left your perimeter. Defence and health buy only this."><b>⛨</b>Sovereign Answer<i>3000</i></span></span></div>
+    </div>
+    <div class="rw">+$400M</div>
+  </div>
+  <div class="ms">
+    <div class="act">Act III · Fab</div>
+    <div>
+      <div class="name">Vertical Integration</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#ff6d3d" title="Packaged GPU — CoWoS packaging, not lithography, is the real supply ceiling. Booking window: 52-78 weeks."><b>▤</b>Packaged GPU<i>400</i></span></span></div>
+    </div>
+    <div class="rw">+$2B</div>
+  </div>
+  <div class="ms">
+    <div class="act">Act III · Fab</div>
+    <div>
+      <div class="name">Frontier Lab</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#ffd24a" title="NVL72 Rack — 72 GPUs, ~120kW, about $3M. Roughly $25,000 of capex per kW of rack load."><b>⛁</b>NVL72 Rack<i>12</i></span></span></div>
+    </div>
+    <div class="rw">+$8B</div>
+  </div>
+  <div class="ms">
+    <div class="act">Endgame</div>
+    <div>
+      <div class="name">Takeoff</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#ffd24a" title="Frontier Model — Grok-3 cost ~$218M. GPT-5-class runs are estimated $1.5-3B. Training cost is doubling every ~8 months."><b>✵</b>Frontier Model<i>3</i></span></span></div>
+    </div>
+    <div class="rw">+$50B</div>
+  </div>
+  <div class="ms">
+    <div class="act">Home Lab</div>
+    <div>
+      <div class="name">Weights On Your Desk</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#8f9bb3" title="Draft Answer — Ungraded output from a cheap model. Needs a judge before you can ship it."><b>○</b>Draft Answer<i>150</i></span></span></div>
+    </div>
+    <div class="rw">+$6,000</div>
+  </div>
+  <div class="ms">
+    <div class="act">Home Lab</div>
+    <div>
+      <div class="name">The Box In The Corner</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#3fc46a" title="On-Prem Answer — Generated on a box in the customer's own building. Never crossed a network they do not own — which is the entire product."><b>◈</b>On-Prem Answer<i>200</i></span></span></div>
+    </div>
+    <div class="rw">+$60,000</div>
+  </div>
+  <div class="ms">
+    <div class="act">Home Lab</div>
+    <div>
+      <div class="name">Somebody Else's Server</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#3fc46a" title="On-Prem Answer — Generated on a box in the customer's own building. Never crossed a network they do not own — which is the entire product."><b>◈</b>On-Prem Answer<i>900</i></span></span></div>
+    </div>
+    <div class="rw">+$450k</div>
+  </div>
+  <div class="ms">
+    <div class="act">Home Lab</div>
+    <div>
+      <div class="name">The Rack In The Basement</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#3fc46a" title="On-Prem Answer — Generated on a box in the customer's own building. Never crossed a network they do not own — which is the entire product."><b>◈</b>On-Prem Answer<i>2400</i></span></span></div>
+    </div>
+    <div class="rw">+$2.4M</div>
+  </div>
+  <div class="ms">
+    <div class="act">AI Slop</div>
+    <div>
+      <div class="name">Content Is Free</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#9e8fa8" title="Generated Text — Roughly 57% of sentences on the open web are already machine-translated. The slop is not coming; it arrived."><b>≡</b>Generated Text<i>80</i></span><span class="chip" style="--c:#c47fd0" title="Generated Image — About $0.04 an image at standard quality. Four cents is less than the cost of deciding whether you wanted it."><b>▩</b>Generated Image<i>30</i></span></span></div>
+    </div>
+    <div class="rw">+—</div>
+  </div>
+  <div class="ms">
+    <div class="act">AI Slop</div>
+    <div>
+      <div class="name">Somebody Pays For This</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#c47fd0" title="Generated Image — About $0.04 an image at standard quality. Four cents is less than the cost of deciding whether you wanted it."><b>▩</b>Generated Image<i>200</i></span></span></div>
+    </div>
+    <div class="rw">+$45,000</div>
+  </div>
+  <div class="ms">
+    <div class="act">AI Slop</div>
+    <div>
+      <div class="name">Ablated</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#c98a3d" title="Content Pack — Text, images and video assembled into something a buyer will actually take delivery of."><b>❑</b>Content Pack<i>150</i></span></span></div>
+    </div>
+    <div class="rw">+$400k</div>
+  </div>
+  <div class="ms">
+    <div class="act">AI Slop</div>
+    <div>
+      <div class="name">The Slop Machine</div>
+      <div class="req"><span class="lbl">sell</span><span class="stacks"><span class="chip" style="--c:#b03d5f" title="Adult Content — Pays like a regulated contract with none of the paperwork, and every incentive in the payment stack is pointed at you."><b>◉</b>Adult Content<i>400</i></span></span></div>
+    </div>
+    <div class="rw">+$6M</div>
+  </div></div></div>
+</section>
+
+  <footer>
+    <span>Generated by tools/build-reference-card.mjs — re-run after any content change</span>
+    <span>one unit = 100 operations ≈ 10k in / 2k out tokens</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var q = document.getElementById('q');
+  var hint = document.getElementById('qhint');
+  var rows = Array.prototype.slice.call(document.querySelectorAll('[data-search]'));
+  var groups = Array.prototype.slice.call(document.querySelectorAll('[data-group]'));
+  var base = hint.textContent;
+  function apply() {
+    var term = q.value.trim().toLowerCase();
+    var shown = 0;
+    rows.forEach(function (r) {
+      var hit = !term || r.getAttribute('data-search').indexOf(term) !== -1;
+      r.classList.toggle('hidden', !hit);
+      if (hit) shown++;
+    });
+    groups.forEach(function (g) {
+      var any = g.querySelector('[data-search]:not(.hidden)');
+      var list = g.querySelector('.nodelist, .tablewrap');
+      var empty = g.querySelector('.empty');
+      if (list) list.classList.toggle('hidden', !any);
+      if (empty) empty.classList.toggle('hidden', !!any);
+    });
+    hint.textContent = term ? shown + ' matching' : base;
+  }
+  q.addEventListener('input', apply);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '/' && document.activeElement !== q) { e.preventDefault(); q.focus(); }
+    if (e.key === 'Escape' && document.activeElement === q) { q.value = ''; apply(); q.blur(); }
+  });
+})();
+</script>

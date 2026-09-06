@@ -1,0 +1,229 @@
+# Publishing AIfor.study — plan
+
+**Status:** plan only, nothing built yet. Written 6 Sep 2026.
+
+Today the game is a pure client-side React/Vite SPA (~6.6k lines) that saves to
+`localStorage` and talks to no server. Publishing it means adding a backend for
+the first time. This document is the plan for that.
+
+## Decisions taken
+
+| Decision | Choice |
+| --- | --- |
+| Hosting + backend | Cloudflare all-in — Worker with static assets, D1, KV |
+| Login | Email + password |
+| Saves | Stay in `localStorage`; no cloud sync yet |
+| Gating | Landing + waitlist for the public; game only loads for approved sessions |
+| Approval | Manual — you review each signup, approve via Claude Code |
+| Domain | `aifor.study` |
+
+## Architecture
+
+```
+                    aifor.study (Cloudflare DNS)
+                              │
+                    ┌─────────▼──────────┐
+                    │  Worker (index.ts) │
+                    └─────────┬──────────┘
+          ┌───────────────────┼───────────────────┐
+          │                   │                   │
+   static assets          /api/*              /play/*
+   (landing, auth UI)     auth endpoints      auth check → KV
+   public                 D1: users,          game bundle
+                          sessions            private
+```
+
+One Worker, one `wrangler.jsonc`, one `npx wrangler deploy`. No CORS, no second
+vendor, no separate API host.
+
+**Why the game lives in KV rather than in static assets:** anything Cloudflare
+serves as a static asset is a public URL. To make "the bundle only loads for
+approved sessions" true rather than cosmetic, the game has to be fetched
+through code that can check a cookie. Two Vite builds — the public shell into
+`dist/`, the game into `dist-game/` which a deploy script uploads to KV.
+
+### Cost
+
+| Item | Cost |
+| --- | --- |
+| Workers Paid plan | $5/mo |
+| D1, KV, Turnstile, Web Analytics | free tier, comfortably |
+| Resend (transactional email) | free to 3,000/mo |
+| `aifor.study` domain | already yours |
+
+**≈ $5/mo.** The paid plan is not optional-ish here — see the password note
+below.
+
+### The password-hashing constraint
+
+The Workers runtime is not Node, so there is no `bcrypt` and no `argon2`. The
+hash is PBKDF2-SHA256 via WebCrypto, which is native and fine, but an
+OWASP-sized iteration count (~210k) burns real CPU — plausibly 50–150ms. The
+**free plan caps a request at 10ms of CPU**; the paid plan gives 30s. So:
+
+- Budget the $5/mo plan, or
+- measure first (`wrangler tail` reports CPU time) and only pay if you exceed.
+
+Do **not** solve this by lowering iterations into the weak range, and do **not**
+hash on the client — client-side hashing makes the hash *become* the password.
+
+This is the concrete cost of email+password over magic links. It is a fine cost
+to pay; just pay it deliberately.
+
+## Data model (D1)
+
+```sql
+CREATE TABLE users (
+  id              TEXT PRIMARY KEY,          -- uuid v4
+  email           TEXT NOT NULL UNIQUE,      -- stored lowercased, trimmed
+  password_hash   TEXT NOT NULL,             -- pbkdf2$<iters>$<salt_b64>$<hash_b64>
+  status          TEXT NOT NULL DEFAULT 'pending',  -- pending|approved|rejected|blocked
+  email_verified_at INTEGER,
+  note            TEXT,                      -- "why do you want in?" from the form
+  created_at      INTEGER NOT NULL,
+  approved_at     INTEGER,
+  reviewed_note   TEXT,                      -- your reason, for your own memory
+  signup_country  TEXT,                      -- cf.country, no raw IP stored
+  signup_ua       TEXT,
+  last_login_at   INTEGER
+);
+
+CREATE TABLE sessions (
+  token_hash  TEXT PRIMARY KEY,              -- sha256 of the cookie value
+  user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at  INTEGER NOT NULL,
+  expires_at  INTEGER NOT NULL,
+  last_seen_at INTEGER
+);
+CREATE INDEX sessions_user ON sessions(user_id);
+
+CREATE TABLE email_tokens (
+  token_hash TEXT PRIMARY KEY,
+  user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  purpose    TEXT NOT NULL,                  -- verify|reset
+  expires_at INTEGER NOT NULL,
+  used_at    INTEGER
+);
+
+CREATE TABLE auth_attempts (                 -- cheap rate limiting + audit
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  key       TEXT NOT NULL,                   -- "login:<email>" or "ip:<hash>"
+  at        INTEGER NOT NULL,
+  ok        INTEGER NOT NULL
+);
+CREATE INDEX auth_attempts_key_at ON auth_attempts(key, at);
+```
+
+Two things worth noticing: sessions store the **hash** of the cookie value, so
+a database leak does not hand out live sessions; and signup records a country
+and user-agent but not a raw IP, which keeps the GDPR surface small while still
+giving you enough to spot a bot wave.
+
+## Endpoints
+
+| Method | Path | Does |
+| --- | --- | --- |
+| POST | `/api/register` | validate, Turnstile check, insert `pending`, email a verify link |
+| GET | `/api/verify?token=` | mark `email_verified_at`, land on "you're in the queue" |
+| POST | `/api/login` | verify password, refuse unless `approved`, set session cookie |
+| POST | `/api/logout` | delete session, clear cookie |
+| GET | `/api/me` | `{ email, status }` or 401 — the SPA gates on this |
+| POST | `/api/forgot`, `/api/reset` | password reset (you own this because you own passwords) |
+| GET | `/play`, `/play/assets/*` | session check → stream game bundle from KV |
+
+Session cookie: `HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=30d`.
+
+## Security checklist
+
+- **Turnstile on the register form.** Free, Cloudflare-native. Spam signups
+  cost you review time, which is the scarcest thing in this design.
+- **Email verification before review.** Even with manual approval, verify the
+  address first so your queue holds real people, not typos.
+- **Rate limit** `/api/login` and `/api/register` — per email and per IP hash,
+  via `auth_attempts`, plus a WAF rate-limiting rule as a second layer.
+- **Generic errors.** "Email or password is incorrect" for every login failure.
+  Register always answers "check your email" whether or not the address exists.
+- **CSRF:** `SameSite=Lax` plus requiring `Content-Type: application/json` on
+  every mutating request.
+- **Secrets** via `wrangler secret put` (`RESEND_API_KEY`, `TURNSTILE_SECRET`).
+  Never in the repo, never in `wrangler.jsonc`.
+- **Never log** request bodies on auth routes.
+
+## Phases
+
+### Phase 0 — repo and pipeline (½ day)
+
+The project currently sits at `AI builder game/AI builder game/` with a sibling
+`__MACOSX/` — flatten that first, it will otherwise be baked into the repo
+forever.
+
+1. Flatten the directory, delete `__MACOSX/`.
+2. `git init`, first commit, push to a **private** GitHub repo.
+3. `npm i -D wrangler`, add `wrangler.jsonc` with the assets binding.
+4. `npx wrangler deploy` → verify on the `*.workers.dev` URL.
+
+Deploy to `workers.dev` only at this stage. Do **not** attach `aifor.study`
+until the gate exists, or the game is briefly public at its real address.
+
+### Phase 1 — auth backend (1–2 days)
+
+D1 database, schema migration, the endpoints above, Resend wired up with
+domain verification (SPF + DKIM records on `aifor.study`). Test every path
+against a local `wrangler dev --remote`.
+
+### Phase 2 — landing page and auth UI (1 day)
+
+A real landing page: what the game is, a screenshot or two, the signup form
+with the "why do you want in?" field, and login. This is the public face of
+`aifor.study`, so it is worth more than a form on a white page. The existing
+`index.html` becomes the shell; the game moves behind `/play`.
+
+### Phase 3 — the hard gate (½ day)
+
+Second Vite entry building the game to `dist-game/`, a deploy script that
+uploads those files to KV, and the `/play/*` Worker route that checks the
+session before serving. Response headers `Cache-Control: private, no-store`.
+
+### Phase 4 — admin tooling (2–3 h)
+
+`tools/admin.mjs`, wrapping `wrangler d1 execute`:
+
+```bash
+node tools/admin.mjs pending           # table of unreviewed signups
+node tools/admin.mjs approve <email>   # flips status, sends the welcome email
+node tools/admin.mjs reject <email> --reason "..."
+node tools/admin.mjs stats
+```
+
+Then `.claude/commands/review-signups.md` so that typing `/review-signups` in
+Claude Code pulls the pending queue, summarises it, and flags the things worth
+flagging — disposable-domain addresses, empty notes, several signups from one
+country in one minute. You say yes or no per person; approving sends mail to a
+stranger, so it gets confirmed each time rather than batched silently.
+
+### Phase 5 — launch (½ day)
+
+Nameservers to Cloudflare, custom domain on the Worker, `www` redirect,
+Cloudflare Web Analytics (cookieless, so no consent banner), privacy policy and
+terms, and a data-deletion route — you are storing emails and password hashes,
+which makes you a data controller.
+
+**Roughly 4–5 focused days.**
+
+## Deliberately not doing yet
+
+- **Cloud saves.** Add once people actually play. It is the natural next step
+  and the schema above leaves room for it.
+- **OAuth / Google sign-in.** Would remove the password surface entirely; keep
+  it in the back pocket.
+- **A playable demo tier.** Better funnel, but it needs the content split and
+  a soft gate, which contradicts the hard gate you asked for. Revisit if
+  waitlist conversion is poor.
+
+## Open questions
+
+1. Where is `aifor.study` registered? Nameservers need to move to Cloudflare.
+2. Do you want a signup notification email per registration, or will you just
+   run `/review-signups` when you feel like it?
+3. Is the waitlist capped? A cap changes the landing copy ("50 spots") and
+   gives you a reason to say no.

@@ -1,0 +1,521 @@
+import {
+  ALL_VENDORS,
+  BALANCE,
+  RECIPES_BY_BUILDING,
+  VENDORS,
+  building,
+  item,
+  poolColor,
+  poolName,
+  recipe,
+  type Vendor,
+} from '../data';
+import {
+  removeLink,
+  currentCost,
+  groupMachines,
+  groupOf,
+  removeMachine,
+  removeMachines,
+  repairCost,
+  repairMachine,
+  triggerCraft,
+  ungroup,
+  setClock,
+  setEnabled,
+  setRecipe,
+  setVendor,
+} from '../engine/factory';
+import {
+  machineComputeDraw,
+  machineDrawPerMin,
+  machineRatePerMin,
+  poolOf,
+  statusLabel,
+} from '../engine/simulate';
+import { onSiteCount } from '../engine/simulate';
+import { money, tpm } from './format';
+import type { Selection } from './Canvas';
+import type { Game } from './useGame';
+
+interface Props {
+  game: Game;
+  selection: Selection;
+  setSelection: (s: Selection) => void;
+}
+
+const round = (n: number): string => (Math.round(n * 10) / 10).toString();
+
+export default function Inspector({ game, selection, setSelection }: Props) {
+  const { state, act, toast } = game;
+
+  if (!selection) {
+    return (
+      <p className="empty">
+        Select a machine to set its recipe, clock speed and power draw. Select a belt to remove it.
+      </p>
+    );
+  }
+
+  if (selection.kind === 'link') {
+    const link = state.links[selection.id];
+    if (!link) return <p className="empty">Belt is gone.</p>;
+    const from = state.machines[link.fromId];
+    const to = state.machines[link.toId];
+    return (
+      <>
+        <div className="field">
+          <label>Belt</label>
+          <div className="kv">
+            <span className="k">Carrying</span>
+            <span>{item(link.itemId).name}</span>
+          </div>
+          <div className="kv">
+            <span className="k">From</span>
+            <span>{building(from?.buildingId ?? '')?.name ?? '—'}</span>
+          </div>
+          <div className="kv">
+            <span className="k">To</span>
+            <span>{building(to?.buildingId ?? '')?.name ?? '—'}</span>
+          </div>
+          <div className="kv">
+            <span className="k">Capacity</span>
+            <span className="mono">{BALANCE.linkRatePerMin}/min</span>
+          </div>
+        </div>
+        <button
+          className="danger"
+          style={{ width: '100%' }}
+          onClick={() => {
+            act((s) => removeLink(s, link.id));
+            setSelection(null);
+          }}
+        >
+          Remove belt
+        </button>
+      </>
+    );
+  }
+
+  const selected = selection.ids.map((id) => state.machines[id]).filter(Boolean);
+  if (!selected.length) return <p className="empty">Machine is gone.</p>;
+
+  /*
+   * More than one node selected. The panel drops to the operations that
+   * genuinely apply to a block — grouping, power, demolition — rather than
+   * pretending a recipe dropdown means anything across six chassis.
+   */
+  if (selected.length > 1) {
+    const ids = selected.map((m) => m.id);
+    const counts = new Map<string, number>();
+    for (const m of selected) counts.set(m.buildingId, (counts.get(m.buildingId) ?? 0) + 1);
+    const refund = selected.reduce(
+      (sum, m) => sum + currentCost(state, m.buildingId) * BALANCE.refundRate,
+      0,
+    );
+    const monthly = selected.reduce((sum, m) => sum + (building(m.buildingId)?.monthlyCost ?? 0), 0);
+    const draw = selected.reduce((sum, m) => sum + machineComputeDraw(m), 0);
+    const anyOff = selected.some((m) => !m.enabled);
+    const groupIds = [...new Set(selected.map((m) => m.groupId).filter(Boolean))] as string[];
+
+    return (
+      <>
+        <div className="field">
+          <div className="card" style={{ marginBottom: 10 }}>
+            <div className="head">
+              <b>{selected.length} nodes selected</b>
+            </div>
+            {[...counts.entries()].map(([id, n]) => (
+              <div className="kv" key={id}>
+                <span className="k">{building(id)?.name ?? id}</span>
+                <span className="mono">×{n}</span>
+              </div>
+            ))}
+            <div className="kv">
+              <span className="k">Compute draw</span>
+              <span className="mono">−{tpm(draw)} TPM</span>
+            </div>
+            {monthly > 0 && (
+              <div className="kv">
+                <span className="k">Subscriptions</span>
+                <span className="mono">{money(monthly)}/mo</span>
+              </div>
+            )}
+            <div className="kv">
+              <span className="k">Scrap value</span>
+              <span className="mono">{money(Math.floor(refund))}</span>
+            </div>
+          </div>
+        </div>
+
+        <button
+          style={{ width: '100%', marginBottom: 6 }}
+          onClick={() => {
+            const outcome = act((s) => groupMachines(s, ids));
+            if (!outcome.ok) toast(outcome.reason, 'bad');
+            else toast(`Grouped ${ids.length} nodes — they now fail together`, 'good');
+          }}
+        >
+          Group these {ids.length} nodes
+        </button>
+        {groupIds.length > 0 && (
+          <button
+            style={{ width: '100%', marginBottom: 6 }}
+            onClick={() => {
+              act((s) => groupIds.forEach((g) => ungroup(s, g)));
+              toast('Ungrouped', 'info');
+            }}
+          >
+            Ungroup
+          </button>
+        )}
+
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            style={{ flex: 1 }}
+            onClick={() => act((s) => ids.forEach((id) => setEnabled(s, id, anyOff)))}
+          >
+            {anyOff ? 'Switch all on' : 'Switch all off'}
+          </button>
+          <button
+            className="danger"
+            style={{ flex: 1 }}
+            onClick={() => {
+              const result = act((s) => removeMachines(s, ids));
+              setSelection(null);
+              toast(`Demolished ${result.removed} — refunded ${money(result.refund)}`, 'info');
+            }}
+          >
+            Demolish all
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  const machine = selected[0];
+
+  const b = building(machine.buildingId);
+  const r = recipe(machine.recipeId);
+  if (!b) return null;
+
+  const options = (RECIPES_BY_BUILDING[b.id] ?? []).filter((opt) =>
+    state.unlockedRecipes.includes(opt.id),
+  );
+  const status = state.status[machine.id] ?? 'idle';
+  const isCapacity = b.kind === 'capacity';
+  const nodePool = poolOf(machine);
+  const poolStat = nodePool ? state.compute.pools[nodePool] : undefined;
+  const refund = currentCost(state, machine.buildingId) * BALANCE.refundRate;
+  const selectedGroup = groupOf(state, machine.id);
+  /**
+   * Nodes close enough to be one rig. Grouping is opt-in and proximity is the
+   * only signal we have for "these belong together" — the player laid them out.
+   */
+  const groupCandidates = Object.values(state.machines).filter(
+    (o) =>
+      o.id !== machine.id &&
+      !o.groupId &&
+      Math.abs(o.x - machine.x) < 320 &&
+      Math.abs(o.y - machine.y) < 260,
+  );
+
+  return (
+    <>
+      <div className="field">
+        <div className="card" style={{ marginBottom: 10 }}>
+          <div className="head">
+            <b>{b.name}</b>
+            <span
+              className="badge"
+              style={{
+                background: status === 'running' ? '#1d3d28' : '#3d2a1d',
+                color: status === 'running' ? 'var(--good)' : 'var(--warn)',
+              }}
+            >
+              {statusLabel[status]}
+            </span>
+          </div>
+          <div className="blurb">{b.description}</div>
+          <div className="kv">
+            <span className="k">Compute</span>
+            <span className="mono">
+              {isCapacity
+                ? `+${tpm(b.computeSupply * machine.clock)} TPM`
+                : `−${tpm(machineComputeDraw(machine))} TPM`}
+            </span>
+          </div>
+          {nodePool && (
+            <div className="kv">
+              <span className="k">{isCapacity ? 'Supplies' : 'Limited by'}</span>
+              <span className="mono" style={{ color: poolColor(nodePool) }}>
+                {poolName(nodePool)}
+                {poolStat && poolStat.satisfaction < 0.999
+                  ? ` · ${Math.round(poolStat.satisfaction * 100)}%`
+                  : ''}
+              </span>
+            </div>
+          )}
+          {b.monthlyCost > 0 && (
+            <div className="kv">
+              <span className="k">Subscription</span>
+              <span className="mono">{money(b.monthlyCost)}/mo</span>
+            </div>
+          )}
+          {b.dataRisk !== 0 && (
+            <div className="kv">
+              <span className="k">Data risk</span>
+              <span
+                className="mono"
+                style={{ color: b.dataRisk > 0 ? 'var(--bad)' : 'var(--good)' }}
+              >
+                {b.dataRisk > 0 ? `+${b.dataRisk} exposure` : `${b.dataRisk} exposure`}
+              </span>
+            </div>
+          )}
+          {r?.cost ? (
+            <div className="kv">
+              <span className="k">API spend</span>
+              <span className="mono">{money(r.cost)} / craft</span>
+            </div>
+          ) : null}
+          {r?.payout ? (
+            <div className="kv">
+              <span className="k">Contract pays</span>
+              <span className="mono" style={{ color: 'var(--good)' }}>
+                {money(r.payout)} / craft
+              </span>
+            </div>
+          ) : null}
+          {r?.maxExposure !== undefined ? (
+            <div className="kv">
+              <span className="k">Exposure ceiling</span>
+              <span
+                className="mono"
+                style={{ color: state.exposure > r.maxExposure ? 'var(--bad)' : 'var(--good)' }}
+              >
+                {Math.round(state.exposure)} / {r.maxExposure}
+              </span>
+            </div>
+          ) : null}
+          {r?.note ? <div className="blurb" style={{ marginTop: 8, opacity: 0.75 }}>{r.note}</div> : null}
+        </div>
+      </div>
+
+      {b.vendorScoped && (
+        <div className="field">
+          <label>
+            Provider
+            {!machine.vendor && <span style={{ color: 'var(--warn)' }}> — pick one</span>}
+          </label>
+          <select
+            value={machine.vendor ?? ''}
+            onChange={(e) => {
+              const result = act((st) => setVendor(st, machine.id, e.target.value || null));
+              if (!result.ok) toast(result.reason, 'bad');
+            }}
+          >
+            <option value="">— none —</option>
+            {ALL_VENDORS.map((v) => (
+              <option key={v} value={v}>
+                {VENDORS[v].name}
+              </option>
+            ))}
+          </select>
+          <div className="hintline">
+            Rate limits do not pool across providers. This buys throughput for{' '}
+            {machine.vendor ? VENDORS[machine.vendor as Vendor].name : 'whichever you choose'} only.
+            {b.servesNodes !== undefined &&
+              ` A free tier covers ${b.servesNodes} node; a second on the same provider stops it counting.`}
+          </div>
+        </div>
+      )}
+
+      {true && (
+        <div className="field">
+          <label>Recipe</label>
+          {options.length === 0 ? (
+            <p className="empty" style={{ padding: 0 }}>
+              No unlocked recipe fits this chassis yet.
+            </p>
+          ) : (
+            <select
+              value={machine.recipeId ?? ''}
+              onChange={(e) => {
+                const result = act((s) => setRecipe(s, machine.id, e.target.value || null));
+                if (!result.ok) toast(result.reason, 'bad');
+              }}
+            >
+              <option value="">— none —</option>
+              {options.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
+
+      {r && (
+        <div className="field">
+          <label>Throughput at {Math.round(machine.clock * 100)}%</label>
+          {r.inputs.map((s) => (
+            <div className="kv" key={`in-${s.itemId}`}>
+              <span className="k">
+                ← {item(s.itemId).name}{' '}
+                <span className="mono" style={{ opacity: 0.7 }}>
+                  ({Math.floor(machine.inputs[s.itemId] ?? 0)} held)
+                </span>
+              </span>
+              <span className="mono">{round(machineDrawPerMin(machine, s.itemId))}/min</span>
+            </div>
+          ))}
+          {r.outputs.map((s) => (
+            <div className="kv" key={`out-${s.itemId}`}>
+              <span className="k">
+                → {item(s.itemId).name}{' '}
+                <span className="mono" style={{ opacity: 0.7 }}>
+                  ({Math.floor(machine.outputs[s.itemId] ?? 0)} held)
+                </span>
+              </span>
+              <span className="mono">{round(machineRatePerMin(machine, s.itemId))}/min</span>
+            </div>
+          ))}
+          {r.inputs.length === 0 && r.outputs.length === 0 && (
+            <div className="kv">
+              <span className="k">Cycle</span>
+              <span className="mono">{r.seconds}s, no items</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {true && (
+        <div className="field">
+          <label>
+            Clock speed — {Math.round(machine.clock * 100)}%
+            {!isCapacity && machine.clock > 1 && (
+              <span style={{ color: 'var(--warn)' }}>
+                {' '}
+                (compute ×{round(machine.clock ** BALANCE.clockExponent)})
+              </span>
+            )}
+          </label>
+          <input
+            type="range"
+            min={BALANCE.minClock * 100}
+            max={BALANCE.maxClock * 100}
+            step={5}
+            value={machine.clock * 100}
+            onChange={(e) => act((s) => setClock(s, machine.id, Number(e.target.value) / 100))}
+          />
+        </div>
+      )}
+
+      {/*
+        A blown node supplies nothing, produces nothing, fails every on-site
+        audit it was counting toward — and still bills its monthly cost. Repair
+        is priced at today's replacement cost, not what you originally paid.
+      */}
+      {machine.broken && (
+        <div className="tip-warn" style={{ marginBottom: 8 }}>
+          <b>Blown.</b> Whatever this bay was holding is gone. It is still billing{' '}
+          {money(b.monthlyCost)}/mo until you repair it or switch it off.
+          <button
+            style={{ width: '100%', marginTop: 8 }}
+            disabled={!!machine.repairing}
+            onClick={() => {
+              const outcome = act((s) => repairMachine(s, machine.id));
+              if (!outcome.ok) toast(outcome.reason, 'bad');
+              else toast('Repair started', 'good');
+            }}
+          >
+            {machine.repairing
+              ? `Repairing… ${Math.ceil(machine.repairing)}s`
+              : `Repair for ${money(repairCost(state, machine.id))}`}
+          </button>
+        </div>
+      )}
+
+      {r?.manual && !machine.broken && (
+        <button
+          style={{ width: '100%', marginBottom: 8 }}
+          disabled={machine.crafting || !machine.enabled}
+          onClick={() => {
+            const outcome = act((s) => triggerCraft(s, machine.id));
+            if (!outcome.ok) toast(outcome.reason, 'bad');
+          }}
+        >
+          {machine.crafting ? 'Running…' : '⚡ Generate'}
+        </button>
+      )}
+
+      {r?.requiresOnSite && (
+        <div className="tip-kv">
+          <span>On-site audit</span>
+          <span className="mono">
+            {onSiteCount(state, r.requiresOnSite.tier)} / {r.requiresOnSite.count}{' '}
+            {r.requiresOnSite.tier}
+          </span>
+        </div>
+      )}
+
+      {(machine.groupId || selectedGroup.length > 1) && (
+        <div style={{ marginBottom: 8 }}>
+          <div className="tip-kv">
+            <span>Group</span>
+            <span className="mono">{selectedGroup.length} nodes fail together</span>
+          </div>
+          {machine.groupId && (
+            <button
+              style={{ width: '100%', marginTop: 6 }}
+              onClick={() => {
+                act((s) => ungroup(s, machine.groupId!));
+                toast('Ungrouped', 'info');
+              }}
+            >
+              Ungroup
+            </button>
+          )}
+        </div>
+      )}
+
+      {!machine.groupId && groupCandidates.length > 0 && (
+        <button
+          style={{ width: '100%', marginBottom: 8 }}
+          onClick={() => {
+            const outcome = act((s) =>
+              groupMachines(s, [machine.id, ...groupCandidates.map((o) => o.id)]),
+            );
+            if (!outcome.ok) toast(outcome.reason, 'bad');
+            else toast(`Grouped ${groupCandidates.length + 1} nodes — they now fail together`, 'good');
+          }}
+        >
+          Group with {groupCandidates.length} nearby node
+          {groupCandidates.length === 1 ? '' : 's'}
+        </button>
+      )}
+
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button
+          style={{ flex: 1 }}
+          onClick={() => act((s) => setEnabled(s, machine.id, !machine.enabled))}
+        >
+          {machine.enabled ? 'Switch off' : 'Switch on'}
+        </button>
+        <button
+          className="danger"
+          style={{ flex: 1 }}
+          onClick={() => {
+            act((s) => removeMachine(s, machine.id));
+            setSelection(null);
+            toast(`Refunded ${money(Math.floor(refund))}`, 'info');
+          }}
+        >
+          Demolish
+        </button>
+      </div>
+    </>
+  );
+}

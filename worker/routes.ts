@@ -110,7 +110,15 @@ export async function login(request: Request, env: Env): Promise<Response> {
 
   // Account state is only revealed once the password proved ownership.
   if (user.status === 'pending') {
-    return fail(403, 'pending_approval', 'Your account is waiting to be reviewed. You will get an email when it opens.');
+    // Do not promise mail we cannot send. With no Resend key configured the
+    // only way someone learns they were approved is by trying again.
+    return fail(
+      403,
+      'pending_approval',
+      env.RESEND_API_KEY
+        ? 'Your account is waiting to be reviewed. You will get an email when it opens.'
+        : 'Your account is waiting to be reviewed. Try signing in again in a day or so.',
+    );
   }
   if (user.status !== 'approved') {
     return fail(403, 'not_approved', 'This account cannot sign in.');

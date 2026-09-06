@@ -419,3 +419,42 @@ moment of review rather than only in this document.
 `users.email_verified_at` is **kept but unused** — nullable, always null for
 new rows. Leaving the column costs nothing and means re-enabling verification
 later is a code change rather than a migration.
+
+
+## Email off for now — 6 Sep 2026
+
+No Resend account yet. The code stays; it is inert without a key, and the app
+no longer promises mail it cannot send.
+
+**Two switches, and they must agree:**
+
+| Switch | Where | Turns on |
+| --- | --- | --- |
+| `RESEND_API_KEY` | Worker secret | actually sending mail |
+| `VITE_EMAIL_ENABLED=true` | `.env` | the reset link, and "watch your inbox" copy |
+
+`npm run check:secrets` cross-checks them: it **blocks** a deploy where the
+flag is on but the key is missing (the app would offer a reset that goes
+nowhere) and warns when the key is set but the flag is not.
+
+**What is off right now:**
+
+- Approving somebody tells them nothing. They find out by trying to sign in
+  again, which is what the pending screen now says. The Worker picks that
+  wording from whether `RESEND_API_KEY` exists, so it corrects itself.
+- The forgot-password link is hidden. A forgotten password can only be fixed
+  by you — Phase 4's CLI should grow a `set-password` command for that.
+
+**To turn email on later:** verify `aifor.study` in Resend (two DNS records in
+the Cloudflare zone, already yours), `npx wrangler secret put RESEND_API_KEY`,
+set `VITE_EMAIL_ENABLED=true` in `.env`, rebuild. No code change.
+
+### check:secrets no longer blocks on missing secrets
+
+Missing secrets are now a deliberate choice, so they warn loudly and let the
+deploy through. Only genuine breakage stops it: the placeholder database id,
+being logged out, or the two email switches disagreeing.
+
+It also calls `node_modules/wrangler/bin/wrangler.js` directly rather than
+going through `npx` — Node 24 on Windows refuses to spawn a `.cmd` without a
+shell, and `shell: true` concatenates arguments unescaped.

@@ -4,6 +4,17 @@ import Turnstile, { turnstileEnabled } from './Turnstile';
 
 type Mode = 'register' | 'login' | 'forgot';
 
+/**
+ * Whether the app may promise email.
+ *
+ * Off by default: with no RESEND_API_KEY on the Worker, mail is logged and
+ * never sent, so offering a password reset would be a dead end and telling
+ * someone to watch their inbox would be a lie. Set VITE_EMAIL_ENABLED=true in
+ * .env at the same time as you set the Worker's key — `npm run check:secrets`
+ * warns if the two disagree.
+ */
+const EMAIL_ENABLED = import.meta.env.VITE_EMAIL_ENABLED === 'true';
+
 // Kept in step with MIN_PASSWORD_LENGTH in worker/security.ts, which is
 // the check that actually decides.
 const MIN_PASSWORD = 8;
@@ -83,8 +94,11 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
       <div className="done">
         <h3>You are in the queue</h3>
         <p>
-          Your request has been added. Access is reviewed by hand, one at a time, so it will not be instant
-          — you will get an email when your account opens.
+          Your request has been added. Access is reviewed by hand, one at a time, so it will not be
+          instant.{' '}
+          {EMAIL_ENABLED
+            ? 'You will get an email when your account opens.'
+            : 'Come back and try signing in again in a day or so.'}
         </p>
       </div>
     );
@@ -189,7 +203,10 @@ function LoginForm({
         <h3>You are in the queue</h3>
         <p>
           Your request is waiting to be reviewed. Requests are read by a person, so this takes a little
-          while. You will get an email the moment your account opens.
+          while.{' '}
+          {EMAIL_ENABLED
+            ? 'You will get an email the moment your account opens.'
+            : 'Try signing in again in a day or so — it will just work once you are in.'}
         </p>
         <div className="pending-actions">
           <button type="button" onClick={() => setProblem(null)}>
@@ -232,11 +249,13 @@ function LoginForm({
         {busy ? 'Signing in…' : 'Sign in'}
       </button>
 
-      <div className="form-foot">
-        <button type="button" className="linkish" onClick={onForgot}>
-          Forgot your password?
-        </button>
-      </div>
+      {EMAIL_ENABLED && (
+        <div className="form-foot">
+          <button type="button" className="linkish" onClick={onForgot}>
+            Forgot your password?
+          </button>
+        </div>
+      )}
     </form>
   );
 }

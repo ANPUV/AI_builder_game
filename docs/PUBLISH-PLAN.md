@@ -239,9 +239,10 @@ which makes you a data controller.
 - `git init` on `main`, two commits, clean tree. `.gitignore` now covers
   `.wrangler/`, `.dev.vars` and `.env*` — the secret files, before any secret
   exists to leak. `.gitattributes` normalises line endings to LF.
-- Node pinned to 24.20.0 via `.node-version` (installed with fnm). The machine
-  was on 20.17.0, which **Wrangler hard-refuses** (needs ≥22) and Vite 7 only
-  warns about (wants ≥22.12). Both are happy now.
+- Node upgraded 20.17.0 → **24.19.0 LTS** system-wide (winget
+  `OpenJS.NodeJS.LTS`); fnm removed entirely. The machine was on 20.17.0, which
+  **Wrangler hard-refuses** (needs ≥22) and Vite 7 only warns about (wants
+  ≥22.12). One Node, no version manager, nothing to activate per shell.
 - `wrangler` installed, `wrangler.jsonc` written and validated by
   `--dry-run`. `npm audit` clean.
 - Deploy target: **`beta.aifor.study`**, static assets only.
@@ -264,3 +265,24 @@ your real domain — the thing Phase 0 was supposed to avoid by staying on
 `beta.aifor.study`, policy = allow your email only. Free to 50 users, email
 one-time-code, no code to write, and it comes off in one click when the real
 gate ships in Phase 3. Do this *before* the first deploy, not after.
+
+### Why fnm was dropped (6 Sep 2026)
+
+fnm was tried first and abandoned. Its shell hook cannot work under **Windows
+PowerShell 5.1**: `fnm env` puts a *junction* on `PATH`, and PS 5.1 will not
+resolve native commands through a junction'd `PATH` entry. The result is
+silent and confusing — fnm prints "Using Node v24.20.0" while `node -v` still
+answers `v20.17.0`, because lookup fell through to `C:\Program Files
+odejs`.
+Developer Mode was already on and every junction was valid; the mechanism
+itself is the problem.
+
+System Node plus `engines` in `package.json` is the simpler contract here.
+
+### A stale dev server was holding the old tree
+
+A `npm run dev` from before the flatten was still running out of
+`AI builder game/AI builder game/`. It was what blocked moving `src`, deleting
+the empty nested directory, and later `npm ci` (an `EPERM` on
+`esbuild.exe`). Stopped. If file operations in this repo start failing with
+`EPERM` or "resource busy", look for a dev server first.

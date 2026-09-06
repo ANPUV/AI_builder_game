@@ -227,3 +227,40 @@ which makes you a data controller.
    run `/review-signups` when you feel like it?
 3. Is the waitlist capped? A cap changes the landing copy ("50 spots") and
    gives you a reason to say no.
+
+---
+
+## Phase 0 status — 6 Sep 2026
+
+**Done:**
+
+- Flattened the nested `AI builder game/AI builder game/` layout; deleted the
+  2,744 AppleDouble files in `__MACOSX/`.
+- `git init` on `main`, two commits, clean tree. `.gitignore` now covers
+  `.wrangler/`, `.dev.vars` and `.env*` — the secret files, before any secret
+  exists to leak. `.gitattributes` normalises line endings to LF.
+- Node pinned to 24.20.0 via `.node-version` (installed with fnm). The machine
+  was on 20.17.0, which **Wrangler hard-refuses** (needs ≥22) and Vite 7 only
+  warns about (wants ≥22.12). Both are happy now.
+- `wrangler` installed, `wrangler.jsonc` written and validated by
+  `--dry-run`. `npm audit` clean.
+- Deploy target: **`beta.aifor.study`**, static assets only.
+
+**Blocked on you (both need your Cloudflare credentials):**
+
+1. `npm run cf:login` — interactive browser OAuth.
+2. `aifor.study` nameservers must point at Cloudflare before the custom domain
+   on `beta.` will bind.
+
+Then `npm run deploy`.
+
+### Before beta goes up: put Cloudflare Access in front of it
+
+`beta.aifor.study` with no gate is the whole game, public, at a real address on
+your real domain — the thing Phase 0 was supposed to avoid by staying on
+`workers.dev`. A beta subdomain is less discoverable, not private.
+
+**Cloudflare Zero Trust → Access → Add an application**, self-hosted,
+`beta.aifor.study`, policy = allow your email only. Free to 50 users, email
+one-time-code, no code to write, and it comes off in one click when the real
+gate ships in Phase 3. Do this *before* the first deploy, not after.

@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { LANGUAGES, translate, type Key, type Lang } from './index';
+import { buildingDescription, buildingName, itemName, recipeName } from './content';
+import type { Building, Item, Recipe } from '../data';
 
 const KEY = 'aifor-study/lang';
 
@@ -51,4 +53,24 @@ export function useLang(): LangValue {
   const ctx = useContext(LangContext);
   if (ctx) return ctx;
   return { lang: 'en', setLang: () => {}, t: (key, vars) => translate('en', key, vars) };
+}
+
+/**
+ * Content names bound to the current language.
+ *
+ * Components call these instead of reading `.name` off the data object, so a
+ * language switch repaints node labels, tooltips and the tech tree with
+ * everything else. Untranslated ids fall through to English per string.
+ */
+export function useContent() {
+  const { lang } = useLang();
+  return useMemo(
+    () => ({
+      bName: (b: Building) => buildingName(b, lang),
+      bDesc: (b: Building) => buildingDescription(b, lang),
+      iName: (i: Item) => itemName(i, lang),
+      rName: (r: Recipe) => recipeName(r, lang),
+    }),
+    [lang],
+  );
 }

@@ -2,6 +2,7 @@ import { BUILDING_BY_ID, buildingCostAt } from '../data';
 import { HOTBAR_KEYS } from '../engine/factory';
 import type { GameState } from '../engine/types';
 import { inkOn, money } from './format';
+import { useContent } from '../i18n/useLang';
 import Tip from './Tip';
 
 interface Props {
@@ -25,6 +26,7 @@ export default function Hotbar({
   onClear,
   onOpenDialog,
 }: Props) {
+  const { bName } = useContent();
   return (
     <div className="hotbar">
       {state.hotbar.map((id, i) => {
@@ -55,7 +57,7 @@ export default function Hotbar({
               <>
                 <div className="tip-title">
                   <span className="tip-glyph" style={{ background: b.color, color: inkOn(b.color) }}>{b.icon}</span>
-                  {b.name}
+                  {bName(b)}
                 </div>
                 <div className="tip-kv">
                   <span>Key</span>

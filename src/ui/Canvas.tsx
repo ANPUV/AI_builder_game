@@ -31,7 +31,7 @@ import {
 import { inkOn, money } from './format';
 import MachineNode from './MachineNode';
 import type { Game } from './useGame';
-import { useLang } from '../i18n/useLang';
+import { useContent, useLang } from '../i18n/useLang';
 
 /**
  * What the inspector is looking at. Machines are a *set* — a marquee or a
@@ -116,6 +116,7 @@ export default function Canvas({
 }: Props) {
   const { state, act, toast } = game;
   const { t } = useLang();
+  const { bName, iName } = useContent();
   const ref = useRef<HTMLDivElement>(null);
   const dragRef = useRef<Drag>(null);
   const [view, setView] = useState<View>({ x: 120, y: 90, zoom: 1 });
@@ -679,7 +680,7 @@ export default function Canvas({
       {pending && (
         <div className="hint" style={{ left: 'auto', right: 14 }}>
           {pending.offerId ? 'Signing ' : 'Placing '}
-          <b>{BUILDING_BY_ID[pending.buildingId]?.name}</b> — click the canvas.
+          <b>{(() => { const pb = BUILDING_BY_ID[pending.buildingId]; return pb ? bName(pb) : ''; })()}</b> — click the canvas.
         </div>
       )}
 
@@ -704,7 +705,7 @@ export default function Canvas({
             >
               <div className="quick-head">
                 <span style={{ color: item(quickBuild.itemId).color }}>
-                  {item(quickBuild.itemId).icon} {item(quickBuild.itemId).name}
+                  {item(quickBuild.itemId).icon} {iName(item(quickBuild.itemId))}
                 </span>
                 <span className="quick-dim">
                   {t(quickBuild.dir === 'out' ? 'quick.goesTo' : 'quick.comesFrom')}
@@ -728,7 +729,7 @@ export default function Canvas({
                   <span className="glyph" style={{ background: b.color, color: inkOn(b.color) }}>
                     {b.icon}
                   </span>
-                  <span className="quick-name">{b.name}</span>
+                  <span className="quick-name">{bName(b)}</span>
                   <span className="mono quick-dim">{money(price)}</span>
                 </button>
               ))}

@@ -23,7 +23,8 @@
     "db:migrate:local": "wrangler d1 migrations apply aifor-study-beta --local",
     "check:secrets": "node tools/check-secrets.mjs",
     "dev:ui": "vite",
-    "dev:api": "wrangler dev --port 8788"
+    "dev:api": "wrangler dev --port 8788",
+    "check:i18n": "node tools/check-translations.mjs"
   },
   "dependencies": {
     "react": "^19.2.0",

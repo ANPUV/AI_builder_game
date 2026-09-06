@@ -17,6 +17,7 @@ import {
 } from '../engine/market';
 import type { ContractOffer, GameState } from '../engine/types';
 import { inkOn, money } from './format';
+import { useContent } from '../i18n/useLang';
 import type { Pending } from './Canvas';
 
 /** m:ss, the same shape the top bar uses for elapsed time. */
@@ -42,6 +43,7 @@ function OfferRow({
   offer: ContractOffer;
   onSign: (pending: Pending) => void;
 }) {
+  const { bName, bDesc, iName } = useContent();
   const b = BUILDING_BY_ID[offer.buildingId];
   const listing = listingFor(offer.buildingId);
   if (!b || !listing) return null;
@@ -63,7 +65,7 @@ function OfferRow({
         <span className="glyph" style={{ background: b.color, color: inkOn(b.color) }}>{b.icon}</span>
         <span className="offer-title">
           <span className="name">
-            {b.name}
+            {bName(b)}
             <span className="rarity" style={{ color: tone.color, borderColor: tone.color }}>
               {tone.label}
             </span>
@@ -89,7 +91,7 @@ function OfferRow({
             ? best.inputs.map((i, n) => (
                 <span key={i.itemId}>
                   {n > 0 ? ' + ' : ''}
-                  {i.qty}× <span style={{ color: item(i.itemId).color }}>{item(i.itemId).name}</span>
+                  {i.qty}× <span style={{ color: item(i.itemId).color }}>{iName(item(i.itemId))}</span>
                 </span>
               ))
             : 'nothing you have unlocked yet'}
@@ -121,7 +123,7 @@ function OfferRow({
         </span>
       </div>
 
-      <p className="offer-note">{b.description}</p>
+      <p className="offer-note">{bDesc(b)}</p>
 
       {gated && (
         <div className="tip-warn">
@@ -147,6 +149,7 @@ function OfferRow({
  * program feel like an event instead of a purchase.
  */
 export function MarketplaceBody({ state, onSign }: Omit<Props, 'onClose'>) {
+  const { bName, bDesc } = useContent();
   const offers = openOffers(state);
   const slots = boardSlots(state);
   const types = unlockedListings(state).length;
@@ -190,9 +193,9 @@ export function MarketplaceBody({ state, onSign }: Omit<Props, 'onClose'>) {
                 const l = listingFor(b.id);
                 const tone = RARITY[rarityOf(l?.weight ?? 0)];
                 return (
-                  <span className="chip subtle" key={b.id} title={b.description}>
+                  <span className="chip subtle" key={b.id} title={bDesc(b)}>
                     <span className="lock">🔒</span>
-                    {b.name}
+                    {bName(b)}
                     <span style={{ color: tone.color, marginLeft: 5 }}>{tone.label}</span>
                   </span>
                 );

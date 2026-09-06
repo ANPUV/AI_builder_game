@@ -38,7 +38,7 @@ import { onSiteCount } from '../engine/simulate';
 import { money, tpm } from './format';
 import type { Selection } from './Canvas';
 import type { Game } from './useGame';
-import { useLang } from '../i18n/useLang';
+import { useContent, useLang } from '../i18n/useLang';
 
 interface Props {
   game: Game;
@@ -51,6 +51,7 @@ const round = (n: number): string => (Math.round(n * 10) / 10).toString();
 export default function Inspector({ game, selection, setSelection }: Props) {
   const { state, act, toast } = game;
   const { t } = useLang();
+  const { bName, bDesc, iName, rName } = useContent();
 
   if (!selection) {
     return (
@@ -71,15 +72,15 @@ export default function Inspector({ game, selection, setSelection }: Props) {
           <label>{t('inspector.belt')}</label>
           <div className="kv">
             <span className="k">{t('inspector.carrying')}</span>
-            <span>{item(link.itemId).name}</span>
+            <span>{iName(item(link.itemId))}</span>
           </div>
           <div className="kv">
             <span className="k">{t('inspector.from')}</span>
-            <span>{building(from?.buildingId ?? '')?.name ?? '—'}</span>
+            <span>{(() => { const fb = building(from?.buildingId ?? ''); return fb ? bName(fb) : '—'; })()}</span>
           </div>
           <div className="kv">
             <span className="k">{t('inspector.to')}</span>
-            <span>{building(to?.buildingId ?? '')?.name ?? '—'}</span>
+            <span>{(() => { const tb = building(to?.buildingId ?? ''); return tb ? bName(tb) : '—'; })()}</span>
           </div>
           <div className="kv">
             <span className="k">{t('inspector.capacity')}</span>
@@ -146,7 +147,7 @@ export default function Inspector({ game, selection, setSelection }: Props) {
             </div>
             {[...counts.entries()].map(([id, n]) => (
               <div className="kv" key={id}>
-                <span className="k">{building(id)?.name ?? id}</span>
+                <span className="k">{(() => { const gb = building(id); return gb ? bName(gb) : id; })()}</span>
                 <span className="mono">×{n}</span>
               </div>
             ))}
@@ -244,7 +245,7 @@ export default function Inspector({ game, selection, setSelection }: Props) {
       <div className="field">
         <div className="card" style={{ marginBottom: 10 }}>
           <div className="head">
-            <b>{b.name}</b>
+            <b>{bName(b)}</b>
             <span
               className="badge"
               style={{
@@ -255,7 +256,7 @@ export default function Inspector({ game, selection, setSelection }: Props) {
               {statusLabel[status]}
             </span>
           </div>
-          <div className="blurb">{b.description}</div>
+          <div className="blurb">{bDesc(b)}</div>
           <div className="kv">
             <span className="k">Compute</span>
             <span className="mono">
@@ -368,7 +369,7 @@ export default function Inspector({ game, selection, setSelection }: Props) {
               <option value="">— none —</option>
               {options.map((opt) => (
                 <option key={opt.id} value={opt.id}>
-                  {opt.name}
+                  {rName(opt)}
                 </option>
               ))}
             </select>
@@ -382,7 +383,7 @@ export default function Inspector({ game, selection, setSelection }: Props) {
           {r.inputs.map((s) => (
             <div className="kv" key={`in-${s.itemId}`}>
               <span className="k">
-                ← {item(s.itemId).name}{' '}
+                ← {iName(item(s.itemId))}{' '}
                 <span className="mono" style={{ opacity: 0.7 }}>
                   ({Math.floor(machine.inputs[s.itemId] ?? 0)} held)
                 </span>
@@ -393,7 +394,7 @@ export default function Inspector({ game, selection, setSelection }: Props) {
           {r.outputs.map((s) => (
             <div className="kv" key={`out-${s.itemId}`}>
               <span className="k">
-                → {item(s.itemId).name}{' '}
+                → {iName(item(s.itemId))}{' '}
                 <span className="mono" style={{ opacity: 0.7 }}>
                   ({Math.floor(machine.outputs[s.itemId] ?? 0)} held)
                 </span>

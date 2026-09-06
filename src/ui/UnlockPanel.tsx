@@ -1,5 +1,6 @@
 import { BUILDING_BY_ID, MILESTONE_BY_ID, RECIPE_BY_ID } from '../data';
 import { inkOn, money, recipeFlow } from './format';
+import { useContent } from '../i18n/useLang';
 
 /**
  * Shown when a milestone completes. A toast is too small to teach anything, and
@@ -13,6 +14,7 @@ export default function UnlockPanel({
   milestoneId: string;
   onClose: () => void;
 }) {
+  const { bName, bDesc, rName } = useContent();
   const m = MILESTONE_BY_ID[milestoneId];
   if (!m) return null;
 
@@ -40,10 +42,10 @@ export default function UnlockPanel({
                 <span className="glyph" style={{ background: b.color, color: inkOn(b.color) }}>{b.icon}</span>
                 <span className="meta">
                   <span className="name">
-                    {b.name}
+                    {bName(b)}
                     <span className="mono unlock-cost">{money(b.cost)}</span>
                   </span>
-                  <span className="sub">{b.description}</span>
+                  <span className="sub">{bDesc(b)}</span>
                 </span>
               </div>
             ))}
@@ -55,9 +57,9 @@ export default function UnlockPanel({
             <div className="section-title">New recipes</div>
             {recipes.map((r) => (
               <div className="unlock-recipe" key={r.id}>
-                <b>{r.name}</b>
+                <b>{rName(r)}</b>
                 <span className="tip-dim">
-                  {' on '}{BUILDING_BY_ID[r.buildingId]?.name} · {recipeFlow(r)}
+                  {' on '}{(() => { const rb = BUILDING_BY_ID[r.buildingId]; return rb ? bName(rb) : ''; })()} · {recipeFlow(r)}
                 </span>
               </div>
             ))}

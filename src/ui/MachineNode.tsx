@@ -13,6 +13,7 @@ import { machineComputeSupply, statusLabel } from '../engine/simulate';
 import { craftProgress, NODE_W, ROW_H } from './geometry';
 import type { Machine, MachineStatus } from '../engine/types';
 import { inkOn, money, tpm } from './format';
+import { useContent } from '../i18n/useLang';
 
 const STATUS_COLOR: Record<MachineStatus, string> = {
   running: 'var(--good)',
@@ -44,6 +45,7 @@ export default function MachineNode({
   pendingItemId,
   onGenerate,
 }: Props) {
+  const { bName, iName, rName } = useContent();
   const b = building(machine.buildingId);
   const r = recipe(machine.recipeId);
   if (!b) return null;
@@ -66,7 +68,7 @@ export default function MachineNode({
     >
       <div className="node-header" style={{ background: b.color, color: inkOn(b.color) }}>
         <span className="glyph">{b.icon}</span>
-        <span className="title">{b.name}</span>
+        <span className="title">{bName(b)}</span>
         <span
           className="dot"
           style={{ background: STATUS_COLOR[status] }}
@@ -88,14 +90,14 @@ export default function MachineNode({
                 {inId && (
                   <>
                     <span className="amt mono">{Math.floor(machine.inputs[inId] ?? 0)}</span>
-                    <span className="name">{inItem?.name}</span>
+                    <span className="name">{inItem ? iName(inItem) : ''}</span>
                   </>
                 )}
               </span>
               <span className="side">
                 {outItem && (
                   <>
-                    <span className="name">{outItem.name}</span>
+                    <span className="name">{iName(outItem)}</span>
                     <span className="amt mono">{Math.floor(machine.outputs[outId] ?? 0)}</span>
                   </>
                 )}
@@ -127,7 +129,7 @@ export default function MachineNode({
       <div className="node-footer">
         <div className="row">
           <span>
-            {r ? r.name : 'No recipe'}
+            {r ? rName(r) : 'No recipe'}
             {b.vendorScoped && (
               <span
                 className="vendor-tag"

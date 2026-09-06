@@ -69,6 +69,16 @@ export interface Building {
   withdrawnAtIndex?: number;
   /** 0-10, summed into the global Slop Index while this node runs. */
   slopRisk?: number;
+  /**
+   * Hard cap on how many of this node may exist at once. Reaching it greys the
+   * card out in the build bar and `placeMachine` refuses — the bar is only the
+   * hint, the engine is the rule, so the quick-build keys cannot go around it.
+   *
+   * The free tier carries one: it is the allowance every provider hands out,
+   * and being able to paper over a rate limit with a stack of them would
+   * remove the reason the first paid tier costs $200.
+   */
+  maxCount?: number;
 }
 
 export type BuildingTier =
@@ -145,7 +155,7 @@ export const BUILDINGS: Building[] = [
   // ======================================================================
   // CAPACITY — throughput. Everything else throttles without it.
   // ======================================================================
-  B({ id: 'free_tier',     name: 'Free Tier',       icon: '○', kind: 'capacity', vendorScoped: true, servesNodes: 1, tier: 'Capacity', cost: 0,     monthlyCost: 0,     computeDraw: 0, computeSupply: 150,      dataRisk: 0, color: '#5b7f5b', description: 'Enough to prove the idea works and nothing more. Every provider gives you one.' }),
+  B({ id: 'free_tier',     name: 'Free Tier',       icon: '○', kind: 'capacity', vendorScoped: true, servesNodes: 1, maxCount: 1, tier: 'Capacity', cost: 0,     monthlyCost: 0,     computeDraw: 0, computeSupply: 150,      dataRisk: 0, color: '#5b7f5b', description: 'Enough to prove the idea works and nothing more. Every provider gives you one.' }),
   B({ id: 'api_tier1',     name: 'API Tier 1',      icon: '①', kind: 'capacity', vendorScoped: true, tier: 'Capacity', cost: 200,   monthlyCost: 0,     computeDraw: 0, computeSupply: 500,     dataRisk: 0, color: '#4a8f4a', description: 'Unlocked at $5 paid. 500k TPM, $100/mo spend cap. The real first wall you hit.' }),
   B({ id: 'api_tier3',     name: 'API Tier 3',      icon: '③', kind: 'capacity', vendorScoped: true, tier: 'Capacity', cost: 1800,  monthlyCost: 0,     computeDraw: 0, computeSupply: 5000,    dataRisk: 0, color: '#4a9f5a', description: 'Unlocked at $100 paid. $1,000/mo cap. Tiers are earned by spending, not by asking.' }),
   B({ id: 'api_tier5',     name: 'API Tier 5',      icon: '⑤', kind: 'capacity', vendorScoped: true, tier: 'Capacity', cost: 14000, monthlyCost: 0,     computeDraw: 0, computeSupply: 40000,   dataRisk: 0, color: '#4aaf6a', description: 'Unlocked at $1,000 paid. 40M TPM and a $200,000/mo cap. The ceiling of renting someone else’s compute.' }),

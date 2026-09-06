@@ -8,6 +8,7 @@ import {
 } from '../engine/factory';
 import { hasUnseenOffers, markOffersSeen } from '../engine/market';
 import BuildDialog, { type BuildTab } from './BuildDialog';
+import SettingsDialog from './SettingsDialog';
 import Canvas, { machineIds, type Pending, type Selection } from './Canvas';
 import Coach from './Coach';
 import Inspector from './Inspector';
@@ -35,6 +36,7 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
   const [pending, setPending] = useState<Pending | null>(null);
   /** The build dialog, and which tab it should land on. */
   const [dialog, setDialog] = useState<BuildTab | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   /** The tech tree lives in a left drawer now, closed until asked for. */
   const [treeOpen, setTreeOpen] = useState(false);
 
@@ -100,7 +102,7 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
 
   return (
     <div className="app">
-      <TopBar game={game} onSignOut={onSignOut} />
+      <TopBar game={game} onSignOut={onSignOut} onOpenSettings={() => setSettingsOpen(true)} />
       <div className="body">
         <Canvas
           game={game}
@@ -155,6 +157,14 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
           </section>
         </div>
       </div>
+      {settingsOpen && (
+        <SettingsDialog
+          addons={game.state.addons}
+          onToggleAddon={game.setAddon}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
+
       {dialog && (
         <BuildDialog
           state={game.state}

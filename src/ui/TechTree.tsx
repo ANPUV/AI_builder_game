@@ -4,6 +4,7 @@ import {
   MILESTONES,
   RECIPE_BY_ID,
   TRACKS,
+  trackEnabled,
   item,
   unlockedProducersOf,
   type Milestone,
@@ -11,12 +12,14 @@ import {
 } from '../data';
 import type { GameState } from '../engine/types';
 import { inkOn, money } from './format';
+import { useContent } from '../i18n/useLang';
 import Tip from './Tip';
 
 /** How many locked milestones ahead of the current one to reveal. */
 export const LOOKAHEAD = 3;
 
 function UnlockList({ milestone }: { milestone: Milestone }) {
+  const { bName, bDesc } = useContent();
   const buildings = milestone.unlocksBuildings.map((id) => BUILDING_BY_ID[id]).filter(Boolean);
   const recipes = milestone.unlocksRecipes.map((id) => RECIPE_BY_ID[id]).filter(Boolean);
   if (!buildings.length && !recipes.length) return null;
@@ -31,9 +34,9 @@ function UnlockList({ milestone }: { milestone: Milestone }) {
             <>
               <div className="tip-title">
                 <span className="tip-glyph" style={{ background: b.color, color: inkOn(b.color) }}>{b.icon}</span>
-                {b.name}
+                {bName(b)}
               </div>
-              <div className="tip-body">{b.description}</div>
+              <div className="tip-body">{bDesc(b)}</div>
               <div className="tip-kv"><span>Cost</span><span className="mono">{money(b.cost)}</span></div>
               {b.dataRisk !== 0 && (
                 <div className="tip-kv">
@@ -47,7 +50,7 @@ function UnlockList({ milestone }: { milestone: Milestone }) {
           }
         >
           <span className="chip" style={{ borderColor: b.color }}>
-            <span style={{ color: b.color }}>{b.icon}</span> {b.name}
+            <span style={{ color: b.color }}>{b.icon}</span> {bName(b)}
           </span>
         </Tip>
       ))}
@@ -69,6 +72,7 @@ function Requirement({
   state: GameState;
   locked: boolean;
 }) {
+  const { iName, bName, rName } = useContent();
   const it = item(itemId);
   const have = Math.floor(state.delivered[itemId] ?? 0);
   const pct = Math.min(1, have / need);
@@ -83,7 +87,7 @@ function Requirement({
           content={
             <>
               <div className="tip-title">
-                <span style={{ color: it.color }}>{it.icon}</span> {it.name}
+                <span style={{ color: it.color }}>{it.icon}</span> {iName(it)}
               </div>
               <div className="tip-body">{it.note}</div>
               <div className="tip-sub">Sold to contracts, not merely produced.</div>
@@ -93,8 +97,8 @@ function Requirement({
               {producers.length ? (
                 producers.slice(0, 5).map(({ building, recipe }) => (
                   <div className="tip-row" key={recipe.id}>
-                    <span style={{ color: building.color }}>{building.icon}</span> {building.name}
-                    <span className="tip-dim"> · {recipe.name}</span>
+                    <span style={{ color: building.color }}>{building.icon}</span> {bName(building)}
+                    <span className="tip-dim"> · {rName(recipe)}</span>
                   </div>
                 ))
               ) : (
@@ -104,7 +108,7 @@ function Requirement({
           }
         >
           <span className="req-name">
-            <span style={{ color: it.color }}>{it.icon}</span> {it.name}
+            <span style={{ color: it.color }}>{it.icon}</span> {iName(it)}
             <span className="req-help">?</span>
           </span>
         </Tip>
@@ -141,13 +145,16 @@ export default function TechTree({ state }: { state: GameState }) {
   const visibleTracks = TRACKS.filter(
     (tr) =>
       tr.id === 'main' ||
+      // A switched-off addon leaves the tab list too, so the tech tree agrees
+      // with the build bar about what game is being played.
+      (trackEnabled(tr.id, state.addons) &&
       MILESTONES.some(
         (m) =>
           m.track === tr.id &&
           (state.completedMilestones.includes(m.id) ||
             m.unlocksBuildings.some((b) => state.unlockedBuildings.includes(b)) ||
             Object.keys(m.requires).some((i) => (state.delivered[i] ?? 0) > 0)),
-      ),
+      )),
   );
   const active = visibleTracks.some((tr) => tr.id === track) ? track : 'main';
 

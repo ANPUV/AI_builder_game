@@ -4,6 +4,7 @@ import {
   RECIPES_BY_BUILDING,
   VENDORS,
   buildingCostAt,
+  buildingEnabled,
   isWithdrawn,
   item,
   makesItems,
@@ -13,14 +14,14 @@ import {
   type Pool,
   type Vendor,
 } from '../data';
-import { HOTBAR_KEYS } from '../engine/factory';
+import { HOTBAR_KEYS, countOf } from '../engine/factory';
 import { hasUnseenOffers } from '../engine/market';
 import type { GameState } from '../engine/types';
 import type { Pending } from './Canvas';
 import { inkOn, money, recipeFlow, tpm } from './format';
 import { MarketplaceBody } from './Marketplace';
 import Tip from './Tip';
-import { useLang } from '../i18n/useLang';
+import { useContent, useLang } from '../i18n/useLang';
 
 /** Tab order. 'Contracts' is special: it renders the contract board. */
 const TABS = [
@@ -69,6 +70,7 @@ interface Props {
 }
 
 function ItemRow({ ids, label }: { ids: string[]; label: string }) {
+  const { iName } = useContent();
   if (!ids.length) return null;
   return (
     <div className="tip-kv">
@@ -76,7 +78,7 @@ function ItemRow({ ids, label }: { ids: string[]; label: string }) {
       <span style={{ textAlign: 'right' }}>
         {ids.map((id) => (
           <span key={id} style={{ color: item(id).color, marginLeft: 5 }}>
-            {item(id).icon} {item(id).name}
+            {item(id).icon} {iName(item(id))}
           </span>
         ))}
       </span>
@@ -85,6 +87,7 @@ function ItemRow({ ids, label }: { ids: string[]; label: string }) {
 }
 
 export function BuildTip({ b, state }: { b: Building; state: GameState }) {
+  const { bName, bDesc, rName } = useContent();
   const recipes = (RECIPES_BY_BUILDING[b.id] ?? []).filter((r) =>
     state.unlockedRecipes.includes(r.id),
   );
@@ -95,9 +98,9 @@ export function BuildTip({ b, state }: { b: Building; state: GameState }) {
     <>
       <div className="tip-title">
         <span className="tip-glyph" style={{ background: b.color, color: inkOn(b.color) }}>{b.icon}</span>
-        {b.name}
+        {bName(b)}
       </div>
-      <div className="tip-body">{b.description}</div>
+      <div className="tip-body">{bDesc(b)}</div>
 
       <ItemRow label="Takes" ids={takesItems(b.id, state.unlockedRecipes)} />
       <ItemRow label="Makes" ids={makesItems(b.id, state.unlockedRecipes)} />
@@ -140,7 +143,7 @@ export function BuildTip({ b, state }: { b: Building; state: GameState }) {
           </div>
           {recipes.map((r) => (
             <div className="tip-row" key={r.id}>
-              {r.name}
+              {rName(r)}
               <span className="tip-dim"> · {recipeFlow(r)}</span>
             </div>
           ))}
@@ -166,12 +169,16 @@ export default function BuildDialog({
   onAssign,
 }: Props) {
   const { t } = useLang();
+  const { bName, iName } = useContent();
   const unlocked = useMemo(
     () =>
       BUILDINGS.filter(
-        (b) => state.unlockedBuildings.includes(b.id) && !isWithdrawn(b, state.priceIndex),
+        (b) =>
+          state.unlockedBuildings.includes(b.id) &&
+          !isWithdrawn(b, state.priceIndex) &&
+          buildingEnabled(b.id, state.addons),
       ),
-    [state.unlockedBuildings, state.priceIndex],
+    [state.unlockedBuildings, state.priceIndex, state.addons],
   );
 
   const available = TABS.filter(
@@ -233,6 +240,9 @@ export default function BuildDialog({
                 .map((b) => {
                   const price = buildingCostAt(b, state.priceIndex);
                   const affordable = state.credits >= price;
+                  // Kept in the list rather than hidden: a card that vanishes
+                  // reads as a bug, a dead one reads as a rule.
+                  const capped = b.maxCount !== undefined && countOf(state, b.id) >= b.maxCount;
                   const makes = makesItems(b.id, state.unlockedRecipes);
                   const isNew = freshUnlocks.includes(b.id);
                   const wouldThrottle = b.kind !== 'capacity' && b.computeDraw > headroom;
@@ -240,10 +250,10 @@ export default function BuildDialog({
 
                   return (
                     <Tip key={b.id} content={<BuildTip b={b} state={state} />} width={290}>
-                      <div className={`build-card${isNew ? ' fresh' : ''}`}>
+                      <div className={`build-card${isNew ? ' fresh' : ''}${capped ? ' capped' : ''}`}>
                         <button
                           className="build-card-main"
-                          disabled={!affordable}
+                          disabled={!affordable || capped}
                           onClick={() => {
                             onPick(b.id);
                             onClose();
@@ -252,11 +262,12 @@ export default function BuildDialog({
                           <span className="glyph" style={{ background: b.color, color: inkOn(b.color) }}>{b.icon}</span>
                           <span className="meta">
                             <span className="name">
-                              {b.name}
+                              {bName(b)}
                               {isNew && <span className="new-badge">NEW</span>}
-                              {wouldThrottle && (
+                              {wouldThrottle && !capped && (
                                 <span className="warn-badge" title="Not enough spare capacity">!</span>
                               )}
+                              {capped && <span className="cap-badge">{t('build.built')}</span>}
                             </span>
                             <span className="sub mono">
                               {money(price)}
@@ -270,7 +281,7 @@ export default function BuildDialog({
                                 Makes{' '}
                                 {makes.map((id, i) => (
                                   <span key={id} style={{ color: item(id).color }}>
-                                    {i > 0 ? ', ' : ''}{item(id).name}
+                                    {i > 0 ? ', ' : ''}{iName(item(id))}
                                   </span>
                                 ))}
                               </span>

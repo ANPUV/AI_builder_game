@@ -1,3 +1,4 @@
+import type { AddonSettings } from '../data/addons';
 /** A placed node on the canvas. */
 export interface Machine {
   id: string;
@@ -173,6 +174,12 @@ export interface GameState {
    * Persisted, so a player's bar survives a reload.
    */
   hotbar: (string | null)[];
+
+  /**
+   * Which optional content tracks are switched on. Absent from an older save,
+   * where the spread in loadState leaves the default (everything on) in place.
+   */
+  addons: AddonSettings;
 
   /** Per-tick derived values; not persisted meaningfully but harmless. */
   compute: ComputeReport;

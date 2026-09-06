@@ -18,6 +18,7 @@ import {
 } from '../engine/save';
 import { advance } from '../engine/simulate';
 import type { GameState } from '../engine/types';
+import type { AddonTrack } from '../data/addons';
 import { money } from './format';
 
 export interface Toast {
@@ -234,6 +235,18 @@ export function useGame() {
       persist();
       toast('Saved', 'good');
     },
+
+    /**
+     * Switch an optional content track on or off. Persisted straight away —
+     * this is a preference, and losing it to a crash before the next autosave
+     * would be a small but pointless annoyance.
+     */
+    setAddon: useCallback((track: AddonTrack, on: boolean) => {
+      const state = stateRef.current!;
+      state.addons = { ...state.addons, [track]: on };
+      persist();
+      bump();
+    }, []),
 
     /** Pause if running, resume at the last speed if paused. */
     togglePause: useCallback(() => {

@@ -4,6 +4,7 @@ import {
   ITEM_BY_ID,
   LINK_RATE_PER_SEC,
   MILESTONES,
+  trackEnabled,
   building,
   listingFor,
   priceAt,
@@ -608,6 +609,9 @@ function transfer(state: GameState, dt: number): void {
 function checkMilestones(state: GameState, events: TickEvents): void {
   const tracks: Track[] = ['main', 'homelab', 'slop'];
   for (const track of tracks) {
+    // A switched-off addon stops advancing. Progress already made is kept, so
+    // turning it back on resumes rather than restarts.
+    if (!trackEnabled(track, state.addons)) continue;
     const next = MILESTONES.find(
       (m) => (m.track ?? 'main') === track && !state.completedMilestones.includes(m.id),
     );

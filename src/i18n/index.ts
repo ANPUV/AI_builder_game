@@ -79,6 +79,16 @@ const en = {
   'quick.comesFrom': 'comes from',
   'quick.noTakers': 'Nothing you have unlocked takes this yet.',
   'quick.noMakers': 'Nothing you have unlocked makes this yet.',
+
+  'top.settings': 'Settings',
+  'build.built': 'BUILT',
+  'settings.title': 'Settings',
+  'settings.language': 'Language',
+  'settings.addons': 'Optional tracks',
+  'settings.addonsNote':
+    'Side branches off the main spine. Switching one off hides its nodes and stops its milestones advancing.',
+  'settings.addonsKeep':
+    'Anything already on the canvas keeps running, and progress is kept — switching a track back on resumes it.',
 } as const;
 
 export type Key = keyof typeof en;
@@ -143,6 +153,16 @@ const vi: Partial<Record<Key, string>> = {
   'quick.comesFrom': 'đến từ',
   'quick.noTakers': 'Chưa có node nào bạn mở khoá nhận thứ này.',
   'quick.noMakers': 'Chưa có node nào bạn mở khoá tạo ra thứ này.',
+
+  'top.settings': 'Cài đặt',
+  'build.built': 'ĐÃ XÂY',
+  'settings.title': 'Cài đặt',
+  'settings.language': 'Ngôn ngữ',
+  'settings.addons': 'Nhánh tuỳ chọn',
+  'settings.addonsNote':
+    'Các nhánh phụ ngoài mạch chính. Tắt một nhánh sẽ ẩn node của nó và dừng tiến trình cột mốc.',
+  'settings.addonsKeep':
+    'Những gì đã đặt trên canvas vẫn chạy, và tiến trình được giữ — bật lại nhánh sẽ tiếp tục từ chỗ cũ.',
 };
 
 const DICTS: Record<Lang, Partial<Record<Key, string>>> = { en, vi };

@@ -17,7 +17,15 @@ const clock = (seconds: number): string => {
 };
 
 /** `onSignOut` is optional so the game still renders standalone, ungated. */
-export default function TopBar({ game, onSignOut }: { game: Game; onSignOut?: () => void }) {
+export default function TopBar({
+  game,
+  onSignOut,
+  onOpenSettings,
+}: {
+  game: Game;
+  onSignOut?: () => void;
+  onOpenSettings: () => void;
+}) {
   const { state, speed, setSpeed, save, reset, togglePause, exportFile, importFile, savedAt } =
     game;
   const fileInput = useRef<HTMLInputElement>(null);
@@ -287,6 +295,9 @@ export default function TopBar({ game, onSignOut }: { game: Game; onSignOut?: ()
         title={theme === 'dark' ? t('top.toLight') : t('top.toDark')}
       >
         {theme === 'dark' ? '☀' : '☾'}
+      </button>
+      <button onClick={onOpenSettings} title={t('top.settings')} aria-label={t('top.settings')}>
+        ⚙
       </button>
       <button
         className="danger"

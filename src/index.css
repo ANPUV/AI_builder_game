@@ -749,6 +749,20 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
   background: var(--panel-2);
 }
 .build-card.fresh { border-color: var(--good); }
+
+/*
+ * A chassis you have hit the build limit for. It stays in the grid rather than
+ * disappearing — a card that vanishes reads as a bug, a dead one reads as a
+ * rule — and the BUILT badge says which rule.
+ */
+.build-card.capped { opacity: 0.45; border-style: dashed; }
+.build-card.capped .build-card-main { cursor: not-allowed; }
+.build-card.capped .build-card-main:disabled { opacity: 1; }
+.cap-badge {
+  margin-left: 6px; padding: 0 5px; border-radius: 3px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.06em;
+  background: var(--line); color: var(--muted);
+}
 .build-card-main {
   flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 9px;
   padding: 8px 9px; text-align: left; background: transparent; border: none; border-radius: 0;
@@ -778,3 +792,39 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 /* Overlay layer: transparent to the pointer, its controls are not. */
 .canvas-overlay { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
 .canvas-overlay > * { pointer-events: auto; }
+
+/* --- settings dialog ---------------------------------------------------- */
+
+.settings-note {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.settings-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line-soft);
+  cursor: pointer;
+}
+.settings-row:last-of-type { border-bottom: none; }
+.settings-row input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  margin: 1px 0 0;
+  accent-color: var(--accent);
+  flex: none;
+  cursor: pointer;
+}
+.settings-row-text { display: block; }
+.settings-row-name { display: block; font-weight: 600; }
+.settings-row-blurb {
+  display: block;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+  margin-top: 2px;
+}

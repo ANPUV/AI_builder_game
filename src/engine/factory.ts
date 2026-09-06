@@ -10,6 +10,7 @@ import {
   isWithdrawn,
   recipe,
 } from '../data';
+import { DEFAULT_ADDONS, buildingEnabled } from '../data/addons';
 import { nextId } from './ids';
 import { seedMarket, takeOffer } from './market';
 import type { GameState, Link, Machine, LinkShape } from './types';
@@ -30,6 +31,7 @@ export function createInitialState(): GameState {
     offers: {},
     lastOffered: {},
     hotbar: Array<string | null>(HOTBAR_SLOTS).fill(null),
+    addons: { ...DEFAULT_ADDONS },
     exposure: 0,
     breaches: 0,
     breachFreeze: 0,
@@ -86,6 +88,13 @@ export const currentCost = (state: GameState, buildingId: string): number => {
   return b ? buildingCostAt(b, state.priceIndex) : 0;
 };
 
+/** How many of a building are on the canvas right now. */
+export function countOf(state: GameState, buildingId: string): number {
+  let n = 0;
+  for (const m of Object.values(state.machines)) if (m.buildingId === buildingId) n++;
+  return n;
+}
+
 export function placeMachine(
   state: GameState,
   buildingId: string,
@@ -98,6 +107,16 @@ export function placeMachine(
   // Withdrawn from sale. Apple pulled the 512GB Mac Studio in March 2026
   // rather than reprice it; anyone who already owns one keeps theirs.
   if (isWithdrawn(b, state.priceIndex)) return fail(`${b.name} is no longer sold`);
+  // The build bar greys these out, but the quick-build keys do not go through
+  // it — so the rule lives here, where every path has to pass.
+  if (!buildingEnabled(buildingId, state.addons)) return fail(`${b.name} is switched off in settings`);
+  if (b.maxCount !== undefined && countOf(state, buildingId) >= b.maxCount) {
+    return fail(
+      b.maxCount === 1
+        ? `You only get one ${b.name}`
+        : `You may only have ${b.maxCount} of the ${b.name}`,
+    );
+  }
   const price = buildingCostAt(b, state.priceIndex);
   if (state.credits < price) return fail(`Need ${price} credits for a ${b.name}`);
 
@@ -497,11 +516,29 @@ export function pasteClipboard(
   if (!clip.nodes.length) return fail('Nothing to paste');
 
   let total = 0;
+  // Capped chassis are counted across the clipboard as well as the canvas:
+  // pasting two free tiers onto an empty board has to fail as a whole, not
+  // place the first and strand the second.
+  const wouldAdd = new Map<string, number>();
   for (const n of clip.nodes) {
     const b = BUILDING_BY_ID[n.buildingId];
     if (!b) return fail('That chassis no longer exists');
     if (!state.unlockedBuildings.includes(n.buildingId)) return fail(`${b.name} is not unlocked yet`);
     if (isWithdrawn(b, state.priceIndex)) return fail(`${b.name} is no longer sold`);
+    if (!buildingEnabled(n.buildingId, state.addons)) {
+      return fail(`${b.name} is switched off in settings`);
+    }
+    if (b.maxCount !== undefined) {
+      const pending = (wouldAdd.get(n.buildingId) ?? 0) + 1;
+      wouldAdd.set(n.buildingId, pending);
+      if (countOf(state, n.buildingId) + pending > b.maxCount) {
+        return fail(
+          b.maxCount === 1
+            ? `You only get one ${b.name}`
+            : `You may only have ${b.maxCount} of the ${b.name}`,
+        );
+      }
+    }
     total += buildingCostAt(b, state.priceIndex);
   }
   if (state.credits < total) {

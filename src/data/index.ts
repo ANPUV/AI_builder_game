@@ -17,6 +17,7 @@ export * from './items';
 export * from './milestones';
 export * from './recipes';
 export * from './market';
+export * from './addons';
 
 const byId = <T extends { id: string }>(rows: T[]): Record<string, T> =>
   Object.fromEntries(rows.map((r) => [r.id, r]));

@@ -44,3 +44,29 @@ export function recipeFlow(r: Recipe): string {
   if (r.payout !== undefined) return `${ins || 'nothing'} → ${money(r.payout)}${needs}`;
   return `${ins || 'nothing'} → ${outs || 'nothing'}${needs}`;
 }
+
+/**
+ * Readable ink for text sitting on an arbitrary building colour.
+ *
+ * Node glyphs and headers are painted with the building's own colour, which
+ * ranges from near-black (the silicon chain) to bright green. A single fixed
+ * ink colour is unreadable at one end or the other, so pick per colour using
+ * relative luminance rather than guessing.
+ */
+export function inkOn(background: string): string {
+  const hex = background.replace('#', '');
+  const full = hex.length === 3 ? hex.split('').map((c) => c + c).join('') : hex;
+  const n = Number.parseInt(full, 16);
+  if (!Number.isFinite(n) || full.length !== 6) return '#0d1117';
+  // sRGB -> linear, then the WCAG luminance weights.
+  const chan = (v: number) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  const r = chan((n >> 16) & 255);
+  const g = chan((n >> 8) & 255);
+  const b = chan(n & 255);
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  // Contrast against white vs against the dark ink; take whichever wins.
+  return (1.05 / (luminance + 0.05)) > ((luminance + 0.05) / 0.10) ? '#f4f8fc' : '#0d1117';
+}

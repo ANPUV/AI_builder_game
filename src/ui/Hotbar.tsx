@@ -1,7 +1,7 @@
 import { BUILDING_BY_ID, buildingCostAt } from '../data';
 import { HOTBAR_KEYS } from '../engine/factory';
 import type { GameState } from '../engine/types';
-import { money } from './format';
+import { inkOn, money } from './format';
 import Tip from './Tip';
 
 interface Props {
@@ -54,7 +54,7 @@ export default function Hotbar({
             content={
               <>
                 <div className="tip-title">
-                  <span className="tip-glyph" style={{ background: b.color }}>{b.icon}</span>
+                  <span className="tip-glyph" style={{ background: b.color, color: inkOn(b.color) }}>{b.icon}</span>
                   {b.name}
                 </div>
                 <div className="tip-kv">
@@ -80,7 +80,7 @@ export default function Hotbar({
               }}
             >
               <span className="hot-key">{HOTBAR_KEYS[i]}</span>
-              <span className="hot-glyph" style={{ background: b.color }}>{b.icon}</span>
+              <span className="hot-glyph" style={{ background: b.color, color: inkOn(b.color) }}>{b.icon}</span>
             </button>
           </Tip>
         );

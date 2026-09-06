@@ -16,7 +16,7 @@ import {
   windowRemaining,
 } from '../engine/market';
 import type { ContractOffer, GameState } from '../engine/types';
-import { money } from './format';
+import { inkOn, money } from './format';
 import type { Pending } from './Canvas';
 
 /** m:ss, the same shape the top bar uses for elapsed time. */
@@ -60,7 +60,7 @@ function OfferRow({
   return (
     <div className="offer">
       <div className="offer-head">
-        <span className="glyph" style={{ background: b.color }}>{b.icon}</span>
+        <span className="glyph" style={{ background: b.color, color: inkOn(b.color) }}>{b.icon}</span>
         <span className="offer-title">
           <span className="name">
             {b.name}

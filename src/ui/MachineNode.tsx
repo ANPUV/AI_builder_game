@@ -12,7 +12,7 @@ import { inputPorts, outputPorts } from '../engine/factory';
 import { machineComputeSupply, statusLabel } from '../engine/simulate';
 import { craftProgress, NODE_W, ROW_H } from './geometry';
 import type { Machine, MachineStatus } from '../engine/types';
-import { money, tpm } from './format';
+import { inkOn, money, tpm } from './format';
 
 const STATUS_COLOR: Record<MachineStatus, string> = {
   running: 'var(--good)',
@@ -64,7 +64,7 @@ export default function MachineNode({
       style={{ left: machine.x, top: machine.y, width: NODE_W }}
       data-node-id={machine.id}
     >
-      <div className="node-header" style={{ background: b.color }}>
+      <div className="node-header" style={{ background: b.color, color: inkOn(b.color) }}>
         <span className="glyph">{b.icon}</span>
         <span className="title">{b.name}</span>
         <span

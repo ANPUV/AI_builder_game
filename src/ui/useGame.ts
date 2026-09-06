@@ -9,7 +9,13 @@ import {
   rarityOf,
 } from '../data';
 import { createInitialState } from '../engine/factory';
-import { clearSave, loadState, saveState } from '../engine/save';
+import {
+  clearSave,
+  exportSaveJSON,
+  importSaveJSON,
+  loadState,
+  saveState,
+} from '../engine/save';
 import { advance } from '../engine/simulate';
 import type { GameState } from '../engine/types';
 import { money } from './format';
@@ -45,6 +51,14 @@ export function useGame() {
    */
   const speedRef = useRef(speed);
   speedRef.current = speed;
+  /**
+   * The speed to come back to when unpausing. Without this, pause is a one-way
+   * door: the ❚❚ button only ever *sets* zero, so pressing it again re-pauses
+   * and the only way to resume is to notice you must click 1×.
+   */
+  const resumeSpeedRef = useRef(1);
+  /** When the world was last written to localStorage, for the top bar. */
+  const [savedAt, setSavedAt] = useState<number | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastId = useRef(0);
   /** Milestone awaiting its unlock panel, and what it made available. */
@@ -52,6 +66,22 @@ export function useGame() {
   const [freshUnlocks, setFreshUnlocks] = useState<string[]>([]);
 
   const repaint = useCallback(() => bump(), []);
+
+  const persist = useCallback(() => {
+    saveState(stateRef.current!);
+    setSavedAt(Date.now());
+  }, []);
+
+  /**
+   * Placing a node then reloading within the autosave window used to lose the
+   * node. Structural changes are cheap to write and rare compared to ticks, so
+   * they get their own debounced save instead of waiting for the interval.
+   */
+  const saveSoon = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleSave = useCallback(() => {
+    if (saveSoon.current) clearTimeout(saveSoon.current);
+    saveSoon.current = setTimeout(persist, 800);
+  }, [persist]);
 
   const toast = useCallback((text: string, tone: Toast['tone'] = 'info') => {
     toastId.current += 1;
@@ -65,9 +95,10 @@ export function useGame() {
     <T,>(fn: (state: GameState) => T): T => {
       const result = fn(stateRef.current!);
       repaint();
+      scheduleSave();
       return result;
     },
-    [repaint],
+    [repaint, scheduleSave],
   );
 
   const reset = useCallback(() => {
@@ -172,18 +203,15 @@ export function useGame() {
 
   // --- autosave -----------------------------------------------------------
   useEffect(() => {
-    const handle = setInterval(
-      () => saveState(stateRef.current!),
-      BALANCE.autosaveSeconds * 1000,
-    );
-    const onLeave = () => saveState(stateRef.current!);
+    const handle = setInterval(persist, BALANCE.autosaveSeconds * 1000);
+    const onLeave = () => persist();
     window.addEventListener('beforeunload', onLeave);
     return () => {
       clearInterval(handle);
       window.removeEventListener('beforeunload', onLeave);
       onLeave();
     };
-  }, []);
+  }, [persist]);
 
   return {
     pendingUnlock,
@@ -201,10 +229,59 @@ export function useGame() {
     toasts,
     toast,
     reset,
+    savedAt,
     save: () => {
-      saveState(stateRef.current!);
+      persist();
       toast('Saved', 'good');
     },
+
+    /** Pause if running, resume at the last speed if paused. */
+    togglePause: useCallback(() => {
+      const current = speedRef.current;
+      if (current > 0) resumeSpeedRef.current = current;
+      const next = current > 0 ? 0 : resumeSpeedRef.current || 1;
+      setSpeed(next);
+      speedRef.current = next;
+      bump();
+    }, []),
+
+    /** Write the world to a .json file the player keeps. */
+    exportFile: useCallback(() => {
+      const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+      const blob = new Blob([exportSaveJSON(stateRef.current!)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `aifor-study-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // Revoking immediately can cancel the download in some browsers.
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      toast('Save exported', 'good');
+    }, [toast]),
+
+    /** Replace the world with a file the player picked. */
+    importFile: useCallback(
+      async (file: File) => {
+        const result = importSaveJSON(await file.text());
+        if (!result.ok) {
+          toast(result.reason, 'bad');
+          return;
+        }
+        stateRef.current = result.state;
+        setPendingUnlock(null);
+        setFreshUnlocks([]);
+        if (import.meta.env.DEV) {
+          const bridge = (window as unknown as { __ai?: Record<string, unknown> }).__ai;
+          if (bridge) bridge.state = stateRef.current;
+        }
+        persist();
+        repaint();
+        toast(`Loaded ${file.name}`, 'good');
+      },
+      [persist, repaint, toast],
+    ),
   };
 }
 

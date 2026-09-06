@@ -14,9 +14,10 @@ import {
   type Vendor,
 } from '../data';
 import { HOTBAR_KEYS } from '../engine/factory';
+import { hasUnseenOffers } from '../engine/market';
 import type { GameState } from '../engine/types';
 import type { Pending } from './Canvas';
-import { money, recipeFlow, tpm } from './format';
+import { inkOn, money, recipeFlow, tpm } from './format';
 import { MarketplaceBody } from './Marketplace';
 import Tip from './Tip';
 
@@ -26,6 +27,32 @@ const TABS = [
   'Slop', 'Compliance', 'Capacity', 'Training', 'Silicon', 'Contracts',
 ] as const;
 export type BuildTab = (typeof TABS)[number];
+
+/**
+ * Where a node runs, which is the distinction players actually shop by.
+ *
+ * A tab like Capacity mixes an OpenAI tier with a rented H100 and a Mac Studio;
+ * they are the same `tier` but nothing like the same purchase. Splitting on the
+ * pool the node touches puts "somebody else's rate limit" and "hardware you own"
+ * in separate blocks, and pulls the content generators out of both.
+ */
+type Group = 'online' | 'local' | 'generated' | 'other';
+
+const GROUP_LABEL: Record<Group, string> = {
+  online: 'Online — provider APIs',
+  local: 'Local — your own hardware',
+  generated: 'AI-generated content',
+  other: 'Everything else',
+};
+const GROUP_ORDER: Group[] = ['online', 'local', 'generated', 'other'];
+
+function groupOf(b: Building, unlockedRecipes: string[]): Group {
+  // Content generators first: what they make matters more than where they run.
+  if (makesItems(b.id, unlockedRecipes).some((id) => item(id).form === 'slop')) return 'generated';
+  if (b.vendor || b.vendorScoped) return 'online';
+  if (b.computeDraw > 0 || b.computeSupply > 0) return 'local';
+  return 'other';
+}
 
 interface Props {
   state: GameState;
@@ -66,7 +93,7 @@ export function BuildTip({ b, state }: { b: Building; state: GameState }) {
   return (
     <>
       <div className="tip-title">
-        <span className="tip-glyph" style={{ background: b.color }}>{b.icon}</span>
+        <span className="tip-glyph" style={{ background: b.color, color: inkOn(b.color) }}>{b.icon}</span>
         {b.name}
       </div>
       <div className="tip-body">{b.description}</div>
@@ -162,19 +189,22 @@ export default function BuildDialog({
           <h2>{active === 'Contracts' ? 'Contract offers' : active}</h2>
         </div>
 
-        <div className="tabs">
+        <div className="build-split">
+        <div className="tabs vertical">
           {available.map((t) => (
             <button
               key={t}
               className={`tab${t === active ? ' active' : ''}`}
               onClick={() => setTab(t)}
             >
-              {t}
-              {t !== 'Contracts' && (
-                <span className="tab-count">
-                  {unlocked.filter((b) => b.tier === t).length}
-                </span>
-              )}
+              <span className="tab-label">{t}</span>
+              {t === 'Contracts'
+                ? hasUnseenOffers(state) && <span className="reddot" />
+                : (
+                    <span className="tab-count">
+                      {unlocked.filter((b) => b.tier === t).length}
+                    </span>
+                  )}
             </button>
           ))}
         </div>
@@ -183,9 +213,21 @@ export default function BuildDialog({
           {active === 'Contracts' ? (
             <MarketplaceBody state={state} onSign={onSign} />
           ) : (
-            <div className="build-grid">
-              {unlocked
-                .filter((b) => b.tier === active)
+            <>
+              {(() => {
+                const inTab = unlocked.filter((b) => b.tier === active);
+                const groups = GROUP_ORDER.map((g) => ({
+                  g,
+                  members: inTab.filter((b) => groupOf(b, state.unlockedRecipes) === g),
+                })).filter((x) => x.members.length > 0);
+                // One group is not a grouping; skip the header rather than
+                // labelling a list with the only thing it could be.
+                const showHeads = groups.length > 1;
+                return groups.map(({ g, members }) => (
+                  <div className="build-group" key={g}>
+                    {showHeads && <div className="build-group-head">{GROUP_LABEL[g]}</div>}
+                    <div className="build-grid">
+              {members
                 .map((b) => {
                   const price = buildingCostAt(b, state.priceIndex);
                   const affordable = state.credits >= price;
@@ -205,7 +247,7 @@ export default function BuildDialog({
                             onClose();
                           }}
                         >
-                          <span className="glyph" style={{ background: b.color }}>{b.icon}</span>
+                          <span className="glyph" style={{ background: b.color, color: inkOn(b.color) }}>{b.icon}</span>
                           <span className="meta">
                             <span className="name">
                               {b.name}
@@ -251,8 +293,13 @@ export default function BuildDialog({
                     </Tip>
                   );
                 })}
-            </div>
+                    </div>
+                  </div>
+                ));
+              })()}
+            </>
           )}
+        </div>
         </div>
 
         <button className="offer-close" onClick={onClose}>Close</button>

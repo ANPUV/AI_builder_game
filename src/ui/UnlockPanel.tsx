@@ -1,5 +1,5 @@
 import { BUILDING_BY_ID, MILESTONE_BY_ID, RECIPE_BY_ID } from '../data';
-import { money, recipeFlow } from './format';
+import { inkOn, money, recipeFlow } from './format';
 
 /**
  * Shown when a milestone completes. A toast is too small to teach anything, and
@@ -37,7 +37,7 @@ export default function UnlockPanel({
             <div className="section-title">New buildings</div>
             {buildings.map((b) => (
               <div className="unlock-row" key={b.id}>
-                <span className="glyph" style={{ background: b.color }}>{b.icon}</span>
+                <span className="glyph" style={{ background: b.color, color: inkOn(b.color) }}>{b.icon}</span>
                 <span className="meta">
                   <span className="name">
                     {b.name}

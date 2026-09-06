@@ -10,7 +10,7 @@ import {
   type Track,
 } from '../data';
 import type { GameState } from '../engine/types';
-import { money } from './format';
+import { inkOn, money } from './format';
 import Tip from './Tip';
 
 /** How many locked milestones ahead of the current one to reveal. */
@@ -30,7 +30,7 @@ function UnlockList({ milestone }: { milestone: Milestone }) {
           content={
             <>
               <div className="tip-title">
-                <span className="tip-glyph" style={{ background: b.color }}>{b.icon}</span>
+                <span className="tip-glyph" style={{ background: b.color, color: inkOn(b.color) }}>{b.icon}</span>
                 {b.name}
               </div>
               <div className="tip-body">{b.description}</div>

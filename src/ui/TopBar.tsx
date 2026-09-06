@@ -1,5 +1,7 @@
+import { useRef } from 'react';
 import { BALANCE, VENDORS, poolColor, poolName, type Pool } from '../data';
 import Tip from './Tip';
+import { useTheme } from './useTheme';
 import type { Game } from './useGame';
 import { money, tpm } from './format';
 
@@ -14,7 +16,11 @@ const clock = (seconds: number): string => {
 
 /** `onSignOut` is optional so the game still renders standalone, ungated. */
 export default function TopBar({ game, onSignOut }: { game: Game; onSignOut?: () => void }) {
-  const { state, speed, setSpeed, save, reset } = game;
+  const { state, speed, setSpeed, save, reset, togglePause, exportFile, importFile, savedAt } =
+    game;
+  const fileInput = useRef<HTMLInputElement>(null);
+  const { theme, toggleTheme } = useTheme();
+  const paused = speed === 0;
   const { demandKtpm, supplyKtpm, satisfaction } = state.compute;
   // Show the pool that is hurting, not an average that hides it.
   const poolRows = Object.entries(state.compute.pools)
@@ -213,14 +219,55 @@ export default function TopBar({ game, onSignOut }: { game: Game; onSignOut?: ()
       <div className="spacer" />
 
       <div className="speeds">
-        {BALANCE.speeds.map((s) => (
-          <button key={s} className={speed === s ? 'active' : ''} onClick={() => setSpeed(s)}>
-            {s === 0 ? '❚❚' : `${s}×`}
-          </button>
-        ))}
+        {/* A toggle, not a set-to-zero. It shows what pressing it will DO, so a
+            paused game offers ▶ rather than a highlighted ❚❚ with no way back. */}
+        <button
+          className={paused ? 'active' : ''}
+          onClick={togglePause}
+          title={paused ? 'Resume (Space)' : 'Pause (Space)'}
+        >
+          {paused ? '▶' : '❚❚'}
+        </button>
+        {BALANCE.speeds
+          .filter((s) => s > 0)
+          .map((s) => (
+            <button key={s} className={!paused && speed === s ? 'active' : ''} onClick={() => setSpeed(s)}>
+              {s}×
+            </button>
+          ))}
       </div>
 
+      {savedAt !== null && (
+        <span className="saved-at" title={new Date(savedAt).toLocaleTimeString()}>
+          Saved
+        </span>
+      )}
+
       <button onClick={save}>Save</button>
+      <button onClick={exportFile} title="Download this factory as a .json file">
+        Export
+      </button>
+      <button onClick={() => fileInput.current?.click()} title="Load a factory from a .json file">
+        Import
+      </button>
+      <input
+        ref={fileInput}
+        type="file"
+        accept="application/json,.json"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          // Reset the input so picking the same file twice still fires.
+          e.target.value = '';
+          if (file) void importFile(file);
+        }}
+      />
+      <button
+        onClick={toggleTheme}
+        title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      >
+        {theme === 'dark' ? '☀' : '☾'}
+      </button>
       <button
         className="danger"
         onClick={() => {

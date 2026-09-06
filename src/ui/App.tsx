@@ -24,6 +24,8 @@ export default function App({ onSignOut }: { onSignOut?: () => void } = {}) {
   const [pending, setPending] = useState<Pending | null>(null);
   /** The build dialog, and which tab it should land on. */
   const [dialog, setDialog] = useState<BuildTab | null>(null);
+  /** The tech tree lives in a left drawer now, closed until asked for. */
+  const [treeOpen, setTreeOpen] = useState(false);
 
   const openDialog = (tab?: BuildTab) => {
     // Opening the board is what clears the dot — the leads have been looked at.
@@ -39,6 +41,13 @@ export default function App({ onSignOut }: { onSignOut?: () => void } = {}) {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
 
+      // Space is the universal pause key in a sim; without it the only control
+      // is a button the player has to aim at.
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        game.togglePause();
+        return;
+      }
       if (e.key === 'Escape') {
         setDialog(null);
         setPending(null);
@@ -89,10 +98,32 @@ export default function App({ onSignOut }: { onSignOut?: () => void } = {}) {
           pending={pending}
           setPending={setPending}
         >
-          <button className="build-fab" onClick={() => openDialog()} title="Build (or press 1-0)">
-            <span>＋</span>
-            {hasUnseenOffers(game.state) && <span className="reddot" />}
-          </button>
+          <div className="left-rail">
+            <button className="build-fab" onClick={() => openDialog()} title="Build (or press 1-0)">
+              <span>＋</span>
+              {hasUnseenOffers(game.state) && <span className="reddot" />}
+            </button>
+            <button
+              className={`rail-btn${treeOpen ? ' active' : ''}`}
+              onClick={() => setTreeOpen((open) => !open)}
+              title="Show the tech tree"
+            >
+              Tech tree
+            </button>
+          </div>
+          {treeOpen && (
+            <div className="left-drawer">
+              <div className="drawer-head">
+                <span className="section-title">Tech tree</span>
+                <button className="drawer-close" onClick={() => setTreeOpen(false)} title="Close">
+                  ✕
+                </button>
+              </div>
+              <div className="drawer-body">
+                <TechTree state={game.state} />
+              </div>
+            </div>
+          )}
           <Hotbar
             state={game.state}
             pendingBuilding={pending?.offerId ? null : (pending?.buildingId ?? null)}
@@ -102,12 +133,14 @@ export default function App({ onSignOut }: { onSignOut?: () => void } = {}) {
           />
         </Canvas>
         <div className="sidebar right">
-          <div className="section-title">Next step</div>
-          <Coach state={game.state} />
-          <div className="section-title">Inspector</div>
-          <Inspector game={game} selection={selection} setSelection={setSelection} />
-          <div className="section-title">Tech tree</div>
-          <TechTree state={game.state} />
+          <section className="panel">
+            <div className="section-title">Next step</div>
+            <Coach state={game.state} />
+          </section>
+          <section className="panel panel-grow">
+            <div className="section-title">Inspector</div>
+            <Inspector game={game} selection={selection} setSelection={setSelection} />
+          </section>
         </div>
       </div>
       {dialog && (

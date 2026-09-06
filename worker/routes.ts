@@ -234,6 +234,11 @@ async function issueEmailToken(
  * A real PBKDF2 hash of a value nobody knows, used to spend the same CPU on a
  * login for an address that does not exist. The password here is irrelevant —
  * what matters is that verifying against it costs the same as a real check.
+ *
+ * The iteration count MUST match ITERATIONS in crypto.ts. verifyPassword
+ * rejects anything outside its accepted range before deriving any bits, so a
+ * stale value here would return false instantly and hand back exactly the
+ * timing signal this exists to remove.
  */
 const DUMMY_HASH =
-  'pbkdf2$sha256$210000$AAAAAAAAAAAAAAAAAAAAAA==$Y2Fubm90bWF0Y2hhbnl0aGluZ2hlcmUxMjM0NTY3OA==';
+  'pbkdf2$sha256$100000$AAAAAAAAAAAAAAAAAAAAAA==$Y2Fubm90bWF0Y2hhbnl0aGluZ2hlcmUxMjM0NTY3OA==';

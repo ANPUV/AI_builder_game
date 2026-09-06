@@ -54,7 +54,12 @@ through code that can check a cookie. Two Vite builds — the public shell into
 **≈ $5/mo.** The paid plan is not optional-ish here — see the password note
 below.
 
-### The password-hashing constraint
+### The password-hashing constraint (CORRECTED — see Phase 5 status)
+
+> **This section was wrong.** The real limit is a hard 100,000-iteration cap in
+> the Workers runtime, not CPU time, and the free plan handles it fine. The
+> $5/mo below is not required. Kept for the reasoning trail.
+
 
 The Workers runtime is not Node, so there is no `bcrypt` and no `argon2`. The
 hash is PBKDF2-SHA256 via WebCrypto, which is native and fine, but an
@@ -458,3 +463,54 @@ being logged out, or the two email switches disagreeing.
 It also calls `node_modules/wrangler/bin/wrangler.js` directly rather than
 going through `npx` — Node 24 on Windows refuses to spawn a `.cmd` without a
 shell, and `shell: true` concatenates arguments unescaped.
+
+
+## Deployed — 6 Sep 2026
+
+**Live at https://beta.aifor.study.** Worker `aifor-study-beta`, D1 attached,
+custom domain bound, TLS valid. Remote database is empty.
+
+### The $5/mo was not needed — I had the reason wrong
+
+Phase 1 predicted that PBKDF2 at 210k iterations would blow the free plan's
+10ms CPU cap, and measured ~200ms per login locally to back it up. The first
+deploy did fail on exactly the endpoints that hash a password, which looked
+like confirmation.
+
+It was not. The real error, from `wrangler tail`:
+
+```
+NotSupportedError: Pbkdf2 failed: iteration counts above 100000
+are not supported (requested 210000).
+```
+
+**The Workers runtime hard-caps PBKDF2 at 100,000 iterations** and rejects
+anything higher outright. Pinned to 100,000, login and registration work on the
+free plan with no CPU trouble. The correlation with hashing was right; the
+cause was not.
+
+`ITERATIONS` is now at the platform ceiling — it is not a number to tune
+upward. It sits below OWASP's 600k recommendation, and that gap is the
+platform's rather than a choice. If this ever guards something worth more than
+a game, the answer is an argon2id WASM build, not a bigger number.
+
+**`DUMMY_HASH` in `routes.ts` must carry the same iteration count.**
+`verifyPassword` rejects an out-of-range count *before* deriving any bits, so a
+stale value there would return false instantly and hand back exactly the timing
+oracle it exists to remove. Verified after the change: unknown address 0.44s,
+real address with a wrong password 0.46s.
+
+### If beta.aifor.study will not resolve for you
+
+A local resolver that cached NXDOMAIN from before the deploy. Confirmed here:
+`nslookup beta.aifor.study 8.8.8.8` answered, the router at 192.168.31.1 did
+not, and `curl --resolve` to the Cloudflare IP returned 200. Flush DNS, or
+point the machine at 1.1.1.1. Nothing is wrong with the deployment.
+
+### What is true right now
+
+- **The game is publicly playable** to anyone with the link. The Phase 3 hard
+  gate does not exist yet; the split is a build-time one only.
+- **No bot protection.** No Turnstile secret, and email verification is gone.
+- **No mail.** Approving somebody tells them nothing; they find out by signing
+  in again, which is what the screen says.

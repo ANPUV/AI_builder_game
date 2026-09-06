@@ -2,18 +2,21 @@
  * Password hashing and token handling.
  *
  * The Workers runtime is not Node: there is no bcrypt and no argon2. WebCrypto
- * PBKDF2-SHA256 is what is actually available, and at a high iteration count it
- * is an acceptable choice (OWASP names 600k for PBKDF2-HMAC-SHA256; we run
- * 210k, which is their floor and a deliberate trade against Workers CPU time).
+ * PBKDF2-SHA256 is what is actually available.
  *
- * This costs real CPU per login. The Workers *free* plan caps a request at
- * 10ms of CPU and this will exceed that — the paid plan's 30s is why
- * docs/PUBLISH-PLAN.md budgets $5/mo. Do not "fix" a CPU limit by lowering
- * ITERATIONS, and never hash on the client: a client-side hash simply becomes
- * the password.
+ * ITERATIONS is pinned to the platform ceiling. Workers rejects anything above
+ * 100,000 outright — `NotSupportedError: Pbkdf2 failed: iteration counts above
+ * 100000 are not supported` — so this is not a number to tune upward. It is
+ * below OWASP's 600k recommendation for PBKDF2-HMAC-SHA256; that gap is the
+ * platform's, not a choice, and it is the argument for moving to an argon2id
+ * WASM build if this ever guards something that matters more than a game.
+ *
+ * Never hash on the client to save server work: a client-side hash simply
+ * becomes the password.
  */
 
-const ITERATIONS = 210_000;
+/** The maximum the Workers runtime will accept. Raising it fails at runtime. */
+const ITERATIONS = 100_000;
 const KEY_BYTES = 32;
 const SALT_BYTES = 16;
 
@@ -58,8 +61,10 @@ export async function verifyPassword(password: string, stored: string): Promise<
   const parts = stored.split('$');
   if (parts.length !== 5 || parts[0] !== 'pbkdf2' || parts[1] !== 'sha256') return false;
 
+  // Anything above the platform ceiling cannot be verified here at all, so
+  // reject it rather than throwing NotSupportedError out of deriveBits.
   const iterations = Number(parts[2]);
-  if (!Number.isInteger(iterations) || iterations < 1000 || iterations > 5_000_000) return false;
+  if (!Number.isInteger(iterations) || iterations < 1000 || iterations > ITERATIONS) return false;
 
   let salt: Uint8Array;
   let expected: Uint8Array;

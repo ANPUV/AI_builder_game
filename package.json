@@ -15,14 +15,21 @@
     "progression": "node tools/progression-test.mjs",
     "cf:login": "wrangler login",
     "cf:whoami": "wrangler whoami",
-    "deploy": "npm run build && wrangler deploy",
-    "deploy:dry": "npm run build && wrangler deploy --dry-run"
+    "deploy": "npm run check:secrets && npm run build && wrangler deploy",
+    "deploy:dry": "npm run build && wrangler deploy --dry-run",
+    "typecheck:worker": "tsc -p tsconfig.worker.json",
+    "db:create": "wrangler d1 create aifor-study-beta",
+    "db:migrate": "wrangler d1 migrations apply aifor-study-beta --remote",
+    "db:migrate:local": "wrangler d1 migrations apply aifor-study-beta --local",
+    "dev:worker": "wrangler dev",
+    "check:secrets": "node tools/check-secrets.mjs"
   },
   "dependencies": {
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260906.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.0",

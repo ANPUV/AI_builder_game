@@ -140,6 +140,7 @@ export const RECIPES: Recipe[] = [
   { id: 'rag_pg',       name: 'pgvector RAG',    buildingId: 'pgvector',    seconds: 8, inputs: [i('embedding', 6),  i('user_request', 3)], outputs: [i('grounded_prompt', 3)], cost: 0.5, note: 'Free vectors on the Postgres you already run — until filters bite. Approximate indexes filter AFTER the scan.' },
   { id: 'rag_pine',     name: 'Pinecone RAG',    buildingId: 'pinecone',    seconds: 7, inputs: [i('embedding', 8),  i('user_request', 5)], outputs: [i('grounded_prompt', 5)], cost: 2.0, note: '~$16 per 1M read units. Query traffic is the bill, not storage.' },
   { id: 'rag_tpuf',     name: 'turbopuffer RAG', buildingId: 'turbopuffer', seconds: 8, inputs: [i('embedding', 12), i('user_request', 9)], outputs: [i('grounded_prompt', 9)], cost: 3.0, note: '$1 per PB scanned. Object storage wins on price exactly when volume gets serious.' },
+  { id: 'rag_qdrant',   name: 'Qdrant RAG',     buildingId: 'qdrant_local', seconds: 9, inputs: [i('embedding', 7),  i('user_request', 4)], outputs: [i('grounded_prompt', 4)], note: 'No per-query fee and nothing to list as a subprocessor — the vectors never leave the machine you already run.' },
   { id: 'cache_run',    name: 'Serve Cache',     buildingId: 'redis_cache', seconds: 1, inputs: [], outputs: [], note: 'Cache reads bill at 10% of input. Repeat prefixes are throughput you did not have to buy.' },
 
   // ======================================================================
@@ -276,9 +277,9 @@ export const RECIPES: Recipe[] = [
   // ======================================================================
   // CONTRACTS — SME on-prem. The audit is the mechanic.
   // ======================================================================
-  { id: 'c_sme_pilot', name: 'SME On-Prem Pilot', buildingId: 'sme_pilot', seconds: 20, inputs: [i('onprem_answer', 10)], outputs: [], payout: 190, maxExposure: 55, requiresOnSite: { tier: 'Home Lab', count: 1 }, note: 'They will send someone to look at the machine. One to ten concurrent users needs a 24GB card — that is the entire hardware specification, and it is why this business exists.' },
-  { id: 'c_sme_fleet', name: 'Managed On-Prem',   buildingId: 'sme_fleet', seconds: 35, inputs: [i('onprem_answer', 30), i('verified_answer', 6)], outputs: [], payout: 1150, maxExposure: 35, requiresOnSite: { tier: 'Home Lab', count: 3 }, note: 'You are not selling answers any more. You are selling someone else\'s server, and you are on the hook when it dies.' },
-  { id: 'c_sme_msp',   name: 'Regional MSP',      buildingId: 'sme_msp',   seconds: 45, inputs: [i('onprem_answer', 80)], outputs: [], payout: 6400, maxExposure: 25, requiresOnSite: { tier: 'Home Lab', count: 6 }, note: 'Every box you have sold is a box you now maintain. GDPR fines reach 4% of global annual turnover, and that is the number that pays your invoice.' },
+  { id: 'c_sme_pilot', name: 'SME On-Prem Pilot', buildingId: 'sme_pilot', seconds: 20, inputs: [i('onprem_answer', 10)], outputs: [], payout: 190, maxExposure: 65, requiresOnSite: { tier: 'Home Lab', count: 1 }, note: 'They will send someone to look at the machine. One to ten concurrent users needs a 24GB card — that is the entire hardware specification, and it is why this business exists.' },
+  { id: 'c_sme_fleet', name: 'Managed On-Prem',   buildingId: 'sme_fleet', seconds: 35, inputs: [i('onprem_answer', 30), i('verified_answer', 6)], outputs: [], payout: 1150, maxExposure: 45, requiresOnSite: { tier: 'Home Lab', count: 3 }, note: 'You are not selling answers any more. You are selling someone else\'s server, and you are on the hook when it dies.' },
+  { id: 'c_sme_msp',   name: 'Regional MSP',      buildingId: 'sme_msp',   seconds: 45, inputs: [i('onprem_answer', 80)], outputs: [], payout: 6400, maxExposure: 32, requiresOnSite: { tier: 'Home Lab', count: 6 }, note: 'Every box you have sold is a box you now maintain. GDPR fines reach 4% of global annual turnover, and that is the number that pays your invoice.' },
 
   // ======================================================================
   // CONTRACTS — slop. One pays nothing, one needs your finger, one scales.

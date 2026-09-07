@@ -221,8 +221,8 @@ export const MILESTONES: Milestone[] = [
     name: "Somebody Else's Server",
     blurb: 'You are not selling answers any more. Every box you have sold is a box you now maintain — and a blown power supply is no longer an inconvenience, it is a contract falling over.',
     requires: { onprem_answer: 900 },
-    unlocksBuildings: ['mac_studio_512', 'mac_studio_256', 'gptoss_local'],
-    unlocksRecipes: ['buy_5090', 'buy_psu_t', 'byo_5090_g', 'byo_5090_t', 'run_studio512', 'run_studio256', 'l_gptoss', 'l_sovereign'],
+    unlocksBuildings: ['mac_studio_512', 'mac_studio_256', 'gptoss_local', 'qdrant_local'],
+    unlocksRecipes: ['buy_5090', 'buy_psu_t', 'byo_5090_g', 'byo_5090_t', 'run_studio512', 'run_studio256', 'l_gptoss', 'l_sovereign', 'rag_qdrant'],
     reward: 450000,
   },
   {

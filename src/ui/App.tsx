@@ -211,7 +211,7 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
         game.pendingRaise && (
           <VentureCapitalOffer
             state={game.state}
-            milestoneId={game.pendingRaise}
+            offer={game.pendingRaise}
             onAccept={() => game.resolveRaise(true)}
             onDecline={() => game.resolveRaise(false)}
           />

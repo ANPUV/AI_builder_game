@@ -534,11 +534,17 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
   const prev = state.finance;
   const smoothedRevenue = prev.revenuePerMin + (revenuePerMin - prev.revenuePerMin) * k;
   const smoothedCogs = prev.cogsPerMin + (cogsPerMin - prev.cogsPerMin) * k;
+  const operatingPerMin =
+    smoothedRevenue - smoothedCogs - (burnPerMonth / BALANCE.monthSeconds) * 60;
   state.finance = {
     burnPerMonth,
     revenuePerMin: smoothedRevenue,
     cogsPerMin: smoothedCogs,
-    netPerMin: smoothedRevenue - smoothedCogs - (burnPerMonth / BALANCE.monthSeconds) * 60,
+    operatingPerMin,
+    // Both filled in by tickVenture immediately below, which is the only thing
+    // that knows what financing actually took this tick.
+    financingPerMin: 0,
+    netPerMin: operatingPerMin,
   };
 
   // 4b --- Venture Capital addon: revenue-share charge, loan repayment ------

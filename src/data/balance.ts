@@ -145,11 +145,34 @@ export const BALANCE = {
   vcCapitalMultiplier: 3,
   /** Revenue share offered on the FIRST raise. Later raises offer less new share as the cap table fills — see vcMaxTotalSharePct. */
   vcBaseSharePct: 0.08,
-  /** Cumulative revenue share can never exceed this, however many rounds are taken. The player always keeps at least this much of revenue. */
-  vcMaxTotalSharePct: 0.6,
+  /**
+   * Cumulative share across rounds still being repaid. Real revenue-based
+   * financing takes 5-15% of monthly revenue, 25% at the extreme; 30% sits
+   * just past that, high enough to hurt. Retired rounds do not count, so this
+   * caps concurrent load, not a permanent tax.
+   */
+  vcMaxTotalSharePct: 0.3,
+  /**
+   * A round stops charging once it has taken this multiple of its capital.
+   * Real RBF caps repayment at 1.3-2.5x (1.5-2.0x is the common band). Without
+   * a cap the effective multiple is infinite, which is not a deal anyone signs.
+   */
+  vcRepaymentCap: 2.0,
+  /**
+   * Raising from a weak position costs more, the way a real down round does —
+   * 96% of 2026 term sheets are 1x non-participating, but 2x shows up
+   * precisely in down rounds and bridges. Multiplies the share offered.
+   */
+  vcDownRoundShareMult: 1.5,
+  /** Repayment cap applied instead of vcRepaymentCap when raising while weak. */
+  vcDownRoundRepaymentCap: 3.0,
+  /** Exposure at or above this counts as weak when terms are set, alongside negative operating income. */
+  vcDownRoundExposure: 30,
 
-  /** Bank loan interest, per sim-month, locked in at draw time. ~27% APR — venture debt in reality runs well above prime; steep enough to be a bridge, not a subsidy. */
-  bankLoanRatePerMonth: 0.02,
+  /** Bank loan interest, per sim-month, locked in at draw time. ~12.7% APR — real venture debt runs prime+1-2% at a bank, 8-13% all-in. Cheap to carry; the cost is the fee below. */
+  bankLoanRatePerMonth: 0.01,
+  /** Deducted from the draw itself. Real venture debt charges 1-2% upfront, which is what makes debt costly to TAKE and cheap to HOLD — the opposite shape to the revenue share. */
+  bankLoanOriginationPct: 0.015,
   /** Sim-months a loan amortizes over. Short enough that a careless draw is felt before the next milestone, typically. */
   bankLoanTermMonths: 6,
   /** Size of any one new draw at milestone 0. Grows with progress — see bankLoanCapGrowthPerMilestone. Not a lifetime cap: multiple loans can be outstanding at once. */

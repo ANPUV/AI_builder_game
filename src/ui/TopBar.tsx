@@ -43,11 +43,19 @@ export default function TopBar({
   const worstPool = state.compute.tight[0] ?? null;
   const load = supplyKtpm > 0 ? Math.min(1, demandKtpm / supplyKtpm) : demandKtpm > 0 ? 1 : 0;
   const short = satisfaction < 0.999;
-  const { revenuePerMin, netPerMin } = state.finance;
+  const { revenuePerMin, operatingPerMin, financingPerMin, netPerMin } = state.finance;
+  // Margin is quoted on the money that actually reaches the bank. Quoting it
+  // on operating income reads as a profitable company while investors and the
+  // bank take more than it earns.
   const margin = revenuePerMin > 0 ? netPerMin / revenuePerMin : 0;
+  const financed = financingPerMin > 0.005;
   const exposure = state.exposure;
   const risky = exposure > 30;
   const vcActive = state.vc.totalSharePct > 0 || state.loans.length > 0;
+  // Rounds still being repaid, and the count of those that have met their cap
+  // and stopped charging — the feedback that a raise is a finite obligation.
+  const activeRaises = state.vc.raises.filter((r) => r.paid < r.owed);
+  const retiredCount = state.vc.raises.length - activeRaises.length;
   const loanBalance = state.loans.reduce((sum, l) => sum + l.principal, 0);
   const loanMonthlyDue = state.loans.reduce(
     (sum, l) => sum + l.principal * l.ratePerMonth + l.principal / Math.max(l.monthsRemaining, 1 / BALANCE.monthSeconds),
@@ -70,15 +78,40 @@ export default function TopBar({
         </span>
       </div>
 
-      <div className="stat">
-        <span className="label">{t('top.netPerMin')}</span>
-        <span
-          className="value mono"
-          style={{ color: netPerMin >= 0 ? 'var(--good)' : 'var(--bad)' }}
-        >
-          {netPerMin >= 0 ? '+' : ''}{money(netPerMin)}
-        </span>
-      </div>
+      <Tip
+        width={270}
+        content={
+          <>
+            <div className="tip-title">{t('top.netPerMin')}</div>
+            <div className="tip-kv">
+              <span>{t('top.operating')}</span>
+              <span className="mono">{operatingPerMin >= 0 ? '+' : ''}{money(operatingPerMin)}</span>
+            </div>
+            <div className="tip-kv">
+              <span>{t('top.financing')}</span>
+              <span className="mono">{financed ? `−${money(financingPerMin)}` : '—'}</span>
+            </div>
+            <div className="tip-kv">
+              <span>{t('top.netPerMin')}</span>
+              <span className="mono">{netPerMin >= 0 ? '+' : ''}{money(netPerMin)}</span>
+            </div>
+            <div className="tip-body">{t('top.netNote')}</div>
+          </>
+        }
+      >
+        <div className="stat">
+          <span className="label">
+            {t('top.netPerMin')}
+            {financed && <span className="quick-dim"> · {t('top.afterFinancing')}</span>}
+          </span>
+          <span
+            className="value mono"
+            style={{ color: netPerMin >= 0 ? 'var(--good)' : 'var(--bad)' }}
+          >
+            {netPerMin >= 0 ? '+' : ''}{money(netPerMin)}
+          </span>
+        </div>
+      </Tip>
 
       <div className="stat">
         <span className="label">{t('top.netMargin')}</span>
@@ -100,6 +133,28 @@ export default function TopBar({
                 <div className="tip-body">
                   {t('vc.tipShare', { pct: Math.round(state.vc.totalSharePct * 100) })}
                 </div>
+              )}
+              {activeRaises.length > 0 && (
+                <>
+                  <div className="tip-kv" style={{ opacity: 0.7, marginTop: 6 }}>
+                    <span>{t('vc.roundsOpen', { n: activeRaises.length })}</span>
+                    <span className="mono">{t('vc.repaid')}</span>
+                  </div>
+                  {activeRaises.map((r) => (
+                    <div className="tip-kv" key={r.milestoneId}>
+                      <span>
+                        {Math.round(r.sharePct * 100)}% · {money(r.capital)}
+                        {r.downRound ? ' ⚠' : ''}
+                      </span>
+                      <span className="mono">
+                        {money(r.paid)} / {money(r.owed)}
+                      </span>
+                    </div>
+                  ))}
+                </>
+              )}
+              {retiredCount > 0 && (
+                <div className="tip-body">{t('vc.retired', { n: retiredCount })}</div>
               )}
               {state.loans.length > 0 && (
                 <>

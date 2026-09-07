@@ -46,7 +46,14 @@ export function createInitialState(): GameState {
     vc: { raises: [], totalSharePct: 0, declined: [] },
     loans: [],
     compute: { pools: {}, demandKtpm: 0, supplyKtpm: 0, satisfaction: 1, tight: [] },
-    finance: { burnPerMonth: 0, revenuePerMin: 0, cogsPerMin: 0, netPerMin: 0 },
+    finance: {
+      burnPerMonth: 0,
+      revenuePerMin: 0,
+      cogsPerMin: 0,
+      operatingPerMin: 0,
+      financingPerMin: 0,
+      netPerMin: 0,
+    },
     status: {},
   };
   seedMarket(state);

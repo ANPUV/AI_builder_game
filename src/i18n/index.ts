@@ -22,6 +22,11 @@ export type Lang = (typeof LANGUAGES)[number]['code'];
 const en = {
   'top.cash': 'Cash',
   'top.netPerMin': 'Net / min',
+  'top.operating': 'Operating',
+  'top.financing': 'Financing',
+  'top.afterFinancing': 'after financing',
+  'top.netNote':
+    'Operating is what the factory earns. Financing is what investors and the bank take out of it. Net is what reaches your cash.',
   'top.netMargin': 'Net margin',
   'top.exposure': 'Exposure',
   'top.breach': 'BREACH',
@@ -94,22 +99,32 @@ const en = {
 
   'vc.label': 'Investors',
   'vc.tipTitle': 'Venture Capital',
-  'vc.tipShare': 'Investors take {pct}% of revenue while the company is profitable.',
+  'vc.tipShare': 'Investors take {pct}% of revenue until each round has repaid its cap.',
+  'vc.roundsOpen': '{n} round(s) still repaying',
+  'vc.repaid': 'repaid',
+  'vc.retired': '{n} round(s) repaid in full and no longer charging.',
   'vc.loanBalance': 'Loan balance',
   'vc.loanDue': 'Due',
   'vc.openBank': 'Bank',
   'vc.offerBadge': 'Funding offer',
+  'vc.downRoundBadge': 'Down round',
   'vc.offerTitle': 'Raise a round on {milestone}?',
   'vc.offerBlurb':
-    'One lump sum now, for a permanent slice of revenue. Investors collect nothing in any month the company runs at a loss.',
+    'One lump sum now, against a share of revenue until the round is repaid in full. Investors collect nothing in any month the company runs at a loss — that defers the debt, it does not cancel it.',
+  'vc.downRoundBlurb':
+    'You are raising from weakness, and the terms say so: a bigger share of revenue and a higher repayment cap than the same money would cost a healthy company.',
   'vc.capital': 'Capital',
   'vc.share': 'Revenue share',
+  'vc.repayTotal': 'Repay in total',
+  'vc.repayNote':
+    'The share stops the moment the round has repaid that total. It is a finite obligation, not a permanent tax.',
   'vc.totalAfter': 'Total after this round',
   'vc.decline': 'Decline',
   'vc.accept': 'Take the deal',
   'vc.bankTitle': 'The Bank',
   'vc.bankBlurb':
-    'Borrow against the company, at {rate}% a month. Repaid automatically out of cash on hand, whether or not the company is profitable.',
+    'Borrow against the company, at {rate}% a month plus a {fee}% origination fee taken out of the draw. Repaid automatically out of cash on hand, whether or not the company is profitable.',
+  'vc.bankProceeds': 'You receive',
   'vc.bankOutstanding': 'Outstanding loans',
   'vc.bankRemaining': '({months} mo left)',
   'vc.bankDraw': 'Draw a new loan',
@@ -122,6 +137,11 @@ export type Key = keyof typeof en;
 const vi: Partial<Record<Key, string>> = {
   'top.cash': 'Tiền mặt',
   'top.netPerMin': 'Lãi / phút',
+  'top.operating': 'Lãi vận hành',
+  'top.financing': 'Chi phí tài chính',
+  'top.afterFinancing': 'sau chi phí tài chính',
+  'top.netNote':
+    'Lãi vận hành là phần nhà máy kiếm được. Chi phí tài chính là phần nhà đầu tư và ngân hàng lấy đi. Lãi là phần thực sự vào túi bạn.',
   'top.netMargin': 'Biên lợi nhuận',
   'top.exposure': 'Rủi ro',
   'top.breach': 'RÒ RỈ',
@@ -194,26 +214,36 @@ const vi: Partial<Record<Key, string>> = {
 
   'vc.label': 'Nhà đầu tư',
   'vc.tipTitle': 'Vốn đầu tư mạo hiểm',
-  'vc.tipShare': 'Nhà đầu tư nhận {pct}% doanh thu khi công ty còn lãi.',
+  'vc.tipShare': 'Nhà đầu tư nhận {pct}% doanh thu cho tới khi mỗi vòng trả đủ mức trần.',
+  'vc.roundsOpen': '{n} vòng đang còn trả',
+  'vc.repaid': 'đã trả',
+  'vc.retired': '{n} vòng đã trả đủ và không thu nữa.',
   'vc.loanBalance': 'Dư nợ vay',
   'vc.loanDue': 'Phải trả',
   'vc.openBank': 'Ngân hàng',
   'vc.offerBadge': 'Đề nghị gọi vốn',
+  'vc.downRoundBadge': 'Vòng giảm giá',
   'vc.offerTitle': 'Gọi vốn nhân cột mốc {milestone}?',
   'vc.offerBlurb':
-    'Nhận một khoản vốn lớn ngay bây giờ, đổi lại một phần doanh thu vĩnh viễn. Nhà đầu tư không nhận gì trong những tháng công ty lỗ.',
+    'Nhận một khoản vốn lớn ngay bây giờ, đổi lại một phần doanh thu cho tới khi trả đủ vòng này. Nhà đầu tư không nhận gì trong những tháng công ty lỗ — điều đó hoãn nợ lại, chứ không xoá nợ.',
+  'vc.downRoundBlurb':
+    'Bạn đang gọi vốn từ thế yếu, và điều khoản phản ánh đúng điều đó: phần doanh thu lớn hơn và mức trần hoàn trả cao hơn so với cùng số tiền đó với một công ty khoẻ mạnh.',
   'vc.capital': 'Vốn nhận được',
   'vc.share': 'Chia sẻ doanh thu',
+  'vc.repayTotal': 'Tổng phải hoàn trả',
+  'vc.repayNote':
+    'Phần chia doanh thu dừng ngay khi vòng này trả đủ tổng đó. Đây là nghĩa vụ hữu hạn, không phải khoản thuế vĩnh viễn.',
   'vc.totalAfter': 'Tổng cộng sau vòng này',
   'vc.decline': 'Từ chối',
   'vc.accept': 'Nhận khoản đầu tư',
   'vc.bankTitle': 'Ngân hàng',
   'vc.bankBlurb':
-    'Vay vốn cho công ty với lãi suất {rate}%/tháng. Tự động trừ vào tiền mặt, dù công ty có lãi hay không.',
+    'Vay vốn cho công ty với lãi suất {rate}%/tháng, cộng phí thu xếp {fee}% trừ thẳng vào khoản giải ngân. Tự động trừ vào tiền mặt, dù công ty có lãi hay không.',
   'vc.bankOutstanding': 'Khoản vay hiện có',
   'vc.bankRemaining': '(còn {months} tháng)',
   'vc.bankDraw': 'Vay khoản mới',
   'vc.bankCap': 'Ngân hàng cho vay tối đa',
+  'vc.bankProceeds': 'Bạn thực nhận',
   'vc.bankBorrow': 'Vay',
 };
 

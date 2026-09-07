@@ -122,22 +122,45 @@ export interface FinanceReport {
   revenuePerMin: number;
   /** Rolling $ per minute spent on per-token API costs. */
   cogsPerMin: number;
-  /** revenuePerMin - cogsPerMin - rentPerMin. Gates the Venture Capital revenue share: investors collect nothing while this is <= 0. */
+  /**
+   * revenuePerMin - cogsPerMin - rentPerMin: what the factory itself earns,
+   * BEFORE anything owed to investors or the bank. This is the number the
+   * player can move with build decisions, and it gates the Venture Capital
+   * revenue share — investors collect nothing while it is <= 0.
+   */
+  operatingPerMin: number;
+  /** $ per minute leaving as investor revenue share, loan interest and principal. */
+  financingPerMin: number;
+  /** operatingPerMin - financingPerMin. What actually lands in credits. */
   netPerMin: number;
 }
 
-/** One accepted funding round, under the Venture Capital addon. */
+/**
+ * One accepted funding round, under the Venture Capital addon.
+ *
+ * A round is a FINITE obligation: it takes `sharePct` of revenue until it has
+ * handed over `owed`, then it retires and charges nothing ever again. Real
+ * revenue-based financing caps repayment at 1.3-2.5x the capital advanced;
+ * an uncapped share of revenue is not an instrument anybody sells.
+ */
 export interface VentureRaise {
   milestoneId: string;
   capital: number;
-  /** Share of revenuePerMin this round costs, permanently, while net income is positive. */
+  /** Share of revenuePerMin this round costs while it is still being repaid. */
   sharePct: number;
+  /** Total this round will ever take. Set at signing from BALANCE.vcRepaymentCap. */
+  owed: number;
+  /** Handed over so far. The round retires the moment this reaches `owed`. */
+  paid: number;
+  /** Signed while the company was weak: worse share, higher cap. Display only. */
+  downRound?: boolean;
 }
 
 /** Venture Capital addon state. Present even when the addon is off — cheap, and avoids nullable checks everywhere. */
 export interface VentureState {
+  /** Every round ever signed. Retired rounds stay for the record and charge nothing. */
   raises: VentureRaise[];
-  /** Sum of raises[].sharePct, cached for the per-tick charge. Never exceeds BALANCE.vcMaxTotalSharePct. */
+  /** Sum of sharePct across rounds STILL being repaid, cached for the per-tick charge. Falls as rounds retire. */
   totalSharePct: number;
   /** Milestone ids whose raise offer was declined — permanent, so it is never re-offered. */
   declined: string[];

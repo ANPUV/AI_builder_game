@@ -17,7 +17,14 @@ import {
   saveState,
 } from '../engine/save';
 import { advance } from '../engine/simulate';
-import { acceptRaise, declineRaise, drawLoan, raiseOfferFor } from '../engine/venture';
+import {
+  acceptRaise,
+  declineRaise,
+  drawLoan,
+  loanProceeds,
+  raiseOfferFor,
+  type RaiseOffer,
+} from '../engine/venture';
 import type { GameState } from '../engine/types';
 import type { AddonId } from '../data/addons';
 import { money } from './format';
@@ -71,7 +78,7 @@ export function useGame() {
    * `pendingUnlock` clears for the same milestone, not alongside it — see
    * what you unlocked, then decide whether to fund it.
    */
-  const [pendingRaise, setPendingRaise] = useState<string | null>(null);
+  const [pendingRaise, setPendingRaise] = useState<RaiseOffer | null>(null);
 
   const repaint = useCallback(() => bump(), []);
 
@@ -153,7 +160,11 @@ export function useGame() {
         if (!milestone) continue;
         setPendingUnlock(id);
         setFreshUnlocks(milestone.unlocksBuildings);
-        if (raiseOfferFor(stateRef.current!, id)) setPendingRaise(id);
+        // Snapshot the terms as they stood when the milestone landed. They
+        // depend on company health, and a term sheet must not reprice itself
+        // while the player is reading it.
+        const offer = raiseOfferFor(stateRef.current!, id);
+        if (offer) setPendingRaise(offer);
       }
 
       // Common leads only get the red dot; interrupting play for a $100
@@ -232,13 +243,14 @@ export function useGame() {
     /** Accept or decline the pending raise offer. Declining is permanent. */
     resolveRaise: useCallback((accept: boolean) => {
       const state = stateRef.current!;
-      const id = pendingRaise;
-      if (!id) return;
+      const offer = pendingRaise;
+      if (!offer) return;
       if (accept) {
-        const result = acceptRaise(state, id);
+        const result = acceptRaise(state, offer);
         if (result.ok) toast('Funding round closed', 'good');
+        else toast(result.reason, 'bad');
       } else {
-        declineRaise(state, id);
+        declineRaise(state, offer.milestoneId);
       }
       setPendingRaise(null);
       persist();
@@ -253,7 +265,8 @@ export function useGame() {
         toast(result.reason, 'bad');
         return;
       }
-      toast(`Borrowed ${money(amount)}`, 'good');
+      // What lands is net of the origination fee; the debt is the full amount.
+      toast(`Borrowed ${money(amount)} — received ${money(loanProceeds(amount))}`, 'good');
       persist();
       bump();
     }, [persist, toast]),

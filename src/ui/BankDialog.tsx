@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BALANCE } from '../data';
-import { loanCap } from '../engine/venture';
+import { loanCap, loanProceeds } from '../engine/venture';
 import type { GameState } from '../engine/types';
 import { money } from './format';
 import { useLang } from '../i18n/useLang';
@@ -29,7 +29,12 @@ export default function BankDialog({
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <h2>{t('vc.bankTitle')}</h2>
-          <p>{t('vc.bankBlurb', { rate: (BALANCE.bankLoanRatePerMonth * 100).toFixed(0) })}</p>
+          <p>
+            {t('vc.bankBlurb', {
+              rate: (BALANCE.bankLoanRatePerMonth * 100).toFixed(0),
+              fee: (BALANCE.bankLoanOriginationPct * 100).toFixed(1),
+            })}
+          </p>
         </div>
 
         {state.loans.length > 0 && (
@@ -61,6 +66,13 @@ export default function BankDialog({
           onChange={(e) => setAmount(Number(e.target.value))}
           style={{ width: '100%', marginTop: 8 }}
         />
+        {/* You owe the amount drawn; the fee comes out of what you receive. */}
+        <div className="kv" style={{ marginTop: 8 }}>
+          <span className="k">{t('vc.bankProceeds')}</span>
+          <span className="mono" style={{ color: 'var(--good)' }}>
+            {money(loanProceeds(Math.max(0, amount)))}
+          </span>
+        </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
           <button style={{ flex: 1 }} onClick={onClose}>
             {t('build.close')}

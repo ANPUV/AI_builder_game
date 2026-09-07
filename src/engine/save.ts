@@ -1,5 +1,13 @@
-import { ALL_VENDORS, BUILDING_BY_ID, MILESTONE_BY_ID, RECIPE_BY_ID, listingFor } from '../data';
+import {
+  ALL_VENDORS,
+  BALANCE,
+  BUILDING_BY_ID,
+  MILESTONE_BY_ID,
+  RECIPE_BY_ID,
+  listingFor,
+} from '../data';
 import { HOTBAR_SLOTS, STATE_VERSION, createInitialState } from './factory';
+import { activeSharePct } from './venture';
 import type { GameState } from './types';
 
 const KEY = 'aifor-study/save/v1';
@@ -77,6 +85,46 @@ export function reviveState(parsed: GameState): GameState | null {
   }
   state.unlockedBuildings = state.unlockedBuildings.filter((id) => BUILDING_BY_ID[id]);
   state.unlockedRecipes = state.unlockedRecipes.filter((id) => RECIPE_BY_ID[id]);
+
+  // Funding rounds signed before repayment caps existed took a share of revenue
+  // with no terminal condition — an effectively infinite repayment multiple.
+  // Give each one the cap it should always have had.
+  //
+  // How much such a round had ALREADY taken is unknowable: nothing recorded it.
+  // The choice is resolved in the player's favour, crediting each round with
+  // its capital back (`paid = capital`), so an old save owes only the remaining
+  // margin instead of starting its meter again from zero on money it has
+  // demonstrably been paying for a long time. Rounds signed after this ships
+  // start at `paid: 0` like they should.
+  let migrated = false;
+  for (const r of state.vc?.raises ?? []) {
+    if (typeof r.owed !== 'number') {
+      r.owed = r.capital * BALANCE.vcRepaymentCap;
+      r.paid = r.capital;
+      migrated = true;
+    }
+    if (typeof r.paid !== 'number') r.paid = 0;
+  }
+  // The cumulative ceiling came down at the same time as the cap went in, and a
+  // save that stacked rounds under the old one can sit far above it — which is
+  // exactly the state that made a profitable company bleed cash. Retire rounds
+  // oldest-first (they have been charging longest, so they are the ones most
+  // owed to have finished) until the live share is inside the new ceiling.
+  if (migrated && state.vc) {
+    for (const r of state.vc.raises) {
+      if (activeSharePct(state) <= BALANCE.vcMaxTotalSharePct) break;
+      r.paid = r.owed;
+    }
+  }
+  if (state.vc) state.vc.totalSharePct = activeSharePct(state);
+
+  // Finance split operating income from financing cost. An old save carries
+  // only the old combined `netPerMin`, which was operating income by any other
+  // name — it never subtracted what investors and the bank were taking.
+  const fin = state.finance;
+  if (fin && typeof fin.operatingPerMin !== 'number') fin.operatingPerMin = fin.netPerMin ?? 0;
+  if (fin && typeof fin.financingPerMin !== 'number') fin.financingPerMin = 0;
+
   state.status = {};
   return state;
 }

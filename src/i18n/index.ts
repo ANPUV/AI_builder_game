@@ -79,6 +79,8 @@ const en = {
   'quick.comesFrom': 'comes from',
   'quick.noTakers': 'Nothing you have unlocked takes this yet.',
   'quick.noMakers': 'Nothing you have unlocked makes this yet.',
+  'quick.contractLocked': 'signed, not built',
+  'quick.contractTip': "Customers aren't on the shelf. Open the Contracts tab and sign this one before its offer expires.",
 
   'top.settings': 'Settings',
   'build.built': 'BUILT',
@@ -177,6 +179,8 @@ const vi: Partial<Record<Key, string>> = {
   'quick.comesFrom': 'đến từ',
   'quick.noTakers': 'Chưa có node nào bạn mở khoá nhận thứ này.',
   'quick.noMakers': 'Chưa có node nào bạn mở khoá tạo ra thứ này.',
+  'quick.contractLocked': 'ký hợp đồng, không xây',
+  'quick.contractTip': 'Khách hàng không có sẵn ở đây. Mở tab Hợp đồng và ký với khách này trước khi lời mời hết hạn.',
 
   'top.settings': 'Cài đặt',
   'build.built': 'ĐÃ XÂY',

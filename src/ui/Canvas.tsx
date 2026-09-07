@@ -30,6 +30,7 @@ import {
 } from './geometry';
 import { inkOn, money } from './format';
 import MachineNode from './MachineNode';
+import Tip from './Tip';
 import type { Game } from './useGame';
 import { useContent, useLang } from '../i18n/useLang';
 
@@ -719,20 +720,34 @@ export default function Canvas({
                   {t(quickBuild.dir === 'out' ? 'quick.noTakers' : 'quick.noMakers')}
                 </div>
               )}
-              {options.map(({ b, price }) => (
-                <button
-                  key={b.id}
-                  className="quick-row"
-                  disabled={state.credits < price}
-                  onClick={() => buildQuick(b.id)}
-                >
-                  <span className="glyph" style={{ background: b.color, color: inkOn(b.color) }}>
-                    {b.icon}
-                  </span>
-                  <span className="quick-name">{bName(b)}</span>
-                  <span className="mono quick-dim">{money(price)}</span>
-                </button>
-              ))}
+              {options.map(({ b, price }) => {
+                // A contract chassis has no route onto the canvas from here —
+                // it only ever arrives via a signed offer on the Contracts
+                // tab. Greyed out and inert rather than hidden, so the player
+                // learns why instead of wondering where their customer went.
+                const isContract = b.kind === 'contract';
+                const button = (
+                  <button
+                    className={`quick-row${isContract ? ' quick-row-locked' : ''}`}
+                    disabled={isContract || state.credits < price}
+                    onClick={() => buildQuick(b.id)}
+                  >
+                    <span className="glyph" style={{ background: b.color, color: inkOn(b.color) }}>
+                      {b.icon}
+                    </span>
+                    <span className="quick-name">{bName(b)}</span>
+                    <span className="mono quick-dim">
+                      {isContract ? t('quick.contractLocked') : money(price)}
+                    </span>
+                  </button>
+                );
+                if (!isContract) return <span key={b.id} style={{ display: 'contents' }}>{button}</span>;
+                return (
+                  <Tip key={b.id} width={220} content={t('quick.contractTip')}>
+                    {button}
+                  </Tip>
+                );
+              })}
             </div>
           );
         })()}

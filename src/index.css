@@ -203,6 +203,7 @@ select, input[type='text'] {
   background: transparent; border: 1px solid transparent;
 }
 .quick-row:hover:not(:disabled) { background: var(--btn-hover); border-color: var(--btn-hover-edge); }
+.quick-row-locked { opacity: 0.45; cursor: not-allowed; }
 .quick-row .glyph {
   width: 22px; height: 22px; flex: 0 0 22px; display: grid; place-items: center;
   border-radius: 5px; font-weight: 700; font-size: 12px;

@@ -1,4 +1,4 @@
-import { ALL_VENDORS, BUILDING_BY_ID, RECIPE_BY_ID, listingFor } from '../data';
+import { ALL_VENDORS, BUILDING_BY_ID, MILESTONE_BY_ID, RECIPE_BY_ID, listingFor } from '../data';
 import { HOTBAR_SLOTS, STATE_VERSION, createInitialState } from './factory';
 import type { GameState } from './types';
 
@@ -57,6 +57,24 @@ export function reviveState(parsed: GameState): GameState | null {
     const id = state.hotbar?.[i];
     return id && BUILDING_BY_ID[id] ? id : null;
   });
+  // A milestone only ever transcribes its unlocksBuildings/unlocksRecipes into
+  // these two arrays at the moment it completes (see completeMilestone in
+  // simulate.ts) — completedMilestones itself is just a historical record, not
+  // re-read on load. So a building added to an ALREADY-completed milestone
+  // after a save was written would otherwise never reach that save: the
+  // milestone can't complete a second time to transcribe it. Re-derive from
+  // every completed milestone on every load so old saves keep pace with
+  // content added to milestones they already cleared.
+  for (const id of state.completedMilestones) {
+    const m = MILESTONE_BY_ID[id];
+    if (!m) continue;
+    for (const bId of m.unlocksBuildings) {
+      if (!state.unlockedBuildings.includes(bId)) state.unlockedBuildings.push(bId);
+    }
+    for (const rId of m.unlocksRecipes) {
+      if (!state.unlockedRecipes.includes(rId)) state.unlockedRecipes.push(rId);
+    }
+  }
   state.unlockedBuildings = state.unlockedBuildings.filter((id) => BUILDING_BY_ID[id]);
   state.unlockedRecipes = state.unlockedRecipes.filter((id) => RECIPE_BY_ID[id]);
   state.status = {};

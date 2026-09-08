@@ -671,6 +671,68 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 .drawer-close:hover { color: var(--text); }
 .drawer-body { overflow-y: auto; padding: 6px 10px 10px; min-height: 0; }
 
+/* Tech tree: a horizontal timeline (one column per act) plus a detail panel,
+   docked along the bottom so a wide track has somewhere to actually go. */
+.tt-panel {
+  position: absolute; left: 70px; right: 14px; bottom: 14px; z-index: 20;
+  height: 340px; max-height: calc(100% - 28px);
+  display: flex; flex-direction: column;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 12px 34px var(--shadow);
+  overflow: hidden;
+}
+.tt-head {
+  display: flex; align-items: center; gap: 10px; flex: none;
+  padding: 8px 10px; border-bottom: 1px solid var(--line);
+}
+.tt-body { flex: 1 1 auto; min-height: 0; display: flex; }
+
+.tt-timeline {
+  flex: 1 1 auto; min-width: 0; overflow-x: auto; overflow-y: hidden;
+  display: flex; align-items: stretch; padding: 10px 8px;
+}
+.tt-era {
+  flex: none; min-width: 130px; display: flex; flex-direction: column;
+  padding: 0 14px; border-right: 1px solid var(--line-soft);
+}
+.tt-era:last-child { border-right: none; }
+.tt-era-label {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
+  color: var(--muted); text-align: center; margin-bottom: 10px; white-space: nowrap;
+}
+.tt-era-nodes {
+  flex: 1; position: relative; display: flex; flex-direction: column;
+  justify-content: center; gap: 10px;
+}
+/* Decorative only — a nod to the river-of-eras reference, not a real Sankey. */
+.tt-ribbon {
+  position: absolute; left: -6px; right: -6px; top: 6px; bottom: 6px;
+  border-radius: 999px; opacity: 0.13; z-index: 0;
+}
+.tt-node {
+  position: relative; z-index: 1; width: 100%;
+  display: flex; align-items: center; gap: 8px;
+  background: none; border: none; padding: 3px 4px; border-radius: 6px;
+  color: var(--text); text-align: left; cursor: pointer;
+}
+.tt-node:hover { background: var(--row-on); }
+.tt-node-selected { background: var(--row-on); box-shadow: inset 0 0 0 1px var(--line); }
+.tt-dot {
+  flex: none; border-radius: 50%; display: grid; place-items: center;
+  border: 2px solid var(--line); background: var(--panel-2); color: var(--muted);
+  font-size: 11px; font-weight: 700;
+}
+.tt-node-current .tt-dot { box-shadow: 0 0 0 4px var(--row-on); }
+.tt-node-locked .tt-dot { opacity: 0.55; }
+.tt-node-name { font-size: 10.5px; line-height: 1.2; }
+.tt-node-locked .tt-node-name { color: var(--muted); font-style: italic; }
+.tt-node-done .tt-node-name { color: var(--muted); }
+
+.tt-detail {
+  flex: none; width: 300px; border-left: 1px solid var(--line);
+  padding: 10px 12px; overflow-y: auto;
+}
+
 .build-fab {
   position: relative; z-index: 20;
   width: 44px; height: 44px; border-radius: 10px;

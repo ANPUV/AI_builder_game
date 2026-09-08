@@ -162,17 +162,7 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
             </button>
           </div>
           {treeOpen && (
-            <div className="left-drawer">
-              <div className="drawer-head">
-                <span className="section-title">{t('side.techTree')}</span>
-                <button className="drawer-close" onClick={() => setTreeOpen(false)} title={t('side.close')}>
-                  ✕
-                </button>
-              </div>
-              <div className="drawer-body">
-                <TechTree state={game.state} />
-              </div>
-            </div>
+            <TechTree state={game.state} onClose={() => setTreeOpen(false)} />
           )}
           <Hotbar
             state={game.state}

@@ -13,11 +13,8 @@ import {
 } from '../data';
 import type { GameState } from '../engine/types';
 import { inkOn, money } from './format';
-import { useContent } from '../i18n/useLang';
+import { useContent, useLang } from '../i18n/useLang';
 import Tip from './Tip';
-
-/** How many locked milestones ahead of the current one to reveal. */
-export const LOOKAHEAD = 3;
 
 function UnlockList({ milestone }: { milestone: Milestone }) {
   const { bName, bDesc } = useContent();
@@ -132,7 +129,44 @@ function Requirement({
   );
 }
 
-export default function TechTree({ state }: { state: GameState }) {
+type NodeStatus = 'done' | 'current' | 'locked';
+
+/** Consecutive milestones sharing an `act` become one era column — the data
+ * is already authored in that order, so this is a grouping, not a sort. */
+function groupByAct(milestones: Milestone[]): { label: string; milestones: Milestone[] }[] {
+  const groups: { label: string; milestones: Milestone[] }[] = [];
+  for (const m of milestones) {
+    const label = m.act ?? '';
+    const last = groups[groups.length - 1];
+    if (last && last.label === label) last.milestones.push(m);
+    else groups.push({ label, milestones: [m] });
+  }
+  return groups;
+}
+
+/** A bigger unlock earns a bigger circle — the one piece of the reference
+ * timeline's bubble-sizing this data can actually support honestly. */
+function nodeSize(m: Milestone): number {
+  const impact = m.unlocksBuildings.length + m.unlocksRecipes.length;
+  return Math.round(Math.min(34, Math.max(20, 18 + impact * 1.1)));
+}
+
+/**
+ * The unlock tree, laid out as a horizontal timeline: one column per `act`,
+ * left to right, milestones as circles down each column. All of it is on
+ * screen at once — nothing is hidden behind a lookahead count — because the
+ * whole point of a timeline is seeing where the track goes, not just what's
+ * next. Clicking any circle (done, current, or locked) opens its detail in
+ * the panel on the right; only the current one's requirements actually move.
+ */
+export default function TechTree({
+  state,
+  onClose,
+}: {
+  state: GameState;
+  onClose: () => void;
+}) {
+  const { t } = useLang();
   /**
    * One goal per track, not one goal overall. The branches advance in parallel,
    * so a player on the main spine must never be shown a home lab objective as
@@ -140,6 +174,7 @@ export default function TechTree({ state }: { state: GameState }) {
    * where it goes.
    */
   const [track, setTrack] = useState<Track>('main');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // A branch only appears once the player has actually opened it: nothing is
   // unlocked from it before then, so advertising it would be noise.
@@ -158,116 +193,133 @@ export default function TechTree({ state }: { state: GameState }) {
       )),
   );
   const active = visibleTracks.some((tr) => tr.id === track) ? track : 'main';
+  const activeTrack = TRACKS.find((tr) => tr.id === active)!;
 
   const inTrack = MILESTONES.filter((m) => (m.track ?? 'main') === active);
   const nextIndex = inTrack.findIndex((m) => !state.completedMilestones.includes(m.id));
-  const done = nextIndex === -1 ? inTrack : inTrack.slice(0, nextIndex);
+  const currentMilestone = nextIndex === -1 ? inTrack[inTrack.length - 1] : inTrack[nextIndex];
 
-  const switcher =
-    visibleTracks.length > 1 ? (
-      <div className="track-tabs">
-        {visibleTracks.map((tr) => (
-          <button
-            key={tr.id}
-            className={`track-tab${tr.id === active ? ' on' : ''}`}
-            style={tr.id === active ? { borderColor: tr.color, color: tr.color } : undefined}
-            onClick={() => setTrack(tr.id)}
-            title={tr.blurb}
-          >
-            {tr.name}
-          </button>
-        ))}
-      </div>
-    ) : null;
+  const selected = (selectedId && inTrack.find((m) => m.id === selectedId)) || currentMilestone;
+  const selectedIndex = inTrack.indexOf(selected);
+  const selectedStatus: NodeStatus =
+    nextIndex === -1 || selectedIndex < nextIndex ? 'done' : selectedIndex === nextIndex ? 'current' : 'locked';
 
-  if (nextIndex === -1) {
-    return (
-      <>
-        {switcher}
-        <div className="card">
-          <div className="head"><b>Track complete</b></div>
-          <div className="blurb">
-            All {inTrack.length} milestones on this track are cleared.
-          </div>
-        </div>
-      </>
-    );
-  }
+  const eras = groupByAct(inTrack);
 
-  const current = inTrack[nextIndex];
-  const upcoming = inTrack.slice(nextIndex + 1, nextIndex + 1 + LOOKAHEAD);
-  const hidden = inTrack.length - nextIndex - 1 - upcoming.length;
+  const pickTrack = (id: Track) => {
+    setTrack(id);
+    // A different track has a different current milestone; showing the old
+    // selection after switching would name the wrong track's objective.
+    setSelectedId(null);
+  };
 
   return (
-    <>
-      {switcher}
-      {/* --- the one you are working on ------------------------------------ */}
-      <div className="card ms current">
-        <div className="head">
-          <b>{current.name}</b>
-          <span className="mono ms-index">
-            {current.act ? `${current.act} · ` : ''}{nextIndex + 1}/{inTrack.length}
-          </span>
-        </div>
-        <div className="blurb">{current.blurb}</div>
-        {Object.entries(current.requires).map(([itemId, need]) => (
-          <Requirement key={itemId} itemId={itemId} need={need} state={state} locked={false} />
-        ))}
-        {BALANCE.milestoneRewardMultiplier > 0 && (
-          <div className="kv" style={{ marginTop: 7 }}>
-            <span className="k">Reward</span>
-            <span className="mono">{money(current.reward * BALANCE.milestoneRewardMultiplier)}</span>
+    <div className="tt-panel">
+      <div className="tt-head">
+        <span className="section-title" style={{ margin: 0 }}>{t('side.techTree')}</span>
+        {visibleTracks.length > 1 && (
+          <div className="track-tabs" style={{ margin: '0 0 0 auto' }}>
+            {visibleTracks.map((tr) => (
+              <button
+                key={tr.id}
+                className={`track-tab${tr.id === active ? ' on' : ''}`}
+                style={tr.id === active ? { borderColor: tr.color, color: tr.color } : undefined}
+                onClick={() => pickTrack(tr.id)}
+                title={tr.blurb}
+              >
+                {tr.name}
+              </button>
+            ))}
           </div>
         )}
-        <UnlockList milestone={current} />
+        <button
+          className="drawer-close"
+          style={visibleTracks.length > 1 ? undefined : { marginLeft: 'auto' }}
+          onClick={onClose}
+          title={t('side.close')}
+        >
+          ✕
+        </button>
       </div>
 
-      {/* --- the next three, visible but locked ----------------------------- */}
-      {upcoming.length > 0 && <div className="section-title">Coming up</div>}
-      {upcoming.map((m, i) => (
-        <div className="card ms locked" key={m.id}>
-          <div className="head">
-            <b>
-              <span className="lock">🔒</span> {m.name}
-            </b>
-            <span className="mono ms-index">
-              {m.act ? `${m.act} · ` : ''}{nextIndex + 2 + i}/{inTrack.length}
-            </span>
-          </div>
-          <div className="blurb">{m.blurb}</div>
-          {Object.entries(m.requires).map(([itemId, need]) => (
-            <Requirement key={itemId} itemId={itemId} need={need} state={state} locked />
-          ))}
-          {BALANCE.milestoneRewardMultiplier > 0 && (
-            <div className="kv" style={{ marginTop: 7 }}>
-              <span className="k">Reward</span>
-              <span className="mono">{money(m.reward * BALANCE.milestoneRewardMultiplier)}</span>
-            </div>
-          )}
-          <UnlockList milestone={m} />
-        </div>
-      ))}
-
-      {hidden > 0 && (
-        <div className="card ms sealed">
-          <span className="lock">🔒</span> {hidden} further milestone{hidden === 1 ? '' : 's'} sealed
-        </div>
-      )}
-
-      {/* --- history -------------------------------------------------------- */}
-      {done.length > 0 && (
-        <>
-          <div className="section-title">Completed</div>
-          {done.map((m, i) => (
-            <div className="card ms done" key={m.id}>
-              <div className="head">
-                <b>{i + 1}. {m.name}</b>
-                <span style={{ color: 'var(--good)' }}>✓</span>
+      <div className="tt-body">
+        <div className="tt-timeline">
+          {eras.map((era, ei) => (
+            <div className="tt-era" key={`${era.label}-${ei}`}>
+              <div className="tt-era-label">{era.label || activeTrack.name}</div>
+              <div className="tt-era-nodes">
+                <div className="tt-ribbon" style={{ background: activeTrack.color }} />
+                {era.milestones.map((m) => {
+                  const i = inTrack.indexOf(m);
+                  const status: NodeStatus =
+                    nextIndex === -1 || i < nextIndex ? 'done' : i === nextIndex ? 'current' : 'locked';
+                  const size = nodeSize(m);
+                  return (
+                    <button
+                      key={m.id}
+                      className={`tt-node tt-node-${status}${m.id === selected.id ? ' tt-node-selected' : ''}`}
+                      onClick={() => setSelectedId(m.id)}
+                      title={m.name}
+                    >
+                      <span
+                        className="tt-dot"
+                        style={{
+                          width: size,
+                          height: size,
+                          ...(status !== 'locked'
+                            ? { background: activeTrack.color, borderColor: activeTrack.color, color: 'var(--ink-on-color)' }
+                            : undefined),
+                        }}
+                      >
+                        {status === 'done' ? '✓' : status === 'locked' ? '🔒' : ''}
+                      </span>
+                      <span className="tt-node-name">{m.name}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ))}
-        </>
-      )}
-    </>
+        </div>
+
+        <div className="tt-detail">
+          <div className="card ms" style={{ margin: 0, border: 'none', background: 'none', padding: 0 }}>
+            <div className="head">
+              <b>{selected.name}</b>
+              <span className="mono ms-index">
+                {selected.act ? `${selected.act} · ` : ''}{selectedIndex + 1}/{inTrack.length}
+              </span>
+            </div>
+            {selectedStatus === 'done' && (
+              <div style={{ color: 'var(--good)', fontSize: 11, fontWeight: 600, marginBottom: 6 }}>
+                ✓ Complete
+              </div>
+            )}
+            {selectedStatus === 'locked' && (
+              <div className="req-warn" style={{ marginBottom: 6 }}>
+                <span className="lock">🔒</span> Locked — clear what's ahead of it first
+              </div>
+            )}
+            <div className="blurb">{selected.blurb}</div>
+            {Object.entries(selected.requires).map(([itemId, need]) => (
+              <Requirement
+                key={itemId}
+                itemId={itemId}
+                need={need}
+                state={state}
+                locked={selectedStatus !== 'current'}
+              />
+            ))}
+            {BALANCE.milestoneRewardMultiplier > 0 && (
+              <div className="kv" style={{ marginTop: 7 }}>
+                <span className="k">Reward</span>
+                <span className="mono">{money(selected.reward * BALANCE.milestoneRewardMultiplier)}</span>
+              </div>
+            )}
+            <UnlockList milestone={selected} />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

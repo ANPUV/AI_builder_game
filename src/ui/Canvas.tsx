@@ -592,6 +592,13 @@ export default function Canvas({
             const isSelected = selection?.kind === 'link' && selection.id === link.id;
             return (
               <g key={link.id}>
+                {/* Three passes over one path: a wide dim copy for the glow,
+                    a fat invisible one for the pointer, then the belt. */}
+                <path
+                  className="wire-halo"
+                  d={d}
+                  stroke={item(link.itemId).color}
+                />
                 <path
                   className="wire-hit"
                   d={d}

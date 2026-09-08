@@ -1,44 +1,73 @@
+/* --- Nebula ------------------------------------------------------------
+   The palette is one idea: a dark violet field with a magenta-to-cyan
+   nebula running through it. Purple carries structure (accent), magenta
+   carries "this is new / this pays" (accent-2) and cyan is the cool end of
+   the same gradient (accent-3). Every surface is a translucent violet wash
+   over --bg rather than its own grey, so the glow behind the canvas shows
+   through the chrome instead of stopping at its edge. */
 :root {
-  --bg: #0d1117;
-  --bg-grid: #161c26;
-  --panel: #141a23;
-  --panel-2: #1a222e;
-  --line: #263141;
-  --line-soft: #1e2733;
-  --text: #d7e0ea;
-  --muted: #7d8b9c;
-  --accent: #4aa3d8;
-  --good: #4ce07a;
-  --warn: #e0b23c;
-  --bad: #e05c4c;
+  --bg: #08070f;
+  /* Dots, not rules: the grid should read as star field, not graph paper. */
+  --bg-grid: rgba(180, 173, 247, 0.14);
+  --panel: #0e0d18;
+  --panel-2: #141221;
+  --line: rgba(139, 130, 255, 0.2);
+  --line-soft: rgba(139, 130, 255, 0.12);
+  --text: #e8e6f7;
+  --muted: #8f8bb0;
+  --accent: #8f7bff;
+  --good: #6ee7a8;
+  --warn: #ffc46b;
+  --bad: #ff6b8a;
+
+  /* The nebula itself. --grad is the one gradient the UI repeats: the build
+     button, primary actions, the tech-tree spine and every progress bar. */
+  --accent-2: #ff6ec0;
+  --accent-3: #62c5f2;
+  --grad: linear-gradient(135deg, #8f7bff, #ff6ec0);
+  --grad-spine: linear-gradient(90deg, #ff6ec0, #8f7bff 45%, #62c5f2);
+  --glow: rgba(143, 123, 255, 0.45);
+  /* Numbers are set in the display face and tinted off the accent, so a
+     readout reads as a readout wherever it lands. */
+  --value: #b4adf7;
+
+  --font-display: 'Sora', 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Space Grotesk', 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Nebula is a round theme: pills for controls, generous radii for cards. */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
+  --r-2xl: 24px;
+  --pill: 999px;
 
   /* Promoted from literals so a theme can move them in one place. */
-  --surface-3: #222b38;
-  --btn-hover: #222c3a;
-  --btn-hover-edge: #35455a;
-  --accent-fill: #1d4f6e;
-  --accent-fill-hover: #24628a;
-  --accent-edge: #2c6f96;
+  --surface-3: rgba(255, 255, 255, 0.07);
+  --btn-hover: rgba(122, 108, 255, 0.22);
+  --btn-hover-edge: rgba(139, 130, 255, 0.42);
+  --accent-fill: rgba(122, 108, 255, 0.16);
+  --accent-fill-hover: rgba(122, 108, 255, 0.28);
+  --accent-edge: rgba(139, 130, 255, 0.42);
   /* Text drawn ON a building colour. Components override per colour via
      inkOn(); this is the fallback for static chrome. */
-  --ink-on-color: #0d1117;
-  --shadow: rgba(0, 0, 0, 0.45);
-  --canvas-line: rgba(255, 255, 255, 0.045);
-  /* Panels that float over the canvas: translucent so the grid shows. */
-  --float: rgba(20, 26, 35, 0.9);
-  --float-soft: rgba(20, 26, 35, 0.85);
-  --backdrop: rgba(6, 9, 13, 0.72);
-  --row-on: rgba(255, 255, 255, 0.04);
-  --tip-bg: #0f151d;
-  --danger-fill: #4a2020;
-  --danger-edge: #7a3030;
-  --warn-fill: #3a1f1c;
-  --warn-edge: #6b2f28;
-  --warn-ink: #f0a89e;
-  --good-fill: #12311d;
+  --ink-on-color: #181430;
+  --shadow: rgba(0, 0, 0, 0.5);
+  --canvas-line: rgba(180, 173, 247, 0.14);
+  /* Panels that float over the canvas: translucent so the nebula shows. */
+  --float: rgba(20, 18, 33, 0.92);
+  --float-soft: rgba(20, 18, 33, 0.9);
+  --backdrop: rgba(5, 4, 10, 0.75);
+  --row-on: rgba(122, 108, 255, 0.14);
+  --tip-bg: rgba(20, 18, 33, 0.97);
+  --danger-fill: rgba(255, 110, 138, 0.12);
+  --danger-edge: rgba(255, 110, 138, 0.28);
+  --warn-fill: rgba(255, 196, 107, 0.12);
+  --warn-edge: rgba(255, 196, 107, 0.3);
+  --warn-ink: #ffd79a;
+  --good-fill: rgba(110, 231, 168, 0.12);
 
   color-scheme: dark;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   color: var(--text);
 }
@@ -46,41 +75,53 @@
 /* --- light theme --------------------------------------------------------
    Same token names, different values. Every rule below reads the variables,
    so the theme switch is this block plus the data-theme attribute — no
-   component knows which theme is on. */
-:root[data-theme='light'] {
-  --bg: #f4f6f9;
-  --bg-grid: #e6eaf0;
-  --panel: #ffffff;
-  --panel-2: #f0f3f7;
-  --line: #d3dae3;
-  --line-soft: #e3e8ee;
-  --text: #1b2531;
-  --muted: #5f6b7a;
-  --accent: #1f6f9e;
-  --good: #1a7f3c;
-  --warn: #9a6b09;
-  --bad: #b3372a;
+   component knows which theme is on.
 
-  --surface-3: #e4e9f0;
-  --btn-hover: #e4e9f0;
-  --btn-hover-edge: #b9c4d2;
-  --accent-fill: #d7e9f6;
-  --accent-fill-hover: #c6e0f2;
-  --accent-edge: #7fb4d6;
-  --ink-on-color: #0d1117;
-  --shadow: rgba(16, 26, 40, 0.16);
-  --canvas-line: rgba(20, 32, 48, 0.07);
+   Nebula in daylight is the same hue family run pale: a lavender-white
+   field, violet ink and the same magenta/cyan ends on the gradient. It is
+   built by hand rather than by inverting the dark theme, because an invert
+   turns the one thing the theme is named for — the glow — into a stain. */
+:root[data-theme='light'] {
+  --bg: #f3f1fb;
+  --bg-grid: rgba(103, 88, 190, 0.2);
+  --panel: #ffffff;
+  --panel-2: #f7f5fe;
+  --line: rgba(106, 79, 230, 0.22);
+  --line-soft: rgba(106, 79, 230, 0.13);
+  --text: #211d38;
+  --muted: #6b6690;
+  --accent: #6a4fe6;
+  --good: #17845a;
+  --warn: #a2680d;
+  --bad: #cf2f62;
+
+  --accent-2: #e0409f;
+  --accent-3: #2b8fc4;
+  --grad: linear-gradient(135deg, #6a4fe6, #e0409f);
+  --grad-spine: linear-gradient(90deg, #e0409f, #6a4fe6 45%, #2b8fc4);
+  --glow: rgba(106, 79, 230, 0.28);
+  --value: #5a44c9;
+
+  --surface-3: rgba(106, 79, 230, 0.12);
+  --btn-hover: rgba(106, 79, 230, 0.12);
+  --btn-hover-edge: rgba(106, 79, 230, 0.4);
+  --accent-fill: rgba(106, 79, 230, 0.13);
+  --accent-fill-hover: rgba(106, 79, 230, 0.22);
+  --accent-edge: rgba(106, 79, 230, 0.4);
+  --ink-on-color: #181430;
+  --shadow: rgba(38, 24, 82, 0.16);
+  --canvas-line: rgba(103, 88, 190, 0.2);
   --float: rgba(255, 255, 255, 0.94);
   --float-soft: rgba(255, 255, 255, 0.9);
-  --backdrop: rgba(28, 38, 52, 0.38);
-  --row-on: rgba(20, 32, 48, 0.06);
+  --backdrop: rgba(30, 22, 58, 0.42);
+  --row-on: rgba(106, 79, 230, 0.1);
   --tip-bg: #ffffff;
-  --danger-fill: #fbe3e0;
-  --danger-edge: #e0aaa2;
-  --warn-fill: #fdece8;
-  --warn-edge: #e8bcb2;
-  --warn-ink: #8c3423;
-  --good-fill: #dff0e3;
+  --danger-fill: rgba(207, 47, 98, 0.1);
+  --danger-edge: rgba(207, 47, 98, 0.3);
+  --warn-fill: rgba(162, 104, 13, 0.12);
+  --warn-edge: rgba(162, 104, 13, 0.3);
+  --warn-ink: #7a4c05;
+  --good-fill: rgba(23, 132, 90, 0.12);
 
   color-scheme: light;
 }
@@ -88,10 +129,19 @@
    they need dark ink, which the dark theme gets for free from --text. */
 :root[data-theme='light'] button.active,
 :root[data-theme='light'] .tab.active,
-:root[data-theme='light'] .build-fab,
-:root[data-theme='light'] .rail-btn.active { color: #10314a; }
+:root[data-theme='light'] .rail-btn.active { color: #2a1c5e; }
 
 * { box-sizing: border-box; }
+
+/* Scrollbars are chrome here, not an afterthought: the browser default is a
+   grey slab that cuts a seam across every panel the theme just rounded. */
+* { scrollbar-width: thin; scrollbar-color: var(--accent-edge) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+/* The stepper arrows are the one part Chromium still draws in its own grey. */
+::-webkit-scrollbar-button { display: none; }
+::-webkit-scrollbar-thumb { background: var(--accent-edge); border-radius: var(--pill); }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
 html, body, #root { height: 100%; margin: 0; }
 
@@ -99,17 +149,28 @@ body { background: var(--bg); overflow: hidden; }
 
 button {
   font: inherit;
+  font-weight: 600;
   color: inherit;
-  background: var(--panel-2);
+  background: var(--accent-fill);
   border: 1px solid var(--line);
-  border-radius: 5px;
-  padding: 5px 10px;
+  border-radius: var(--pill);
+  padding: 6px 12px;
   cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, filter 120ms ease;
 }
 button:hover:not(:disabled) { background: var(--btn-hover); border-color: var(--btn-hover-edge); }
 button:disabled { opacity: 0.4; cursor: not-allowed; }
-button.primary { background: var(--accent-fill); border-color: var(--accent-edge); }
-button.primary:hover:not(:disabled) { background: var(--accent-fill-hover); }
+/* The one filled action on a surface rides the nebula gradient — it is the
+   only thing in the UI allowed to glow on its own. */
+button.primary {
+  background: var(--grad);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 0 16px var(--glow);
+}
+button.primary:hover:not(:disabled) { background: var(--grad); filter: brightness(1.1); }
+button.primary:active:not(:disabled) { transform: scale(0.98); }
 button.danger:hover:not(:disabled) { background: var(--danger-fill); border-color: var(--danger-edge); }
 button.active { background: var(--accent-fill); border-color: var(--accent); }
 
@@ -117,17 +178,26 @@ select, input[type='text'] {
   font: inherit;
   color: inherit;
   background: var(--panel-2);
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  padding: 5px 8px;
+  border: 1px solid var(--accent-edge);
+  border-radius: var(--r-sm);
+  padding: 6px 8px;
   width: 100%;
 }
 
-.mono { font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace; }
+/* Numbers are not monospaced here — they are set in the display face with
+   tabular figures, which keeps columns aligned without the terminal look
+   the rest of the theme is trying to leave behind. The class name stays:
+   every call site means "this is a readout", not "this is code". */
+.mono {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
 
 /* --- layout ------------------------------------------------------------ */
-.app { display: grid; grid-template-rows: 46px 1fr; height: 100%; }
-.body { display: grid; grid-template-columns: 1fr 292px; min-height: 0; }
+.app { display: grid; grid-template-rows: 54px 1fr; height: 100%; }
+.body { display: grid; grid-template-columns: minmax(0, 1fr) 296px; min-height: 0; }
 
 .sidebar {
   background: var(--panel);
@@ -137,16 +207,16 @@ select, input[type='text'] {
 }
 .sidebar.right {
   border-right: none; border-left: 1px solid var(--line);
-  display: flex; flex-direction: column; gap: 10px;
-  padding: 10px; overflow: hidden;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 12px; overflow: hidden;
 }
 /* Next step and Inspector are separate cards, not one scrolling column —
    the coach's instruction should not slide away when a node is selected. */
 .panel {
-  background: var(--panel-2);
+  background: var(--accent-fill);
   border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 8px 10px 10px;
+  border-radius: var(--r-lg);
+  padding: 10px 12px 12px;
   min-height: 0;
   overflow-y: auto;
   flex: 0 0 auto;
@@ -156,38 +226,82 @@ select, input[type='text'] {
 
 .section-title {
   text-transform: uppercase;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.14em;
   font-size: 10px;
   color: var(--muted);
   margin: 14px 2px 7px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .section-title:first-child { margin-top: 2px; }
 
 /* --- top bar ----------------------------------------------------------- */
+/* The bar is a row of chips, not a row of labels: each readout gets its own
+   translucent capsule so the eye can count them without reading them. */
 .topbar {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 0 14px;
+  gap: 6px;
+  padding: 0 10px;
+  min-width: 0;
+  overflow: hidden;
   background: var(--panel);
   border-bottom: 1px solid var(--line);
 }
-.brand { font-weight: 700; letter-spacing: 0.02em; }
-.brand span { color: var(--accent); }
-.stat { display: flex; flex-direction: column; line-height: 1.25; }
-.stat .label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-.stat .value { font-weight: 600; }
-.spacer { flex: 1; }
-.speeds { display: flex; gap: 4px; }
-.speeds button { min-width: 34px; text-align: center; padding: 4px 6px; }
+.brand {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  margin-right: 4px;
+  background: linear-gradient(90deg, var(--value), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.brand span { color: inherit; }
+.stat {
+  display: flex; flex-direction: column; line-height: 1.2;
+  background: var(--accent-fill);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 4px 10px;
+  flex: none;
+}
+.stat .label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); white-space: nowrap; }
+.stat .value { font-weight: 700; font-size: 13px; color: var(--value); white-space: nowrap; }
+/* The readouts take the slack and scroll when there is none left, so the
+   controls on the right are always reachable. The scrollbar is left visible:
+   it shows up only when a chip is actually off the end, which is the one
+   moment the player needs to be told the strip moves. */
+.topbar-stats {
+  display: flex; align-items: center; gap: 6px;
+  flex: 1 1 auto; min-width: 0;
+  overflow-x: auto; overflow-y: hidden;
+}
+.topbar-stats::-webkit-scrollbar { height: 4px; }
+/* The speed control is one object with segments, not four loose buttons. */
+.speeds {
+  display: flex; gap: 4px; flex: none;
+  padding: 4px;
+  background: var(--accent-fill);
+  border: 1px solid var(--line);
+  border-radius: var(--pill);
+}
+.speeds button {
+  min-width: 32px; text-align: center; padding: 4px 8px;
+  background: transparent; border-color: transparent; color: var(--muted);
+}
+.speeds button:hover:not(:disabled) { color: var(--text); background: var(--btn-hover); border-color: transparent; }
+.speeds button.active { background: var(--grad); border-color: transparent; color: #fff; }
 /* Belt dropped on empty canvas: the short list of what could go there. */
 .quick-build {
   position: absolute; z-index: 40; width: 232px;
   max-height: 300px; overflow-y: auto;
   background: var(--float); border: 1px solid var(--accent);
-  border-radius: 8px; padding: 6px;
-  box-shadow: 0 10px 34px var(--shadow);
+  border-radius: var(--r-lg); padding: 8px;
+  box-shadow: 0 0 20px var(--glow), 0 10px 34px var(--shadow);
+  backdrop-filter: blur(8px);
 }
 .quick-head {
   display: flex; align-items: center; gap: 6px;
@@ -199,14 +313,15 @@ select, input[type='text'] {
 .quick-empty { font-size: 11px; color: var(--muted); padding: 6px 4px; line-height: 1.5; }
 .quick-row {
   display: flex; align-items: center; gap: 7px; width: 100%;
-  padding: 5px 6px; margin-bottom: 3px; text-align: left;
+  padding: 6px 8px; margin-bottom: 3px; text-align: left;
+  border-radius: var(--r-sm);
   background: transparent; border: 1px solid transparent;
 }
 .quick-row:hover:not(:disabled) { background: var(--btn-hover); border-color: var(--btn-hover-edge); }
 .quick-row-locked { opacity: 0.45; cursor: not-allowed; }
 .quick-row .glyph {
   width: 22px; height: 22px; flex: 0 0 22px; display: grid; place-items: center;
-  border-radius: 5px; font-weight: 700; font-size: 12px;
+  border-radius: 50%; font-weight: 700; font-size: 12px;
 }
 .quick-name { flex: 1; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -217,7 +332,7 @@ select, input[type='text'] {
 .saved-at { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 
 .powerbar {
-  width: 128px; height: 6px; border-radius: 3px;
+  width: 72px; height: 5px; border-radius: var(--pill);
   background: var(--surface-3); overflow: hidden; margin-top: 3px;
 }
 .powerbar > div { height: 100%; transition: width 120ms linear; }
@@ -230,7 +345,7 @@ select, input[type='text'] {
 .build-item .glyph {
   width: 26px; height: 26px; flex: 0 0 26px;
   display: grid; place-items: center;
-  border-radius: 5px; font-size: 15px; color: var(--ink-on-color); font-weight: 700;
+  border-radius: 50%; font-size: 15px; color: var(--ink-on-color); font-weight: 700;
 }
 .build-item .meta { flex: 1; min-width: 0; display: block; }
 .build-item .name { display: block; font-weight: 600; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -241,80 +356,128 @@ select, input[type='text'] {
   position: relative;
   overflow: hidden;
   background-color: var(--bg);
-  background-image:
-    linear-gradient(var(--bg-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+  background-image: radial-gradient(var(--bg-grid) 1.3px, transparent 1.3px);
   cursor: grab;
   user-select: none;
+}
+/* The nebula. Fixed to the viewport rather than the world, so it reads as
+   depth behind the factory instead of a texture the factory sits on and
+   drags around with it. Painted before every positioned child, and inert. */
+.canvas::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(640px 420px at 18% 82%, rgba(255, 110, 192, 0.12), transparent 70%),
+    radial-gradient(760px 480px at 82% 22%, rgba(98, 197, 242, 0.12), transparent 70%),
+    radial-gradient(520px 380px at 55% 50%, rgba(122, 108, 255, 0.08), transparent 70%);
+}
+:root[data-theme='light'] .canvas::before {
+  background:
+    radial-gradient(640px 420px at 18% 82%, rgba(224, 64, 159, 0.09), transparent 70%),
+    radial-gradient(760px 480px at 82% 22%, rgba(43, 143, 196, 0.09), transparent 70%),
+    radial-gradient(520px 380px at 55% 50%, rgba(106, 79, 230, 0.07), transparent 70%);
 }
 .canvas.panning { cursor: grabbing; }
 .canvas.placing { cursor: crosshair; }
 .canvas svg.wires { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .canvas .world { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
 
-.wire { fill: none; stroke-width: 2.5; opacity: 0.75; }
-.wire-hit { fill: none; stroke: transparent; stroke-width: 14; cursor: pointer; }
-.wire.selected { opacity: 1; stroke-width: 3.5; }
+.wire { fill: none; stroke-width: 3; opacity: 0.85; stroke-linecap: round; }
+.wire-hit { fill: none; stroke: transparent; stroke-width: 16; cursor: pointer; }
+/* A wide, near-transparent copy of the same path under the line. It is what
+   makes a belt read as lit rather than drawn, and it costs one more path. */
+.wire-halo { fill: none; stroke-width: 9; opacity: 0.14; stroke-linecap: round; pointer-events: none; }
+.wire.selected { opacity: 1; stroke-width: 4; }
 .wire.flowing {
-  stroke-dasharray: 7 9;
-  animation: flow 0.6s linear infinite;
+  stroke-dasharray: 2 10;
+  animation: flow 0.55s linear infinite;
 }
-@keyframes flow { to { stroke-dashoffset: -16; } }
+@keyframes flow { to { stroke-dashoffset: -26; } }
 .wire.ghost { stroke: var(--accent); stroke-dasharray: 5 5; opacity: 0.9; }
 
 /* --- node -------------------------------------------------------------- */
 .node {
   position: absolute;
-  background: var(--panel);
+  background: var(--float);
   border: 1px solid var(--line);
-  border-radius: 7px;
-  box-shadow: 0 3px 14px var(--shadow);
+  border-radius: var(--r-xl);
+  box-shadow: 0 8px 24px var(--shadow);
   cursor: move;
   overflow: visible;
 }
-.node.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 3px 18px var(--shadow); }
+.node.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--glow), 0 0 26px var(--glow), 0 10px 26px var(--shadow);
+}
 .node.off { opacity: 0.5; }
 
 .node-header {
   display: flex; align-items: center; gap: 7px;
-  height: 36px; padding: 0 9px;
-  border-radius: 6px 6px 0 0;
-  color: #0b0f14; font-weight: 700;
+  height: 40px; padding: 0 11px;
+  /* One less than the node's radius, so the fill meets the border cleanly
+     instead of leaving a hairline of node background in the corner. */
+  border-radius: 19px 19px 0 0;
+  color: var(--ink-on-color); font-weight: 700;
+  font-family: var(--font-display);
+  /* The building's own colour stays the fill; the sheen on top is what makes
+     every header read as lit from the same direction. */
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.14));
 }
-.node-header .glyph { font-size: 14px; }
+/* The icon sits in a disc punched out of the header, not loose on it. */
+.node-header .glyph {
+  width: 22px; height: 22px; flex: 0 0 22px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 12px;
+}
 .node-header .title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
-.node-header .dot { width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 0 1.5px rgba(0,0,0,.25); }
+/* The status LED glows in its own colour and breathes whenever the node is
+   not running, so a stalled factory is visible without reading a word. */
+.node-header .dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  animation: breathe 1.4s ease-in-out infinite;
+}
+.node-header .dot.running { animation: none; }
+@keyframes breathe { 50% { opacity: 0.55; } }
 
 .node-rows { position: relative; }
 .node-row {
-  position: relative; height: 24px;
+  position: relative; height: 26px;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 9px; font-size: 11px;
+  padding: 0 12px; font-size: 11px;
 }
 .node-row .side { display: flex; align-items: center; gap: 5px; min-width: 0; }
-.node-row .amt { color: var(--muted); }
-.node-row .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 62px; }
+.node-row .amt { color: var(--value); }
+.node-row .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60px; color: var(--muted); }
 
+/* Ports are orbs: a specular highlight over the item's colour plus a halo in
+   the same colour. They are the drag handle for every belt, so they have to
+   look grabbable from a zoomed-out view. */
 .port {
   position: absolute; top: 50%;
-  width: 12px; height: 12px; margin-top: -6px;
+  width: 14px; height: 14px; margin-top: -7px;
   border-radius: 50%;
-  border: 2px solid var(--panel);
+  border: 2px solid var(--bg);
   cursor: crosshair;
   transition: transform 90ms ease;
+  background-image: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.75), transparent 60%);
 }
-.port:hover, .port.target { transform: scale(1.45); }
-.port.in { left: -6px; }
-.port.out { right: -6px; }
+.port:hover, .port.target { transform: scale(1.4); }
+.port.in { left: -7px; }
+.port.out { right: -7px; }
 
 .node-footer {
-  height: 34px; padding: 5px 9px 0;
+  height: 38px; padding: 6px 12px 0;
   border-top: 1px solid var(--line-soft);
   font-size: 10px; color: var(--muted);
 }
 .node-footer .row { display: flex; justify-content: space-between; align-items: center; }
+.node-footer .mono { color: var(--value); }
 .progress { height: 4px; border-radius: 2px; background: var(--surface-3); margin-top: 5px; overflow: hidden; }
-.progress > div { height: 100%; background: var(--good); }
+.progress > div { height: 100%; background: linear-gradient(90deg, var(--accent), var(--good)); }
 
 /* --- inspector --------------------------------------------------------- */
 .field { margin-bottom: 10px; }
@@ -325,15 +488,16 @@ select, input[type='text'] {
 input[type='range'] { width: 100%; accent-color: var(--accent); }
 
 .badge {
-  display: inline-block; padding: 1px 6px; border-radius: 3px;
-  font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  display: inline-block; padding: 2px 9px; border-radius: var(--pill);
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
+  border: 1px solid var(--line);
 }
 
-.card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 9px; margin-bottom: 8px; }
+.card { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--r-md); padding: 11px; margin-bottom: 8px; }
 .card.done { opacity: 0.45; }
 .card.locked { opacity: 0.62; border-style: dashed; }
 .card .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
-.card .head b { font-size: 12px; }
+.card .head b { font-size: 12px; font-family: var(--font-display); }
 /* Name plus its "?" travel together, so the head keeps two flex children and
    space-between still pushes the status badge to the right edge. */
 .card .head .head-name { display: flex; align-items: baseline; gap: 5px; min-width: 0; }
@@ -349,16 +513,17 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 
 .req { margin-bottom: 5px; font-size: 11px; }
 .req .line { display: flex; justify-content: space-between; }
-.req .track { height: 3px; background: var(--surface-3); border-radius: 2px; margin-top: 3px; overflow: hidden; }
-.req .track > div { height: 100%; background: var(--accent); }
+.req .track { height: 5px; background: var(--surface-3); border-radius: 3px; margin-top: 4px; overflow: hidden; }
+.req .track > div { height: 100%; background: var(--grad); }
 
 /* --- toasts ------------------------------------------------------------ */
 .toasts { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 7px; align-items: center; pointer-events: none; }
 .toast {
-  background: var(--panel-2); border: 1px solid var(--line);
+  background: var(--float); border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
-  padding: 8px 14px; border-radius: 6px;
-  box-shadow: 0 4px 18px var(--shadow);
+  padding: 9px 16px; border-radius: var(--r-lg);
+  box-shadow: 0 10px 30px var(--shadow);
+  backdrop-filter: blur(6px);
   animation: rise 220ms ease;
 }
 .toast.good { border-left-color: var(--good); }
@@ -369,12 +534,16 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
   position: absolute; bottom: 14px; left: 14px;
   font-size: 11px; color: var(--muted);
   background: var(--float-soft); border: 1px solid var(--line);
-  border-radius: 6px; padding: 8px 11px; line-height: 1.65; max-width: 300px;
+  border-radius: var(--r-lg); padding: 11px 14px; line-height: 1.65; max-width: 310px;
   pointer-events: none;
+  box-shadow: 0 8px 30px var(--shadow);
+  backdrop-filter: blur(6px);
 }
+.hint b { color: var(--text); }
 .hint kbd {
-  background: var(--panel-2); border: 1px solid var(--line);
-  border-radius: 3px; padding: 0 4px; font-size: 10px;
+  background: var(--accent-fill); border: 1px solid var(--accent-edge);
+  border-radius: 5px; padding: 0 5px; font-size: 10px;
+  font-family: var(--font-display);
 }
 .empty { color: var(--muted); font-size: 11px; line-height: 1.5; padding: 4px 2px; }
 
@@ -386,16 +555,16 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
   pointer-events: none;
   background: var(--tip-bg);
   border: 1px solid var(--line);
-  border-radius: 7px;
-  padding: 10px 11px;
-  box-shadow: 0 8px 28px var(--shadow);
+  border-radius: var(--r-md);
+  padding: 11px 13px;
+  box-shadow: 0 12px 34px var(--shadow);
   font-size: 11px;
   line-height: 1.45;
   animation: tipin 90ms ease;
 }
 @keyframes tipin { from { opacity: 0; transform: translateY(3px); } }
-.tip-title { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 12px; margin-bottom: 5px; }
-.tip-glyph { width: 20px; height: 20px; flex: 0 0 20px; display: grid; place-items: center; border-radius: 4px; color: var(--ink-on-color); font-weight: 700; }
+.tip-title { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 12px; margin-bottom: 5px; font-family: var(--font-display); }
+.tip-glyph { width: 20px; height: 20px; flex: 0 0 20px; display: grid; place-items: center; border-radius: 50%; color: var(--ink-on-color); font-weight: 700; }
 .tip-body { color: var(--muted); margin-bottom: 7px; }
 .tip-sub { color: var(--muted); font-style: italic; margin-bottom: 5px; }
 .tip-kv { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; }
@@ -403,16 +572,16 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 .tip-row { padding: 2px 0 2px 8px; border-left: 2px solid var(--line); margin: 2px 0; }
 .tip-dim { color: var(--muted); }
 .tip-warn {
-  margin-top: 8px; padding: 6px 8px; border-radius: 5px;
+  margin-top: 8px; padding: 6px 9px; border-radius: var(--r-sm);
   background: var(--warn-fill); border: 1px solid var(--warn-edge); color: var(--warn-ink);
 }
 
 /* --- build bar additions ------------------------------------------------ */
 .build-item { position: relative; align-items: flex-start; }
-.build-item .makes { color: #5f7387; font-size: 10px; }
+.build-item .makes { color: var(--muted); opacity: 0.75; font-size: 10px; }
 .build-item.fresh { border-color: var(--good); box-shadow: 0 0 0 1px rgba(76, 224, 122, 0.25); }
 .new-badge {
-  margin-left: 6px; padding: 0 4px; border-radius: 3px;
+  margin-left: 6px; padding: 1px 6px; border-radius: var(--pill);
   background: var(--good); color: #08210f; font-size: 8px; font-weight: 800;
   letter-spacing: 0.06em; vertical-align: 1px;
 }
@@ -445,8 +614,8 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 
 .unlocks { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
 .chip {
-  display: inline-block; padding: 2px 6px;
-  border: 1px solid var(--line); border-radius: 4px;
+  display: inline-block; padding: 2px 8px;
+  border: 1px solid var(--line); border-radius: var(--pill);
   font-size: 10px; white-space: nowrap; cursor: help;
 }
 .chip.subtle { color: var(--muted); border-style: dashed; cursor: default; }
@@ -454,13 +623,13 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 /* --- coach -------------------------------------------------------------- */
 .coach {
   border: 1px solid var(--line); border-left-width: 3px;
-  border-radius: 6px; padding: 9px 10px; margin-bottom: 8px;
+  border-radius: var(--r-md); padding: 10px 12px; margin-bottom: 8px;
   background: var(--panel-2);
 }
 .coach.do   { border-left-color: var(--accent); }
 .coach.warn { border-left-color: var(--warn); }
 .coach.ok   { border-left-color: var(--good); }
-.coach-title { font-weight: 700; font-size: 12px; margin-bottom: 4px; }
+.coach-title { font-weight: 700; font-size: 12px; margin-bottom: 4px; font-family: var(--font-display); }
 .coach.do .coach-title   { color: var(--accent); }
 .coach.warn .coach-title { color: var(--warn); }
 .coach.ok .coach-title   { color: var(--good); }
@@ -474,20 +643,21 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
   background: var(--backdrop);
   display: grid; place-items: center;
   animation: tipin 120ms ease;
+  backdrop-filter: blur(4px);
 }
 .modal {
-  width: min(460px, 92vw); max-height: 84vh; overflow-y: auto;
-  background: var(--panel); border: 1px solid var(--line);
-  border-radius: 10px; padding: 18px;
-  box-shadow: 0 20px 60px var(--shadow);
+  width: min(470px, 92vw); max-height: 84vh; overflow-y: auto;
+  background: var(--float); border: 1px solid var(--line);
+  border-radius: var(--r-2xl); padding: 22px;
+  box-shadow: 0 0 40px var(--glow), 0 28px 80px var(--shadow);
 }
-.modal-head h2 { margin: 8px 0 4px; font-size: 19px; }
+.modal-head h2 { margin: 10px 0 4px; font-size: 20px; font-family: var(--font-display); font-weight: 800; }
 .modal-head p { margin: 0 0 10px; color: var(--muted); font-size: 12px; line-height: 1.5; }
 .badge.good { background: var(--good-fill); color: var(--good); }
 
 .unlock-row { display: flex; gap: 9px; align-items: flex-start; padding: 7px 0; border-bottom: 1px solid var(--line-soft); }
 .unlock-row:last-child { border-bottom: none; }
-.unlock-row .glyph { width: 26px; height: 26px; flex: 0 0 26px; display: grid; place-items: center; border-radius: 5px; color: var(--ink-on-color); font-weight: 700; }
+.unlock-row .glyph { width: 26px; height: 26px; flex: 0 0 26px; display: grid; place-items: center; border-radius: 50%; color: var(--ink-on-color); font-weight: 700; }
 .unlock-row .meta { flex: 1; min-width: 0; }
 .unlock-row .name { display: block; font-weight: 600; }
 .unlock-row .sub { display: block; color: var(--muted); font-size: 11px; line-height: 1.45; }
@@ -497,10 +667,10 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 
 /* --- vendor scoping ------------------------------------------------------ */
 .vendor-tag {
-  margin-left: 5px; padding: 0 3px;
-  border: 1px solid currentColor; border-radius: 3px;
-  font-size: 8px; font-weight: 700; letter-spacing: 0.04em;
-  font-family: 'SF Mono', Menlo, monospace; vertical-align: 1px;
+  margin-left: 5px; padding: 0 5px;
+  border: 1px solid currentColor; border-radius: var(--pill);
+  font-size: 8px; font-weight: 700; letter-spacing: 0.05em;
+  font-family: var(--font-display); vertical-align: 1px;
 }
 .hintline { font-size: 10px; color: var(--muted); line-height: 1.45; margin-top: 5px; }
 
@@ -513,33 +683,33 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 .build-item.market-open:hover .glyph.plus { background: var(--accent-fill-hover); }
 .reddot {
   position: absolute; top: 6px; right: 6px;
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--bad);
-  box-shadow: 0 0 0 2px var(--panel), 0 0 7px rgba(224, 92, 76, 0.9);
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 0 2px var(--panel), 0 0 10px var(--accent-2);
   animation: reddot 1.6s ease-in-out infinite;
 }
 @keyframes reddot {
-  50% { box-shadow: 0 0 0 2px var(--panel), 0 0 13px rgba(224, 92, 76, 1); }
+  50% { box-shadow: 0 0 0 2px var(--panel), 0 0 18px var(--accent-2); }
 }
 
 .modal.wide { width: min(560px, 94vw); }
 .offer-list { display: flex; flex-direction: column; gap: 9px; margin-top: 4px; }
 .offer {
-  background: var(--panel-2); border: 1px solid var(--line);
-  border-radius: 7px; padding: 10px 11px;
+  background: var(--accent-fill); border: 1px solid var(--line);
+  border-radius: var(--r-lg); padding: 12px 13px;
 }
 .offer-head { display: flex; gap: 9px; align-items: flex-start; margin-bottom: 7px; }
 .offer-head .glyph {
   width: 26px; height: 26px; flex: 0 0 26px; display: grid; place-items: center;
-  border-radius: 5px; color: var(--ink-on-color); font-weight: 700;
+  border-radius: 50%; color: var(--ink-on-color); font-weight: 700;
 }
 .offer-title { flex: 1; min-width: 0; }
-.offer-title .name { display: block; font-weight: 600; }
+.offer-title .name { display: block; font-weight: 700; font-family: var(--font-display); }
 .offer-title .lead {
   display: block; color: var(--muted); font-size: 11px; line-height: 1.4; font-style: italic;
 }
 .rarity {
-  margin-left: 6px; padding: 0 4px; border: 1px solid currentColor; border-radius: 3px;
+  margin-left: 6px; padding: 1px 7px; border: 1px solid currentColor; border-radius: var(--pill);
   font-size: 8px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
   vertical-align: 1px;
 }
@@ -548,7 +718,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 /* A 3px hairline read as a divider, not a timer, and common leads expire with
    no toast — so the bar was the only warning and nobody saw it. */
 .offer-window {
-  height: 7px; border-radius: 4px; background: var(--surface-3);
+  height: 7px; border-radius: var(--pill); background: var(--surface-3);
   margin-bottom: 8px; overflow: hidden;
   border: 1px solid var(--line-soft);
 }
@@ -565,8 +735,8 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 /* A blown node has to read as damaged at a glance, from across the canvas —
    the player needs to find it without hunting, because it is still billing. */
 .node.broken {
-  border-color: #ff4d4d;
-  box-shadow: 0 0 0 1px rgba(255, 77, 77, 0.5), 0 3px 18px rgba(120, 0, 0, 0.45);
+  border-color: var(--bad);
+  box-shadow: 0 0 0 1px rgba(255, 107, 138, 0.5), 0 0 24px rgba(255, 107, 138, 0.3), 0 10px 26px var(--shadow);
 }
 .node.broken .node-header { filter: grayscale(0.7) brightness(0.7); }
 .node.broken .node-rows { opacity: 0.45; }
@@ -579,9 +749,9 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #ff8080;
-  background: rgba(255, 77, 77, 0.12);
-  border-radius: 3px;
+  color: #ffb3c4;
+  background: rgba(255, 107, 138, 0.14);
+  border-radius: var(--pill);
 }
 
 /* --- box select --------------------------------------------------------- */
@@ -589,8 +759,8 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 .marquee {
   position: absolute;
   border: 1px solid var(--accent);
-  background: rgba(74, 163, 216, 0.12);
-  border-radius: 3px;
+  background: var(--accent-fill);
+  border-radius: var(--r-sm);
   pointer-events: none;
 }
 .selection-tag {
@@ -598,21 +768,22 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
   position: absolute; top: 14px; right: 14px;
   font-size: 11px; color: var(--text);
   background: var(--float); border: 1px solid var(--accent);
-  border-radius: 6px; padding: 5px 9px;
+  border-radius: var(--pill); padding: 6px 12px;
   pointer-events: none;
+  backdrop-filter: blur(6px);
 }
 
 /* The hull is what turns six nodes failing into one event the player can see. */
 .group-hull {
   position: absolute;
-  border: 1px dashed rgba(118, 185, 0, 0.4);
-  border-radius: 12px;
-  background: rgba(118, 185, 0, 0.05);
+  border: 1px dashed var(--accent-edge);
+  border-radius: var(--r-xl);
+  background: rgba(122, 108, 255, 0.05);
   pointer-events: none;
 }
 .group-hull.broken {
-  border-color: rgba(255, 77, 77, 0.55);
-  background: rgba(255, 77, 77, 0.07);
+  border-color: rgba(255, 107, 138, 0.55);
+  background: rgba(255, 107, 138, 0.07);
 }
 
 /* --- AI Slop: the manual craft button ------------------------------------ */
@@ -621,13 +792,13 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 .generate {
   width: 100%;
   margin-top: 4px;
-  padding: 4px 0;
+  padding: 5px 0;
   font-size: 11px;
-  font-weight: 600;
-  color: #1a1a1a;
+  font-weight: 700;
+  color: #2a1d05;
   background: var(--warn);
   border: none;
-  border-radius: 3px;
+  border-radius: var(--pill);
   cursor: pointer;
 }
 .generate:hover { filter: brightness(1.12); }
@@ -639,33 +810,34 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 .track-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
 .track-tab {
   flex: 1;
-  padding: 4px 6px;
+  padding: 5px 10px;
   font-size: 11px;
   color: var(--muted);
   background: transparent;
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--pill);
   cursor: pointer;
 }
 .track-tab:hover { color: var(--fg); }
-.track-tab.on { background: var(--row-on); font-weight: 600; }
+.track-tab.on { background: var(--accent-fill-hover); border-color: var(--accent); color: var(--text); font-weight: 700; }
 
 /* --- build FAB + hotbar (float over the canvas) -------------------------- */
 /* The rail holds the build button and the tech-tree toggle, stacked. */
 .left-rail {
   position: absolute; top: 14px; left: 14px; z-index: 21;
-  display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+  display: flex; flex-direction: column; gap: 9px; align-items: flex-start;
 }
 .rail-btn {
-  width: 44px; min-height: 44px; padding: 6px 4px;
-  font-size: 10px; line-height: 1.15; text-transform: uppercase;
-  letter-spacing: 0.06em; font-weight: 600; text-align: center;
-  background: var(--panel-2); border: 1px solid var(--line);
-  border-radius: 10px; color: var(--muted);
-  box-shadow: 0 4px 16px var(--shadow);
+  min-height: 30px; padding: 6px 13px;
+  font-size: 11px; line-height: 1.15;
+  letter-spacing: 0.02em; font-weight: 600; text-align: center;
+  background: var(--float); border: 1px solid var(--line);
+  border-radius: var(--pill); color: var(--muted);
+  box-shadow: 0 6px 20px var(--shadow);
+  backdrop-filter: blur(6px);
 }
 .rail-btn:hover:not(:disabled) { color: var(--text); border-color: var(--accent); }
-.rail-btn.active { background: var(--accent-fill); border-color: var(--accent); color: var(--text); }
+.rail-btn.active { background: var(--accent-fill-hover); border-color: var(--accent); color: var(--text); }
 
 .drawer-close { padding: 2px 8px; background: transparent; border-color: transparent; color: var(--muted); }
 .drawer-close:hover { color: var(--text); }
@@ -679,28 +851,67 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 .tt-modal {
   width: min(960px, 94vw); height: min(480px, 86vh);
   display: flex; flex-direction: column;
-  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
-  box-shadow: 0 20px 60px var(--shadow);
+  background: var(--float); border: 1px solid var(--line); border-radius: var(--r-xl);
+  box-shadow: 0 0 40px var(--glow), 0 20px 60px var(--shadow);
+  backdrop-filter: blur(8px);
   overflow: hidden;
 }
 .tt-head {
   display: flex; align-items: center; gap: 10px; flex: none;
-  padding: 8px 10px; border-bottom: 1px solid var(--line);
+  padding: 9px 14px; border-bottom: 1px solid var(--line-soft);
 }
 .tt-body { flex: 1 1 auto; min-height: 0; display: flex; }
 
 .tt-timeline {
+  position: relative;
   flex: 1 1 auto; min-width: 0; overflow-x: auto; overflow-y: hidden;
   display: flex; align-items: stretch; padding: 10px 8px;
 }
+/* The spine, in two layers. ::before is a magenta-to-cyan wash blurred out
+   behind the whole timeline — depth, not a line. ::after is the axis the
+   eras are pinned to, and it sits in the gap under the era labels rather
+   than across the middle: run through the node rows it reads as a
+   strikethrough, which is why the design's own centred line does not
+   survive a column of stacked names. */
+.tt-timeline::before,
+.tt-timeline::after {
+  content: '';
+  position: absolute; left: 0; right: 0;
+  pointer-events: none; z-index: 0;
+  background: var(--grad-spine);
+}
+.tt-timeline::before {
+  top: 50%; height: 74px; transform: translateY(-46%);
+  filter: blur(22px); opacity: 0.3;
+}
+/* 10px of timeline padding + the label's fixed 18px, landing in its margin. */
+.tt-timeline::after { top: 34px; height: 3px; opacity: 0.5; }
+/* On white the same wash is a tint over the node names rather than a glow
+   behind them, so it comes down until the names win again. */
+:root[data-theme='light'] .tt-timeline::before { opacity: 0.2; }
+.tt-era, .tt-detail { position: relative; z-index: 1; }
+
+/* The eras scroll sideways; a default scrollbar is a grey slab across the
+   bottom of a glowing panel. */
+.tt-timeline::-webkit-scrollbar { height: 6px; }
+.tt-timeline::-webkit-scrollbar-track { background: transparent; }
+.tt-timeline::-webkit-scrollbar-thumb { background: var(--accent-edge); border-radius: 3px; }
+.tt-timeline { scrollbar-width: thin; scrollbar-color: var(--accent-edge) transparent; }
 .tt-era {
   flex: none; min-width: 130px; display: flex; flex-direction: column;
   padding: 0 14px; border-right: 1px solid var(--line-soft);
 }
+/* The ribbon was the old stand-in for a spine. The spine is real now, and two
+   washes in the same place read as smudge rather than depth. */
+.tt-ribbon { display: none; }
 .tt-era:last-child { border-right: none; }
 .tt-era-label {
-  font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
-  color: var(--muted); text-align: center; margin-bottom: 10px; white-space: nowrap;
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 800;
+  /* Fixed height so the axis line above has something to measure against. */
+  height: 18px; line-height: 18px;
+  color: var(--text); text-align: center; margin-bottom: 10px; white-space: nowrap;
+  text-shadow: 0 0 14px var(--glow);
 }
 .tt-era-nodes {
   flex: 1; position: relative; display: flex; flex-direction: column;
@@ -718,13 +929,21 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
   color: var(--text); text-align: left; cursor: pointer;
 }
 .tt-node:hover { background: var(--row-on); }
-.tt-node-selected { background: var(--row-on); box-shadow: inset 0 0 0 1px var(--line); }
+.tt-node-selected { background: var(--row-on); box-shadow: inset 0 0 0 1px var(--accent); }
 .tt-dot {
   flex: none; border-radius: 50%; display: grid; place-items: center;
-  border: 2px solid var(--line); background: var(--panel-2); color: var(--muted);
-  font-size: 11px; font-weight: 700;
+  border: 2px solid var(--line); background: var(--float); color: var(--muted);
+  font-size: 11px; font-weight: 700; font-family: var(--font-display);
 }
-.tt-node-current .tt-dot { box-shadow: 0 0 0 4px var(--row-on); }
+/* The milestone you are working on is the one lit spot on the spine. */
+.tt-node-current .tt-dot {
+  border-color: var(--accent);
+  color: var(--text);
+  box-shadow: 0 0 0 4px var(--row-on), 0 0 16px var(--glow);
+  animation: glowpulse 2.4s ease-in-out infinite;
+}
+@keyframes glowpulse { 50% { box-shadow: 0 0 0 4px var(--row-on), 0 0 24px var(--glow); } }
+.tt-node-done .tt-dot { border-color: var(--good); color: var(--good); }
 .tt-node-locked .tt-dot { opacity: 0.55; }
 .tt-node-name { font-size: 10.5px; line-height: 1.2; }
 .tt-node-locked .tt-node-name { color: var(--muted); font-style: italic; }
@@ -732,8 +951,8 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 
 .tt-detail {
   flex: none; width: min(300px, 34%); min-width: 190px;
-  border-left: 1px solid var(--line);
-  padding: 10px 12px; overflow-y: auto;
+  border-left: 1px solid var(--line-soft);
+  padding: 12px 13px; overflow-y: auto;
 }
 
 @media (max-width: 720px) {
@@ -746,43 +965,48 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
   }
 }
 
+/* The one thing on the canvas that is unambiguously a button. It is the
+   nebula gradient at full strength — nothing else in the UI is allowed to
+   be this loud, which is what makes it findable. */
 .build-fab {
   position: relative; z-index: 20;
-  width: 44px; height: 44px; border-radius: 10px;
+  width: 52px; height: 52px; border-radius: 50%; padding: 0;
   display: grid; place-items: center;
-  font-size: 22px; line-height: 1;
-  background: var(--accent-fill); border: 1px solid var(--accent-edge);
-  box-shadow: 0 4px 16px var(--shadow);
+  font-size: 25px; line-height: 1; color: #fff;
+  background: var(--grad); border: none;
+  box-shadow: 0 0 24px var(--glow), 0 8px 20px var(--shadow);
 }
-.build-fab:hover { background: var(--accent-fill-hover); border-color: var(--accent); }
-.build-fab .reddot { position: absolute; top: 6px; right: 6px; }
+.build-fab:hover { filter: brightness(1.12); background: var(--grad); }
+.build-fab:active { transform: scale(0.95); }
+.build-fab .reddot { position: absolute; top: 4px; right: 4px; }
 
 .hotbar {
   position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
-  z-index: 20; display: flex; gap: 5px;
-  padding: 6px; border-radius: 10px;
+  z-index: 20; display: flex; gap: 6px;
+  padding: 8px; border-radius: var(--pill);
   background: var(--float);
   border: 1px solid var(--line);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 30px var(--shadow);
+  backdrop-filter: blur(8px);
 }
 .hot-slot {
   position: relative; width: 42px; height: 42px; padding: 0;
-  display: grid; place-items: center; border-radius: 7px;
-  background: var(--panel-2); border: 1px solid var(--line);
+  display: grid; place-items: center; border-radius: var(--r-md);
+  background: var(--accent-fill); border: 1px solid var(--line);
 }
-.hot-slot:hover { border-color: var(--btn-hover-edge); }
+.hot-slot:hover { filter: brightness(1.25); }
 .hot-slot.empty { opacity: 0.45; border-style: dashed; }
-.hot-slot.armed { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.hot-slot.armed { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 14px var(--glow); }
 .hot-slot.broke { opacity: 0.5; }
 .hot-slot.broke .hot-glyph { filter: grayscale(1); }
 .hot-key {
-  position: absolute; top: 2px; left: 4px;
-  font-size: 9px; color: var(--muted);
-  font-family: 'SF Mono', Menlo, monospace;
+  position: absolute; top: 3px; left: 6px;
+  font-size: 8px; color: var(--muted);
+  font-family: var(--font-display);
 }
 .hot-glyph {
   width: 24px; height: 24px; display: grid; place-items: center;
-  border-radius: 5px; color: var(--ink-on-color); font-weight: 700; font-size: 14px;
+  border-radius: 50%; color: var(--ink-on-color); font-weight: 700; font-size: 14px;
 }
 
 /* --- tabbed build dialog -------------------------------------------------- */
@@ -793,11 +1017,11 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
   margin: 10px 0 12px; padding-bottom: 8px;
 }
 .tab {
-  padding: 4px 9px; font-size: 11px; border-radius: 5px;
+  padding: 5px 11px; font-size: 11px; border-radius: var(--pill);
   background: transparent; border: 1px solid transparent; color: var(--muted);
 }
-.tab:hover { background: var(--panel-2); color: var(--text); }
-.tab.active { background: var(--accent-fill); border-color: var(--accent-edge); color: var(--text); font-weight: 600; }
+.tab:hover { background: var(--btn-hover); color: var(--text); border-color: transparent; }
+.tab.active { background: var(--accent-fill-hover); border-color: var(--accent-edge); color: var(--text); font-weight: 700; }
 .tab-count { margin-left: 5px; opacity: 0.6; font-size: 10px; }
 .tab-body { max-height: 56vh; overflow-y: auto; }
 
@@ -828,8 +1052,8 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 .build-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
 .build-card {
   display: flex; align-items: stretch; gap: 0;
-  border: 1px solid var(--line); border-radius: 7px; overflow: hidden;
-  background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden;
+  background: var(--accent-fill);
 }
 .build-card.fresh { border-color: var(--good); }
 
@@ -842,7 +1066,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 .build-card.capped .build-card-main { cursor: not-allowed; }
 .build-card.capped .build-card-main:disabled { opacity: 1; }
 .cap-badge {
-  margin-left: 6px; padding: 0 5px; border-radius: 3px;
+  margin-left: 6px; padding: 1px 7px; border-radius: var(--pill);
   font-size: 9px; font-weight: 700; letter-spacing: 0.06em;
   background: var(--line); color: var(--muted);
 }
@@ -854,23 +1078,23 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 .build-card-main:disabled { opacity: 0.4; }
 .build-card-main .glyph {
   width: 26px; height: 26px; flex: 0 0 26px; display: grid; place-items: center;
-  border-radius: 5px; color: var(--ink-on-color); font-weight: 700;
+  border-radius: 50%; color: var(--ink-on-color); font-weight: 700;
 }
 .build-card-main .meta { flex: 1; min-width: 0; display: block; }
 .build-card-main .name {
   display: block; font-weight: 600; line-height: 1.3;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.build-card-main .sub { display: block; font-size: 10px; line-height: 1.35; color: var(--muted); }
-.build-card-main .makes { color: #5f7387; }
+.build-card-main .sub { display: block; font-size: 10px; line-height: 1.35; color: var(--muted); font-family: var(--font-display); }
+.build-card-main .makes { color: var(--muted); opacity: 0.75; }
 
 .slot-assign {
   flex: 0 0 30px; border: none; border-left: 1px solid var(--line); border-radius: 0;
   background: transparent; color: var(--muted);
-  font-family: 'SF Mono', Menlo, monospace; font-size: 12px;
+  font-family: var(--font-display); font-size: 12px;
 }
 .slot-assign:hover { background: var(--btn-hover); color: var(--text); }
-.slot-assign.set { background: var(--accent-fill); color: var(--text); font-weight: 700; }
+.slot-assign.set { background: var(--accent-fill-hover); color: var(--text); font-weight: 700; }
 
 /* Overlay layer: transparent to the pointer, its controls are not. */
 .canvas-overlay { position: absolute; inset: 0; z-index: 20; pointer-events: none; }

@@ -2,20 +2,20 @@ import { recipe } from '../data';
 import type { LinkShape, Machine } from '../engine/types';
 import { inputPorts, outputPorts } from '../engine/factory';
 
-export const NODE_W = 196;
+export const NODE_W = 210;
 
 /**
- * Canvas grid pitch. The backdrop draws squares this size and placement snaps
- * to them, so the two cannot drift apart — a grid you can see but not land on
- * is worse than no grid.
+ * Canvas grid pitch. The backdrop draws a dot at every intersection and
+ * placement snaps to them, so the two cannot drift apart — a grid you can see
+ * but not land on is worse than no grid.
  */
-export const GRID = 28;
+export const GRID = 30;
 
 /** Round a world coordinate onto the grid. */
 export const snap = (n: number): number => Math.round(n / GRID) * GRID;
-export const HEADER_H = 36;
-export const ROW_H = 24;
-export const FOOTER_H = 34;
+export const HEADER_H = 40;
+export const ROW_H = 26;
+export const FOOTER_H = 38;
 
 export interface Point {
   x: number;

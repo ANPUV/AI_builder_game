@@ -36,7 +36,7 @@ body.site-open #root {
   font-size: 15px;
   line-height: 1.6;
   background:
-    radial-gradient(1100px 520px at 50% -10%, #17222f 0%, transparent 70%),
+    radial-gradient(1100px 520px at 50% -10%, rgba(122, 108, 255, 0.16) 0%, transparent 70%),
     var(--bg);
 }
 
@@ -115,7 +115,7 @@ body.site-open #root {
 .site .hero p {
   margin: 0;
   max-width: 62ch;
-  color: #a9b7c7;
+  color: var(--muted);
   font-size: 17px;
 }
 
@@ -130,8 +130,15 @@ body.site-open #root {
 .site .panel {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 16px;
   padding: 22px;
+  /* The game's .panel is a sidebar card: it caps itself at 42% of its parent
+     and scrolls the rest. Inside .site .grid the parent is a stretched grid
+     item, so that percentage resolves and every pillar card was clipping its
+     own body behind a scrollbar. Reset the pair here, with .site .card. */
+  max-height: none;
+  overflow: visible;
+  flex: none;
 }
 
 .site h2 {

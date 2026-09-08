@@ -34,6 +34,13 @@ const STATUS_COLOR: Record<MachineStatus, string> = {
   disclosed: '#5f9e7a',
 };
 
+/**
+ * A port is an orb: the item's colour, a specular highlight from the top left
+ * and a halo in the same colour. The highlight is a class rule; the colour and
+ * its halo have to be inline because only the item knows them.
+ */
+const orb = (color: string) => ({ backgroundColor: color, boxShadow: `0 0 10px ${color}` });
+
 interface Props {
   machine: Machine;
   status: MachineStatus;
@@ -73,12 +80,17 @@ export default function MachineNode({
       style={{ left: machine.x, top: machine.y, width: NODE_W }}
       data-node-id={machine.id}
     >
-      <div className="node-header" style={{ background: b.color, color: inkOn(b.color) }}>
+      {/* backgroundColor, not background: the shorthand would clear the sheen
+          gradient the stylesheet paints on top of the building's colour. */}
+      <div className="node-header" style={{ backgroundColor: b.color, color: inkOn(b.color) }}>
         <span className="glyph">{b.icon}</span>
         <span className="title">{bName(b)}</span>
         <span
-          className="dot"
-          style={{ background: STATUS_COLOR[status] }}
+          className={`dot${status === 'running' ? ' running' : ''}`}
+          style={{
+            background: STATUS_COLOR[status],
+            boxShadow: `0 0 9px ${STATUS_COLOR[status]}`,
+          }}
           title={statusLabel[status]}
         />
       </div>
@@ -113,7 +125,7 @@ export default function MachineNode({
               {inId && (
                 <div
                   className={`port in${highlight(inId) ? ' target' : ''}`}
-                  style={{ background: inColor }}
+                  style={orb(inColor)}
                   data-port="in"
                   data-machine-id={machine.id}
                   data-item-id={inId}
@@ -122,7 +134,7 @@ export default function MachineNode({
               {outItem && (
                 <div
                   className="port out"
-                  style={{ background: outItem.color }}
+                  style={orb(outItem.color)}
                   data-port="out"
                   data-machine-id={machine.id}
                   data-item-id={outId}
@@ -185,7 +197,9 @@ export default function MachineNode({
           <div
             style={{
               width: `${craftProgress(machine) * 100}%`,
-              background: machine.clock > 1 ? 'var(--warn)' : 'var(--good)',
+              background: `linear-gradient(90deg, var(--accent), ${
+                machine.clock > 1 ? 'var(--warn)' : 'var(--good)'
+              })`,
               transition: `width ${BALANCE.tickSeconds}s linear`,
             }}
           />

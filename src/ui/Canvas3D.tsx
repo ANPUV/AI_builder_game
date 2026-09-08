@@ -54,8 +54,10 @@ export default function Canvas3D(props: Props) {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     el.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#101c2c');
-    scene.fog = new THREE.Fog('#101c2c', 35, 100);
+    // three.js cannot read the CSS variables, so the Nebula values are
+    // literal here. They mirror --bg and the canvas dot grid in index.css.
+    scene.background = new THREE.Color('#08070f');
+    scene.fog = new THREE.Fog('#08070f', 35, 100);
     const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -74,18 +76,20 @@ export default function Canvas3D(props: Props) {
     };
     resetView.current = fit;
     fit();
-    scene.add(new THREE.HemisphereLight(0xb8dcff, 0x263044, 2.5));
-    const sun = new THREE.DirectionalLight(0xffe8c5, 3);
+    // Violet sky, deeper violet bounce, and a warm magenta key light: the
+    // nebula gradient turned into lighting rather than paint.
+    scene.add(new THREE.HemisphereLight(0xc9c3fa, 0x241f3a, 2.5));
+    const sun = new THREE.DirectionalLight(0xffe0f2, 3);
     sun.position.set(8, 18, 10);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
     Object.assign(sun.shadow.camera, { left: -25, right: 25, top: 25, bottom: -25 });
     scene.add(sun);
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: '#17283b', roughness: .95 }));
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: '#151125', roughness: .95 }));
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -.06;
     floor.receiveShadow = true;
-    scene.add(floor, new THREE.GridHelper(200, 200, '#38566d', '#223b50'));
+    scene.add(floor, new THREE.GridHelper(200, 200, '#3b3168', '#241d3f'));
     const buildings = new THREE.Group();
     const belts = new THREE.Group();
     scene.add(buildings, belts);

@@ -292,6 +292,39 @@ check(`a neglected contract churns (${neglected}/40 runs of 10 min)`, neglected 
   check('frozen and intact with the addon off', !!s.machines[c.id] && s.status[c.id] === 'expired', s.status[c.id]);
 }
 {
+  // Churn must END a contract, not delete it. Loyalty caps at churnLoyaltyMax
+  // rather than 1, so even a perfectly-served contract carries a residual roll
+  // — and when that fired it used to remove the node and every belt into it,
+  // which read as the factory being vandalised rather than a customer leaving.
+  seed(3);
+  let vanished = 0, churnedEvents = 0, frozen = 0, priced = 0;
+  for (let i = 0; i < 60; i += 1) {
+    const s = world();
+    const c = factory.placeMachine(s, 'smb_pilot', 500, 300);
+    const ev = run(s, 400);                      // inside the ~7.4 min term
+    churnedEvents += ev.churned.length;
+    priced += ev.churned.filter((c2) => c2.cost > 0).length;
+    if (!s.machines[c.id]) vanished += 1;
+    else if (ev.churned.length) frozen += 1;
+  }
+  check(`a churned contract is never deleted (${vanished}/60 vanished)`, vanished === 0, String(vanished));
+  check(`churn still fires and freezes instead (${churnedEvents} events, ${frozen} frozen)`, churnedEvents > 0, String(churnedEvents));
+  check(
+    `every churn event quotes a re-sign price (${priced}/${churnedEvents})`,
+    churnedEvents > 0 && priced === churnedEvents,
+    `${priced} of ${churnedEvents}`,
+  );
+}
+{
+  // ...and the frozen node is re-signable, which is the whole point.
+  const s = world();
+  const c = factory.placeMachine(s, 'smb_pilot', 500, 300);
+  s.machines[c.id].termEndsAt = s.elapsed;       // as churn leaves it
+  s.credits = 100000;
+  const out = factory.renewContract(s, c.id);
+  check('a churned contract can be re-signed', out.ok, out.ok ? '' : out.reason);
+}
+{
   // A Support Agent pointed at the tier should cut it further still.
   seed(7);
   let churned = 0;

@@ -339,14 +339,17 @@ left it, until you re-sign it or demolish it. A term ending is not the same
 event as a customer walking out — and not renewing already costs you
 everything the contract was earning.
 
-Two things *can* still remove a contract, and neither is the term:
+**Churn ends a contract the same way.** With the Agentic Ops addon on, a live
+contract nobody is looking after can walk — 4% a minute, less loyalty — and
+when it does, the node freezes exactly as an expired one does. You win the
+customer back for the same quarter-price fee. Note that loyalty caps at 85%,
+never 100%, so even a contract you are serving perfectly carries a small
+residual chance; that is why it costs you revenue rather than your factory.
 
-- **Churn**, with the Agentic Ops addon on: a *live* contract nobody is
-  looking after walks, at 4% a minute less loyalty. A frozen one is not
-  eligible.
-- **Three quality strikes**, on **Slop contracts only** — those are the
-  recipes carrying a slop sale, and the strike is a rolling reputation that
-  decays with clean deliveries.
+The one thing that still removes a contract outright is **three quality
+strikes**, on **Slop contracts only** — the recipes carrying a slop sale.
+There the strike is a rolling reputation that decays with clean deliveries,
+and running out of patience really does lose you the customer for good.
 
 ### Exposure ceilings are the real gate
 

@@ -53,8 +53,9 @@ export interface AgentEvents {
   agentBuilt: { buildingName: string; nodes: number; wasted: number }[];
   /** Signs a Reviewer Agent blocked before they emptied the account. */
   agentVetoed: { buildingName: string; cost: number }[];
-  /** Customers who walked because nobody was looking after them. */
-  churned: { buildingName: string }[];
+  /** Customers whose contract lapsed because nobody was looking after them.
+   *  The node freezes rather than vanishing; `cost` is what re-signing takes. */
+  churned: { buildingName: string; cost: number }[];
   /** Contracts a Support Agent re-signed on its own, and what each cost. */
   agentRenewed: { buildingName: string; cost: number }[];
   /** Runaway agent spend: what a tick of nobody watching cost. */
@@ -452,12 +453,24 @@ export function tickAgents(state: GameState, dt: number, events: AgentEvents): v
     if (perMinute <= 0) continue;
     if (Math.random() >= (perMinute / 60) * dt) continue;
 
-    events.churned.push({ buildingName: building(m.buildingId)?.name ?? 'A customer' });
-    for (const link of Object.values(state.links)) {
-      if (link.fromId === m.id || link.toId === m.id) delete state.links[link.id];
-    }
-    delete state.machines[m.id];
-    delete state.status[m.id];
+    // Churn ENDS the contract; it does not delete your factory.
+    //
+    // This used to remove the node and every belt running into it, which made
+    // losing a customer indistinguishable from vandalism: loyalty caps at
+    // churnLoyaltyMax rather than 1, so a contract you were serving perfectly
+    // still carried a residual roll, and the reward for playing well was
+    // occasionally finding a hole in your graph with no idea what made it.
+    //
+    // Freezing it instead reuses the term machinery: the customer stops paying,
+    // the wiring stays put, and you win them back for the same quarter-price
+    // re-signing fee — which is also what lets a Support Agent recover an
+    // account it failed to hold.
+    events.churned.push({
+      buildingName: building(m.buildingId)?.name ?? 'A customer',
+      cost: renewalCost(m.buildingId, state.priceIndex),
+    });
+    m.termEndsAt = state.elapsed;
+    m.servedFor = 0;
   }
 
   // Nobody watching, and it bills you outright.

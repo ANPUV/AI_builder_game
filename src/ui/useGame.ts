@@ -263,7 +263,10 @@ export function useGame() {
         );
       }
       for (const c of events.churned) {
-        toast(`${c.buildingName} churned — nobody was looking after that account.`, 'bad');
+        toast(
+          `${c.buildingName} walked — the contract is frozen, not gone. Re-sign it for ${money(c.cost)}.`,
+          'bad',
+        );
       }
       for (const r of events.agentRenewed) {
         toast(`Support Agent re-signed ${r.buildingName} for ${money(r.cost)}.`, 'good');

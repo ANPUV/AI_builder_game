@@ -145,7 +145,7 @@ function rulesFor(b: Building): Rule[] {
     }
     rules.push({
       title: 'Customers churn once agents are on',
-      body: `With the addon enabled, contracts leave at ${(BALANCE.churnRatePerMin * 100).toFixed(0)}% a minute, offset by loyalty that builds over ${Math.round(BALANCE.churnLoyaltySeconds / 60)} minutes and a ${Math.round(BALANCE.churnGraceSeconds / 60)}-minute grace period on a new signing. That decay does not exist with the addon off.`,
+      body: `With the addon enabled, contracts lapse at ${(BALANCE.churnRatePerMin * 100).toFixed(0)}% a minute, offset by loyalty that builds over ${Math.round(BALANCE.churnLoyaltySeconds / 60)} minutes and a ${Math.round(BALANCE.churnGraceSeconds / 60)}-minute grace on a new signing. Loyalty caps at ${Math.round(BALANCE.churnLoyaltyMax * 100)}%, never 100%, so a small residual chance survives however well you serve them — which is why a lapse freezes the node for re-signing rather than deleting it. That decay does not exist with the addon off.`,
     });
   }
 

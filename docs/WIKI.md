@@ -243,13 +243,13 @@ All income comes from contracts. Item `value` is a **reference price, display
 only** — routing an expensive item somewhere generic is not an exploit, it just
 does nothing.
 
-### Milestones pay nothing
+### Milestones pay a quarter
 
-`milestoneRewardMultiplier` is **0**. Clearing a milestone unlocks buildings
-and recipes and hands you **no cash at all**. Funding has to come out of
-contracts — or, with the Venture Capital addon on, be raised against the
-milestone you just cleared. The `reward` number is still authored in the data,
-because that addon's maths reads it.
+`milestoneRewardMultiplier` is **0.25**, so clearing a milestone hands you a
+quarter of its authored `reward` in cash. That is a grant, not a living: the
+rest has to come out of contracts — or, with the Venture Capital addon on, be
+raised against the milestone you just cleared, which offers **three times** the
+full reward for a slice of revenue.
 
 ---
 
@@ -773,9 +773,18 @@ forever, taken on at whatever the cap table happened to cost at the time.
 | Term | Value |
 | --- | --- |
 | Capital offered | milestone `reward` × **3** |
-| Revenue share, first round | **8%** |
-| Cumulative share cap | **30%** — real revenue-based financing takes 5–15%, 25% at the extreme |
+| Revenue share | **priced against what the company is worth**, not against which round it is |
+| Valuation | `revenue/min × 2,200`, floored at **$120,000** so a pre-revenue round still has a price |
+| Share sold | `capital / (valuation + capital)` — post-money, so a round can never sell more than 100% |
+| Cumulative share cap | **30%**, plus **2% per milestone cleared** |
 | Repayment cap | 2.0× the capital, after which the round retires |
+
+Pricing rounds against the business rather than against a flat percentage is
+what stops five small Act I raises from spending the whole cap table before the
+two rounds that actually carry money are ever offered. The ceiling grows with
+milestones for the same reason: at these capital sizes a round takes thousands
+of sim-minutes to repay its cap, so it barely ever retires, and a fixed ceiling
+would lock a company out of funding for the rest of the run.
 
 Raising while the company is weak is a **down round**: 1.5× the share, a 3.0×
 repayment cap, and +30 Exposure. The game prices your weakness rather than
@@ -793,8 +802,14 @@ bad quarter the way a revenue share does.
 | --- | --- |
 | Rate | 1% per month |
 | Origination fee | 1.5% |
-| Term | 6 months |
+| Term | **18 months** |
 | Cap | $5,000, growing 40% per milestone cleared |
+
+Eighteen rather than six: at six, principal alone on a $19,000 draw came to
+$633 a sim-minute against an Act II operating income nearer $400, so the bank
+was decorative. Eighteen sim-months is still the short end of real venture debt
+(24–48), and still short enough that a careless draw is felt inside the act
+that took it.
 
 ---
 
@@ -850,14 +865,20 @@ The answer ladder, in the order you will build it:
 | API Tier 3 | $1,800 | $0 | 5,000 kTPM | Per vendor |
 | API Tier 5 | $14,000 | $0 | 40,000 kTPM | Per vendor |
 | Batch Lane | $900 | $0 | 9,000 kTPM | Per vendor |
-| Gaming PC | $1,200 | $28 | 90 kTPM | Shared |
-| Homelab Rack | $22,000 | $780 | 6,200 kTPM | Shared |
+| Gaming PC | $1,200 | **$0** | 90 kTPM | Shared |
+| Homelab Rack | $22,000 | **$0** | 6,200 kTPM | Shared |
 | Rented H100 Node | $0 | $15,100 | 24,000 kTPM | Shared |
 | Rented B200 Pod | $0 | $39,600 | 70,000 kTPM | Shared |
 | Colo Rack Bay | $250,000 | $42,000 | 130,000 kTPM | Shared |
 | Own Datacenter | $380,000,000 | $7,080,000 | 2,600,000 kTPM | Shared |
 
 Plus **600 kTPM** of ordinary servers you always have.
+
+Note the zeroes: hardware you **own outright** carries no subscription. You
+paid for the box, and with the ESG addon on its electricity bill arrives
+through the footprint meter instead — which is the honest place for it. Rented
+and vendor-scoped capacity still bills monthly, because that is what renting
+is.
 
 ### Key constants
 

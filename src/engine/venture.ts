@@ -40,6 +40,16 @@ export function activeSharePct(state: GameState): number {
 }
 
 /**
+ * Whether the cap table has any room left for a new round right now — the
+ * single check every UI surface (the tooltip, the on-demand dialog, the
+ * milestone toast) shares, so "why can't I raise" always means the same
+ * thing wherever the player runs into it.
+ */
+export function raiseCapReached(state: GameState): boolean {
+  return activeSharePct(state) >= BALANCE.vcMaxTotalSharePct;
+}
+
+/**
  * Is the company raising from a position of weakness right now?
  *
  * Losing money on real revenue, or carrying the Exposure that already costs

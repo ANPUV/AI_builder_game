@@ -23,12 +23,13 @@ import {
   drawLoan,
   loanProceeds,
   onDemandRaiseOffer,
+  raiseCapReached,
   raiseOfferFor,
   type RaiseOffer,
 } from '../engine/venture';
 import { buyCarbonCredits, publishDisclosure } from '../engine/esg';
 import type { GameState, LinkShape } from '../engine/types';
-import type { AddonId } from '../data/addons';
+import { featureEnabled, type AddonId } from '../data/addons';
 import { money } from './format';
 
 export interface Toast {
@@ -177,7 +178,21 @@ export function useGame() {
         // depend on company health, and a term sheet must not reprice itself
         // while the player is reading it.
         const offer = raiseOfferFor(stateRef.current!, id);
-        if (offer) setPendingRaise(offer);
+        if (offer) {
+          setPendingRaise(offer);
+        } else if (
+          featureEnabled('ventureCapital', stateRef.current!.addons) &&
+          milestone.reward > 0 &&
+          raiseCapReached(stateRef.current!)
+        ) {
+          // The milestone would have offered a round — this is the one case
+          // a fresh completion can silently skip the offer for — so say why,
+          // or it just looks like the addon stopped working.
+          toast(
+            `Investors are at their ${Math.round(BALANCE.vcMaxTotalSharePct * 100)}% cap — no funding offer for ${milestone.name}. A round has to repay before another opens.`,
+            'info',
+          );
+        }
       }
 
       // Common leads only get the red dot; interrupting play for a $100

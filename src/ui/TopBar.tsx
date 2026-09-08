@@ -4,6 +4,7 @@ import { esgBillSplit } from '../engine/esg';
 import { disclosureGap } from '../engine/esgRules';
 import Tip from './Tip';
 import { agentCapacity } from '../engine/simulate';
+import { raiseCapReached } from '../engine/venture';
 import { useTheme } from './useTheme';
 import { LANGUAGES, type Lang } from '../i18n';
 import { useLang } from '../i18n/useLang';
@@ -24,13 +25,11 @@ export default function TopBar({
   game,
   onSignOut,
   onOpenSettings,
-  onOpenRaiseFund,
   onOpenEsg,
 }: {
   game: Game;
   onSignOut?: () => void;
   onOpenSettings: () => void;
-  onOpenRaiseFund: () => void;
   onOpenEsg: () => void;
 }) {
   const { state, speed, setSpeed, save, reset, togglePause, exportFile, importFile, savedAt } =
@@ -57,6 +56,7 @@ export default function TopBar({
   const exposure = state.exposure;
   const risky = exposure > 30;
   const vcActive = state.vc.totalSharePct > 0 || state.loans.length > 0;
+  const vcCapReached = raiseCapReached(state);
   // Rounds still being repaid, and the count of those that have met their cap
   // and stopped charging — the feedback that a raise is a finite obligation.
   const activeRaises = state.vc.raises.filter((r) => r.paid < r.owed);
@@ -139,6 +139,11 @@ export default function TopBar({
                   {t('vc.tipShare', { pct: Math.round(state.vc.totalSharePct * 100) })}
                 </div>
               )}
+              {vcCapReached && (
+                <div className="tip-body" style={{ color: 'var(--warn)' }}>
+                  {t('vc.capReached', { pct: Math.round(BALANCE.vcMaxTotalSharePct * 100) })}
+                </div>
+              )}
               {activeRaises.length > 0 && (
                 <>
                   <div className="tip-kv" style={{ opacity: 0.7, marginTop: 6 }}>
@@ -173,14 +178,14 @@ export default function TopBar({
                   </div>
                 </>
               )}
-              <button className="offer-close" style={{ marginTop: 8 }} onClick={onOpenRaiseFund}>
-                {t('vc.raiseFund')}
-              </button>
             </>
           }
         >
           <div className="stat">
-            <span className="label">{t('vc.label')}</span>
+            <span className="label">
+              {t('vc.label')}
+              {vcCapReached && <span style={{ color: 'var(--warn)' }}> ⚠</span>}
+            </span>
             <span className="value mono" style={{ color: 'var(--warn)' }}>
               {state.vc.totalSharePct > 0 ? `${Math.round(state.vc.totalSharePct * 100)}%` : ''}
               {state.vc.totalSharePct > 0 && state.loans.length > 0 ? ' · ' : ''}

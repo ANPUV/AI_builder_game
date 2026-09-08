@@ -108,7 +108,9 @@ const en = {
   'vc.openBank': 'Bank',
   'vc.raiseFund': 'Raise fund',
   'vc.raiseFundTitle': 'Raise a round?',
-  'vc.raiseFundFull': 'Your investors have no room left on the cap table right now.',
+  'vc.raiseFundFull':
+    "You're at your investors' cap — {pct}% of revenue already committed. A round has to repay before another can open.",
+  'vc.capReached': '{pct}% cap reached — no new rounds until one repays.',
   'vc.offerBadge': 'Funding offer',
   'vc.downRoundBadge': 'Down round',
   'vc.offerTitle': 'Raise a round on {milestone}?',
@@ -300,7 +302,9 @@ const vi: Partial<Record<Key, string>> = {
   'vc.openBank': 'Ngân hàng',
   'vc.raiseFund': 'Gọi vốn',
   'vc.raiseFundTitle': 'Gọi vốn?',
-  'vc.raiseFundFull': 'Nhà đầu tư hiện không còn chỗ trống trên bảng vốn.',
+  'vc.raiseFundFull':
+    'Bạn đã đạt mức trần của nhà đầu tư — {pct}% doanh thu đã cam kết. Một vòng phải trả xong nợ trước khi vòng khác mở ra.',
+  'vc.capReached': 'Đã đạt mức trần {pct}% — không có vòng mới cho tới khi một vòng trả xong.',
   'vc.offerBadge': 'Đề nghị gọi vốn',
   'vc.downRoundBadge': 'Vòng giảm giá',
   'vc.offerTitle': 'Gọi vốn nhân cột mốc {milestone}?',

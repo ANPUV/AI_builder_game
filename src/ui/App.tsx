@@ -118,7 +118,6 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
         game={game}
         onSignOut={onSignOut}
         onOpenSettings={() => setSettingsOpen(true)}
-        onOpenRaiseFund={game.openRaiseFund}
         onOpenEsg={() => setEsgOpen(true)}
       />
       <div className="body">
@@ -145,6 +144,15 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
               <span>＋</span>
               {hasUnseenOffers(game.state) && <span className="reddot" />}
             </button>
+            {featureEnabled('ventureCapital', game.state.addons) && (
+              <button
+                className="rail-btn"
+                onClick={game.openRaiseFund}
+                title={t('vc.raiseFund')}
+              >
+                {t('vc.raiseFund')}
+              </button>
+            )}
             <button
               className={`rail-btn${treeOpen ? ' active' : ''}`}
               onClick={() => setTreeOpen((open) => !open)}

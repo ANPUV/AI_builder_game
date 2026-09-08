@@ -1,3 +1,4 @@
+import { BALANCE } from '../data';
 import { activeSharePct, type RaiseOffer } from '../engine/venture';
 import type { GameState } from '../engine/types';
 import { money } from './format';
@@ -35,7 +36,7 @@ export default function RaiseFundDialog({
         <div className="modal" onClick={(e) => e.stopPropagation()}>
           <div className="modal-head">
             <h2>{t('vc.raiseFundTitle')}</h2>
-            <p>{t('vc.raiseFundFull')}</p>
+            <p>{t('vc.raiseFundFull', { pct: Math.round(BALANCE.vcMaxTotalSharePct * 100) })}</p>
           </div>
           <button className="offer-close" onClick={onClose}>
             {t('build.close')}

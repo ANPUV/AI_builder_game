@@ -334,10 +334,19 @@ up for should not evaporate while you are still wiring it.
 not a customer, it is you posting into the void, and putting that on a renewal
 clock would charge rent on a lesson.
 
-Leaving one frozen is not free. An expired contract earns no loyalty, so with
-the Agentic Ops addon on, the churn roll will eventually take the account for
-good — neglect still costs you the customer, it just takes longer than
-ignoring a live one does.
+**A frozen contract never disappears.** It sits on the canvas, wired as you
+left it, until you re-sign it or demolish it. A term ending is not the same
+event as a customer walking out — and not renewing already costs you
+everything the contract was earning.
+
+Two things *can* still remove a contract, and neither is the term:
+
+- **Churn**, with the Agentic Ops addon on: a *live* contract nobody is
+  looking after walks, at 4% a minute less loyalty. A frozen one is not
+  eligible.
+- **Three quality strikes**, on **Slop contracts only** — those are the
+  recipes carrying a slop sale, and the strike is a rolling reputation that
+  decays with clean deliveries.
 
 ### Exposure ceilings are the real gate
 

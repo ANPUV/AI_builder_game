@@ -119,7 +119,7 @@ function rulesFor(b: Building): Rule[] {
       title: term > 0 ? `Runs a term of about ${Math.round(term)}s` : 'Runs forever',
       body:
         term > 0
-          ? `A contract is a term, not a marriage. When it runs out the node freezes where it stands — it stops delivering and stops paying, but keeps its links and its buffers — and re-signing costs ${Math.round(BALANCE.contractRenewalFraction * 100)}% of what the chassis costs to place today. Term length follows what the deal pays, on a log scale, so the cheap high-volume work comes back around far more often than the rare deals do. A Support Agent watching this account re-signs it for you.`
+          ? `A contract is a term, not a marriage. When it runs out the node freezes where it stands — it stops delivering and stops paying, but keeps its links and its buffers — and re-signing costs ${Math.round(BALANCE.contractRenewalFraction * 100)}% of what the chassis costs to place today. A frozen contract never disappears — it waits for you. Term length follows what the deal pays, on a log scale, so the cheap high-volume work comes back around far more often than the rare deals do. A Support Agent watching this account re-signs it for you.`
           : 'This one pays nothing, so it is not on a renewal clock. It is not a customer — it is you posting into the void, and charging rent on that lesson would be beside the point.',
     });
     rules.push({

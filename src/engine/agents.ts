@@ -414,9 +414,7 @@ export function tickAgents(state: GameState, dt: number, events: AgentEvents): v
     // Renewals. A Support Agent's job is keeping customers, and a term running
     // out is the most ordinary way to lose one — so it re-signs the contracts
     // it is watching without being asked, out of your cash, and holds the same
-    // floor back that a Sales Agent does. A contract nobody renews stays frozen
-    // and stops earning loyalty, so the churn roll below will eventually take
-    // it: neglect still costs you the customer, it just takes longer.
+    // floor back that a Sales Agent does.
     if (isExpired(state, m)) {
       const price = renewalCost(m.buildingId, state.priceIndex);
       if (
@@ -428,12 +426,13 @@ export function tickAgents(state: GameState, dt: number, events: AgentEvents): v
           buildingName: building(m.buildingId)?.name ?? 'A customer',
           cost: price,
         });
-        continue;
       }
-      // Nobody re-signed it. Deliberately NOT a `continue`: an expired contract
-      // falls through to the churn roll below, where it earns no loyalty and is
-      // eventually lost for good. Skipping the roll would make freezing a
-      // contract the safest thing that can happen to it.
+      // Frozen means frozen, renewed or not. An expired contract never reaches
+      // the churn roll: a term ending is not the same event as a customer
+      // walking out, and the node has to still be on the canvas for the player
+      // to re-sign it. Not renewing already costs you everything the contract
+      // was earning — it does not also need to delete your wiring.
+      continue;
     }
 
     // Loyalty is earned by running, not by existing: a contract sitting on

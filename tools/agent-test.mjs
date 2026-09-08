@@ -201,6 +201,8 @@ console.log('\n— churn and support —');
   factory.placeMachine(s, 'consumer_app', 500, 300);
   const events = run(s, 600);
   check('no churn with the addon off', events.churned.length === 0);
+  // Still there after 10 minutes even though its term ran out at ~5: an
+  // expired contract freezes on the canvas, it does not disappear.
   check('the contract is still there', Object.keys(s.machines).length === 1);
 }
 {
@@ -209,12 +211,21 @@ console.log('\n— churn and support —');
   const events = run(s, data.BALANCE.churnGraceSeconds - 10);
   check('nothing churns inside the onboarding grace', events.churned.length === 0);
 }
+/**
+ * These runs are 10 minutes long and a Consumer App's term is about 5, so
+ * without this every one of them would be measuring contract expiry as much as
+ * churn — and the neglected baseline would come out LOWER than the supported
+ * arm, because a frozen contract cannot churn while a renewed one can. Churn
+ * is the subject here; terms have their own checks below.
+ */
+const noTerm = (m) => { if (m) delete m.termEndsAt; };
 const churnRuns = (setup, seconds = 600, runs = 40) => {
   seed(7);
   let churned = 0;
   for (let i = 0; i < runs; i += 1) {
     const s = world();
     const c = factory.placeMachine(s, 'consumer_app', 500, 300);
+    noTerm(s.machines[c.id]);
     setup(s, s.machines[c.id]);
     churned += run(s, seconds).churned.length;
   }
@@ -231,6 +242,7 @@ check(`a neglected contract churns (${neglected}/40 runs of 10 min)`, neglected 
   for (let i = 0; i < 40; i += 1) {
     const s = world();
     const c = factory.placeMachine(s, 'consumer_app', 500, 300);
+    noTerm(s.machines[c.id]);
     const ev = { milestonesCompleted: [], breaches: [], offersArrived: [], offersExpired: [], blowouts: [], fines: [], contractsLost: [], agentSigned: [], agentBuilt: [], agentVetoed: [], churned: [], agentRenewed: [], runaways: [] };
     const dt = data.BALANCE.tickSeconds;
     for (let t = 0; t < 600; t += dt) {
@@ -242,6 +254,44 @@ check(`a neglected contract churns (${neglected}/40 runs of 10 min)`, neglected 
   check(`a well-served contract churns far less (${churned}/40 vs ${neglected}/40)`, churned < neglected, `${churned} vs ${neglected}`);
 }
 {
+  // The bug this guards: an expired contract used to fall through to the churn
+  // roll, so a term ending eventually DELETED the node instead of freezing it.
+  // Freezing is the whole feature — the player has to be able to re-sign it.
+  //
+  // Expiry is forced at t=0 rather than waited out, so the run measures only
+  // what happens to an ALREADY-frozen contract. A contract that is still live
+  // can of course churn on its way to its term; that is the mechanic above.
+  seed(11);
+  let vanished = 0;
+  for (let i = 0; i < 40; i += 1) {
+    const s = world();
+    const c = factory.placeMachine(s, 'consumer_app', 500, 300);
+    factory.setRecipe(s, c.id, 'c_consumer_raw');
+    s.machines[c.id].termEndsAt = s.elapsed;
+    run(s, 1800);
+    if (!s.machines[c.id]) vanished += 1;
+  }
+  check(`a frozen contract is never deleted (${vanished}/40 lost)`, vanished === 0, String(vanished));
+}
+{
+  // ...and it reads as expired rather than quietly running again.
+  const s = world();
+  const c = factory.placeMachine(s, 'consumer_app', 500, 300);
+  factory.setRecipe(s, c.id, 'c_consumer_raw');
+  s.machines[c.id].termEndsAt = s.elapsed;
+  run(s, 1800);
+  check('and it still reads as expired', s.status[c.id] === 'expired', s.status[c.id]);
+}
+{
+  // The same with the addon off, where nothing should touch it at all.
+  const s = world({ agentic: false });
+  const c = factory.placeMachine(s, 'consumer_app', 500, 300);
+  factory.setRecipe(s, c.id, 'c_consumer_raw');
+  s.machines[c.id].termEndsAt = s.elapsed;
+  run(s, 1800);
+  check('frozen and intact with the addon off', !!s.machines[c.id] && s.status[c.id] === 'expired', s.status[c.id]);
+}
+{
   // A Support Agent pointed at the tier should cut it further still.
   seed(7);
   let churned = 0;
@@ -249,7 +299,8 @@ check(`a neglected contract churns (${neglected}/40 runs of 10 min)`, neglected 
     const s = world();
     factory.placeMachine(s, 'agent_console', 100, 100);
     placeAgent(s, 'support_agent', 'tier:consumer_app');
-    factory.placeMachine(s, 'consumer_app', 500, 300);
+    const c = factory.placeMachine(s, 'consumer_app', 500, 300);
+    noTerm(s.machines[c.id]);
     churned += runFed(s, 600).churned.length;
   }
   check(`a Support Agent cuts churn (${churned}/40 vs ${neglected}/40)`, churned < neglected, `${churned} vs ${neglected}`);

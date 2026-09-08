@@ -158,7 +158,7 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
               onClick={() => setTreeOpen((open) => !open)}
               title={t('side.showTechTree')}
             >
-              Tech tree
+              {t('side.techTree')}
             </button>
           </div>
           {treeOpen && (

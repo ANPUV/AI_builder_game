@@ -214,109 +214,111 @@ export default function TechTree({
   };
 
   return (
-    <div className="tt-panel">
-      <div className="tt-head">
-        <span className="section-title" style={{ margin: 0 }}>{t('side.techTree')}</span>
-        {visibleTracks.length > 1 && (
-          <div className="track-tabs" style={{ margin: '0 0 0 auto' }}>
-            {visibleTracks.map((tr) => (
-              <button
-                key={tr.id}
-                className={`track-tab${tr.id === active ? ' on' : ''}`}
-                style={tr.id === active ? { borderColor: tr.color, color: tr.color } : undefined}
-                onClick={() => pickTrack(tr.id)}
-                title={tr.blurb}
-              >
-                {tr.name}
-              </button>
-            ))}
-          </div>
-        )}
-        <button
-          className="drawer-close"
-          style={visibleTracks.length > 1 ? undefined : { marginLeft: 'auto' }}
-          onClick={onClose}
-          title={t('side.close')}
-        >
-          ✕
-        </button>
-      </div>
-
-      <div className="tt-body">
-        <div className="tt-timeline">
-          {eras.map((era, ei) => (
-            <div className="tt-era" key={`${era.label}-${ei}`}>
-              <div className="tt-era-label">{era.label || activeTrack.name}</div>
-              <div className="tt-era-nodes">
-                <div className="tt-ribbon" style={{ background: activeTrack.color }} />
-                {era.milestones.map((m) => {
-                  const i = inTrack.indexOf(m);
-                  const status: NodeStatus =
-                    nextIndex === -1 || i < nextIndex ? 'done' : i === nextIndex ? 'current' : 'locked';
-                  const size = nodeSize(m);
-                  return (
-                    <button
-                      key={m.id}
-                      className={`tt-node tt-node-${status}${m.id === selected.id ? ' tt-node-selected' : ''}`}
-                      onClick={() => setSelectedId(m.id)}
-                      title={m.name}
-                    >
-                      <span
-                        className="tt-dot"
-                        style={{
-                          width: size,
-                          height: size,
-                          ...(status !== 'locked'
-                            ? { background: activeTrack.color, borderColor: activeTrack.color, color: 'var(--ink-on-color)' }
-                            : undefined),
-                        }}
-                      >
-                        {status === 'done' ? '✓' : status === 'locked' ? '🔒' : ''}
-                      </span>
-                      <span className="tt-node-name">{m.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="tt-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="tt-head">
+          <span className="section-title" style={{ margin: 0 }}>{t('side.techTree')}</span>
+          {visibleTracks.length > 1 && (
+            <div className="track-tabs" style={{ margin: '0 0 0 auto' }}>
+              {visibleTracks.map((tr) => (
+                <button
+                  key={tr.id}
+                  className={`track-tab${tr.id === active ? ' on' : ''}`}
+                  style={tr.id === active ? { borderColor: tr.color, color: tr.color } : undefined}
+                  onClick={() => pickTrack(tr.id)}
+                  title={tr.blurb}
+                >
+                  {tr.name}
+                </button>
+              ))}
             </div>
-          ))}
+          )}
+          <button
+            className="drawer-close"
+            style={visibleTracks.length > 1 ? undefined : { marginLeft: 'auto' }}
+            onClick={onClose}
+            title={t('side.close')}
+          >
+            ✕
+          </button>
         </div>
 
-        <div className="tt-detail">
-          <div className="card ms" style={{ margin: 0, border: 'none', background: 'none', padding: 0 }}>
-            <div className="head">
-              <b>{selected.name}</b>
-              <span className="mono ms-index">
-                {selected.act ? `${selected.act} · ` : ''}{selectedIndex + 1}/{inTrack.length}
-              </span>
-            </div>
-            {selectedStatus === 'done' && (
-              <div style={{ color: 'var(--good)', fontSize: 11, fontWeight: 600, marginBottom: 6 }}>
-                ✓ Complete
+        <div className="tt-body">
+          <div className="tt-timeline">
+            {eras.map((era, ei) => (
+              <div className="tt-era" key={`${era.label}-${ei}`}>
+                <div className="tt-era-label">{era.label || activeTrack.name}</div>
+                <div className="tt-era-nodes">
+                  <div className="tt-ribbon" style={{ background: activeTrack.color }} />
+                  {era.milestones.map((m) => {
+                    const i = inTrack.indexOf(m);
+                    const status: NodeStatus =
+                      nextIndex === -1 || i < nextIndex ? 'done' : i === nextIndex ? 'current' : 'locked';
+                    const size = nodeSize(m);
+                    return (
+                      <button
+                        key={m.id}
+                        className={`tt-node tt-node-${status}${m.id === selected.id ? ' tt-node-selected' : ''}`}
+                        onClick={() => setSelectedId(m.id)}
+                        title={m.name}
+                      >
+                        <span
+                          className="tt-dot"
+                          style={{
+                            width: size,
+                            height: size,
+                            ...(status !== 'locked'
+                              ? { background: activeTrack.color, borderColor: activeTrack.color, color: 'var(--ink-on-color)' }
+                              : undefined),
+                          }}
+                        >
+                          {status === 'done' ? '✓' : status === 'locked' ? '🔒' : ''}
+                        </span>
+                        <span className="tt-node-name">{m.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            )}
-            {selectedStatus === 'locked' && (
-              <div className="req-warn" style={{ marginBottom: 6 }}>
-                <span className="lock">🔒</span> Locked — clear what's ahead of it first
-              </div>
-            )}
-            <div className="blurb">{selected.blurb}</div>
-            {Object.entries(selected.requires).map(([itemId, need]) => (
-              <Requirement
-                key={itemId}
-                itemId={itemId}
-                need={need}
-                state={state}
-                locked={selectedStatus !== 'current'}
-              />
             ))}
-            {BALANCE.milestoneRewardMultiplier > 0 && (
-              <div className="kv" style={{ marginTop: 7 }}>
-                <span className="k">Reward</span>
-                <span className="mono">{money(selected.reward * BALANCE.milestoneRewardMultiplier)}</span>
+          </div>
+
+          <div className="tt-detail">
+            <div className="card ms" style={{ margin: 0, border: 'none', background: 'none', padding: 0 }}>
+              <div className="head">
+                <b>{selected.name}</b>
+                <span className="mono ms-index">
+                  {selected.act ? `${selected.act} · ` : ''}{selectedIndex + 1}/{inTrack.length}
+                </span>
               </div>
-            )}
-            <UnlockList milestone={selected} />
+              {selectedStatus === 'done' && (
+                <div style={{ color: 'var(--good)', fontSize: 11, fontWeight: 600, marginBottom: 6 }}>
+                  ✓ Complete
+                </div>
+              )}
+              {selectedStatus === 'locked' && (
+                <div className="req-warn" style={{ marginBottom: 6 }}>
+                  <span className="lock">🔒</span> Locked — clear what's ahead of it first
+                </div>
+              )}
+              <div className="blurb">{selected.blurb}</div>
+              {Object.entries(selected.requires).map(([itemId, need]) => (
+                <Requirement
+                  key={itemId}
+                  itemId={itemId}
+                  need={need}
+                  state={state}
+                  locked={selectedStatus !== 'current'}
+                />
+              ))}
+              {BALANCE.milestoneRewardMultiplier > 0 && (
+                <div className="kv" style={{ marginTop: 7 }}>
+                  <span className="k">Reward</span>
+                  <span className="mono">{money(selected.reward * BALANCE.milestoneRewardMultiplier)}</span>
+                </div>
+              )}
+              <UnlockList milestone={selected} />
+            </div>
           </div>
         </div>
       </div>

@@ -228,7 +228,7 @@ export function nextStep(state: GameState): Step {
   const mainTrack = MILESTONES.filter((m) => (m.track ?? 'main') === 'main');
   const nextIndex = mainTrack.findIndex((m) => !state.completedMilestones.includes(m.id));
   if (nextIndex === -1) {
-    return { tone: 'ok', title: 'Tech tree complete', body: 'Nothing left to unlock. Optimise for margin.' };
+    return { tone: 'ok', title: 'Tech era complete', body: 'Nothing left to unlock. Optimise for margin.' };
   }
   const goal = mainTrack[nextIndex];
 

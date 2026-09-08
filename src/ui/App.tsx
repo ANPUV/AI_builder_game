@@ -11,6 +11,7 @@ import BankDialog from './BankDialog';
 import BuildDialog, { type BuildTab } from './BuildDialog';
 import SettingsDialog from './SettingsDialog';
 import Canvas, { machineIds, type Pending, type Selection } from './Canvas';
+import Canvas3D from './Canvas3D';
 import Coach from './Coach';
 import Inspector from './Inspector';
 import Hotbar from './Hotbar';
@@ -34,6 +35,8 @@ export default function App({ onSignOut }: { onSignOut?: () => void } = {}) {
 function GameShell({ onSignOut }: { onSignOut?: () => void }) {
   const { t } = useLang();
   const game = useGame();
+  const [threeD, setThreeD] = useState(true);
+  const FactoryCanvas = threeD ? Canvas3D : Canvas;
   const [selection, setSelection] = useState<Selection>(null);
   const [pending, setPending] = useState<Pending | null>(null);
   /** The build dialog, and which tab it should land on. */
@@ -112,7 +115,7 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
         onOpenBank={() => setBankOpen(true)}
       />
       <div className="body">
-        <Canvas
+        <FactoryCanvas
           game={game}
           selection={selection}
           setSelection={setSelection}
@@ -121,6 +124,7 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
           onOpenBuild={() => openDialog()}
         >
           <div className="left-rail">
+            <button className="rail-btn" onClick={() => setThreeD(!threeD)}>{threeD ? '2D editor' : '3D floor'}</button>
             <button className="build-fab" onClick={() => openDialog()} title={t('build.openTitle')}>
               <span>＋</span>
               {hasUnseenOffers(game.state) && <span className="reddot" />}
@@ -153,7 +157,7 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
             onClear={(slot) => game.act((st) => setHotkey(st, slot, null))}
             onOpenDialog={() => openDialog()}
           />
-        </Canvas>
+        </FactoryCanvas>
         <div className="sidebar right">
           <section className="panel">
             <div className="section-title">{t('side.nextStep')}</div>

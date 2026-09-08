@@ -65,6 +65,18 @@ export const MARKET = {
 
   /** Offers seeded onto a brand-new save so the opening board is never empty. */
   openingOffers: 2,
+
+  /**
+   * Every listing's window is multiplied by this.
+   *
+   * The per-listing `ttl` values below are the authored ones and stay readable
+   * as a ladder — 90s at the bottom, 700s at the top. They were too short in
+   * play: a 90-second consumer lead at 4x speed is gone in 22 real seconds, and
+   * common leads expire without a toast, so the board appeared to lose offers
+   * at random. Doubling here keeps the ladder's shape and gives every rung
+   * twice the time to be noticed.
+   */
+  ttlMultiplier: 2,
 } as const;
 
 // --- rarity ---------------------------------------------------------------

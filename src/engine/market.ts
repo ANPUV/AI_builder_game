@@ -134,7 +134,7 @@ export function spawnOffer(
     buildingId: chosen.buildingId,
     lead: pick(chosen.leads),
     offeredAt: state.elapsed,
-    expiresAt: state.elapsed + chosen.ttl,
+    expiresAt: state.elapsed + chosen.ttl * MARKET.ttlMultiplier,
     seen: false,
   };
   state.offers[offer.id] = offer;

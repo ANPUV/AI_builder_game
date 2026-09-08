@@ -75,7 +75,7 @@ function OfferRow({
         <span className={`offer-clock mono${urgent ? ' urgent' : ''}`}>{countdown(left)}</span>
       </div>
 
-      <div className="offer-window">
+      <div className={`offer-window${urgent ? ' urgent' : ''}`}>
         <div
           style={{
             width: `${frac * 100}%`,

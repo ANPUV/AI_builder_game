@@ -531,13 +531,20 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
   font-size: 8px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
   vertical-align: 1px;
 }
-.offer-clock { flex: 0 0 auto; color: var(--muted); font-size: 11px; }
+.offer-clock { flex: 0 0 auto; color: var(--text); font-size: 11px; font-weight: 600; }
 .offer-clock.urgent { color: var(--bad); font-weight: 700; }
+/* A 3px hairline read as a divider, not a timer, and common leads expire with
+   no toast — so the bar was the only warning and nobody saw it. */
 .offer-window {
-  height: 3px; border-radius: 2px; background: var(--surface-3);
+  height: 7px; border-radius: 4px; background: var(--surface-3);
   margin-bottom: 8px; overflow: hidden;
+  border: 1px solid var(--line-soft);
 }
 .offer-window > div { height: 100%; transition: width 120ms linear; }
+/* Under a quarter left, the bar pulses so a lead about to lapse is visible
+   from across the dialog rather than only when you are reading that row. */
+.offer-window.urgent > div { animation: offerpulse 1s ease-in-out infinite; }
+@keyframes offerpulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 .offer-note { margin: 7px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
 .offer-sign { width: 100%; margin-top: 9px; }
 .offer-close { width: 100%; margin-top: 12px; }

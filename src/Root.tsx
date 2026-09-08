@@ -13,6 +13,13 @@ import './site/site.css';
 const Game = lazy(() => import('./ui/App'));
 
 export default function Root() {
+  if (import.meta.env.DEV && window.location.pathname === '/preview') {
+    return <Suspense fallback={<div className="site-booting">Starting the simulation…</div>}><Game /></Suspense>;
+  }
+  return <AuthenticatedRoot />;
+}
+
+function AuthenticatedRoot() {
   const { state, signedIn, signOut } = useAuth();
 
   const path = window.location.pathname;
@@ -30,6 +37,7 @@ export default function Root() {
   // A reset link is valid whether or not somebody is signed in, and it is the
   // only reason to be on /reset — so it wins over everything else.
   if (resetToken) return <ResetPage token={resetToken} />;
+
 
   if (state.kind === 'loading') return <div className="site-booting">Loading…</div>;
 

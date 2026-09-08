@@ -16,6 +16,22 @@ npm install
 npm run dev
 ```
 
+## Local 3D preview
+
+Run `npm run dev:ui` and open `http://localhost:5173/preview` to play locally
+without the auth Worker. This route exists only in Vite development mode;
+production keeps the normal sign-in flow.
+
+The Three.js factory floor uses the existing simulation and save format. Use
+the **2D editor / 3D floor** button to switch views without losing progress.
+Drag to orbit, right-drag to pan, scroll to zoom, and **Fit factory** to recenter.
+Choose a building with **+**, then click the floor to place it. Click a building
+to inspect it; **Shift-drag** moves it. Select an output under **Connect**, then
+click its destination to create a belt. Click a belt to inspect or delete it.
+Recipes, manual generation, contracts, and economy use the existing engine.
+The 2D editor retains box selection, copy/paste, and port-drag quick building.
+The new 3D controls currently use English labels and require WebGL2.
+
 ## The reframe
 
 The engine is a factory sim; the content maps it onto how AI companies

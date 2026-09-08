@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   ALL_VENDORS,
   BALANCE,
@@ -30,6 +31,7 @@ import {
   setVendor,
 } from '../engine/factory';
 import FocusPicker from './FocusPicker';
+import NodeWiki from './NodeWiki';
 import { CoolingPicker, coolingSpec } from './CoolingPicker';
 import { setCooling } from '../engine/factory';
 import { coolingOf, effectiveFootprint } from '../engine/esgRules';
@@ -60,6 +62,12 @@ export default function Inspector({ game, selection, setSelection }: Props) {
   const { state, act, toast } = game;
   const { t } = useLang();
   const { bName, bDesc, iName, rName } = useContent();
+  /**
+   * The wiki is a property of "whatever node is selected", not of one node, so
+   * it stays open across a change of selection and repaints for the new one.
+   * Declared before the early returns below because it is a hook.
+   */
+  const [wikiOpen, setWikiOpen] = useState(false);
 
   if (!selection) {
     return (
@@ -251,10 +259,21 @@ export default function Inspector({ game, selection, setSelection }: Props) {
 
   return (
     <>
+      {wikiOpen && <NodeWiki b={b} state={state} onClose={() => setWikiOpen(false)} />}
       <div className="field">
         <div className="card" style={{ marginBottom: 10 }}>
           <div className="head">
-            <b>{bName(b)}</b>
+            <span className="head-name">
+              <b>{bName(b)}</b>
+              <button
+                className="wiki-btn"
+                title={t('wiki.open')}
+                aria-label={t('wiki.open')}
+                onClick={() => setWikiOpen(true)}
+              >
+                ?
+              </button>
+            </span>
             <span
               className="badge"
               style={{

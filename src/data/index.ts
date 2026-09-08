@@ -37,6 +37,21 @@ export const RECIPES_BY_BUILDING: Record<string, Recipe[]> = RECIPES.reduce(
 );
 
 /**
+ * Which milestone opens a given building or recipe. The forward direction is
+ * what the data authors and what `simulate` reads; this is the reverse, for
+ * anything that has a node in hand and wants to say where it came from.
+ *
+ * Absent means the starting kit — see STARTING_BUILDINGS / STARTING_RECIPES.
+ */
+const unlockIndex = (key: 'unlocksBuildings' | 'unlocksRecipes'): Record<string, Milestone> => {
+  const map: Record<string, Milestone> = {};
+  for (const m of MILESTONES) for (const id of m[key]) map[id] ??= m;
+  return map;
+};
+export const MILESTONE_BY_BUILDING: Record<string, Milestone> = unlockIndex('unlocksBuildings');
+export const MILESTONE_BY_RECIPE: Record<string, Milestone> = unlockIndex('unlocksRecipes');
+
+/**
  * THE HARDWARE PRICE INDEX ------------------------------------------------
  * Between mid-2024 and September 2026 a 32GB DDR5 kit went from about $95 to
  * about $400, a 2TB NVMe from $120 to $379, and an RTX PRO 6000 from $8,565 to

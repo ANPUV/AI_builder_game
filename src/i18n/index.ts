@@ -71,6 +71,8 @@ const en = {
   'inspector.elbow': 'Elbow',
   'inspector.removeBelt': 'Remove belt',
 
+  'wiki.open': 'What is this node?',
+
   'build.title': 'Build',
   'build.contracts': 'Contract offers',
   'build.close': 'Close',
@@ -264,6 +266,8 @@ const vi: Partial<Record<Key, string>> = {
   'inspector.straight': 'Thẳng',
   'inspector.elbow': 'Gấp khúc',
   'inspector.removeBelt': 'Gỡ băng chuyền',
+
+  'wiki.open': 'Nút này là gì?',
 
   'build.title': 'Xây dựng',
   'build.contracts': 'Hợp đồng đang chào',

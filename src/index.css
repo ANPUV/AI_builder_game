@@ -331,8 +331,20 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 
 .card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 9px; margin-bottom: 8px; }
 .card.done { opacity: 0.45; }
+.card.locked { opacity: 0.62; border-style: dashed; }
 .card .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
 .card .head b { font-size: 12px; }
+/* Name plus its "?" travel together, so the head keeps two flex children and
+   space-between still pushes the status badge to the right edge. */
+.card .head .head-name { display: flex; align-items: baseline; gap: 5px; min-width: 0; }
+.wiki-btn {
+  flex: none;
+  width: 16px; height: 16px; padding: 0;
+  border-radius: 50%;
+  font-size: 10px; font-weight: 700; line-height: 1;
+  color: var(--muted);
+}
+.wiki-btn:hover { color: var(--accent); border-color: var(--accent); }
 .card .blurb { font-size: 10px; color: var(--muted); line-height: 1.4; margin-bottom: 7px; }
 
 .req { margin-bottom: 5px; font-size: 11px; }

@@ -16,7 +16,8 @@
  *
  * ECONOMICS
  *   cost         one-off $ to place. Refunds BALANCE.refundRate on demolish.
- *   monthlyCost  $ per billing month. One game-minute = one billing month.
+ *   monthlyCost  $ per billing month. BALANCE.monthSeconds (300s, five game-
+ *                minutes) is one billing month, charged continuously.
  *   computeDraw  throughput consumed, in thousands of tokens/minute (kTPM).
  *   computeSupply throughput supplied, same units, for kind 'capacity'.
  *   dataRisk     0-10. Summed across running nodes into global Exposure.

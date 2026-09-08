@@ -6,10 +6,14 @@ a live simulation runs the business: nodes consume inputs, craft over time,
 burn API spend per call, draw throughput against a rate limit, and sell
 finished work to customers who audit what you route through.
 
-Content spec: [`docs/CONTENT-SPEC.md`](docs/CONTENT-SPEC.md) (v2, 5 Sep 2026)
+Player wiki: [`docs/WIKI.md`](docs/WIKI.md) — how to play, every mechanic, all
+five addons. [`docs/reference-card.html`](docs/reference-card.html) is the
+generated Field Guide and the authority on any individual node.
+
+Design specs: [`docs/CONTENT-SPEC.md`](docs/CONTENT-SPEC.md) (v2, 5 Sep 2026)
 covers the main Act I–III spine; [`docs/ADDONS-SPEC.md`](docs/ADDONS-SPEC.md)
-(v1, 6 Sep 2026) adds the Home Lab and AI Slop side tracks. Together:
-53 items, 103 buildings, 135 recipes, 24 milestones, 15 contracts.
+(v1, 6 Sep 2026) adds the Home Lab and AI Slop side tracks. Current content:
+57 items, 124 buildings, 159 recipes, 24 milestones, 16 contracts, 5 addons.
 
 ```bash
 npm install
@@ -99,9 +103,9 @@ items *are*; the engine reads ids and numbers only.
 
 | File | What it holds |
 | --- | --- |
-| [`items.ts`](src/data/items.ts) | 53 items across 7 forms (demand / data / model / silicon / paper / hardware / slop), each with a teaching note. |
-| [`buildings.ts`](src/data/buildings.ts) | 103 buildings. `kind` is source / factory / capacity / contract; plus `monthlyCost`, `computeDraw`, `computeSupply`, `dataRisk`, `tier`. |
-| [`recipes.ts`](src/data/recipes.ts) | 135 recipes. `inputs → outputs` over `seconds`, plus `cost`, `payout`, `maxExposure`, `note`. |
+| [`items.ts`](src/data/items.ts) | 57 items across 8 forms (demand / data / model / silicon / paper / hardware / slop / energy), each with a teaching note. |
+| [`buildings.ts`](src/data/buildings.ts) | 124 buildings. `kind` is source / factory / capacity / contract / agent; plus `monthlyCost`, `computeDraw`, `computeSupply`, `dataRisk`, `tier`. |
+| [`recipes.ts`](src/data/recipes.ts) | 159 recipes. `inputs → outputs` over `seconds`, plus `cost`, `payout`, `maxExposure`, `note`. |
 | [`milestones.ts`](src/data/milestones.ts) | 24 milestones across three parallel tracks (16 main spine, 4 Home Lab, 4 AI Slop), each with an act label, plus the starting kit. |
 | [`market.ts`](src/data/market.ts) | The contract board. One listing per contract chassis: draw `weight`, window `ttl`, and the lead lines. Rarity is derived from weight, so the label and the odds cannot disagree. |
 | [`balance.ts`](src/data/balance.ts) | Tick rate, link throughput, buffers, starting cash, refund, clock bounds, `clockExponent`, `monthSeconds`, breach tuning. |
@@ -180,7 +184,7 @@ Measured through the console above, not asserted:
 | Security hold mid-craft | reports the hold rather than a green "Running" |
 | Rate limiting | satisfaction 0.47 → 12 answers/min; 0.16 → 9; 0.08 → 0. Degrades, does not cliff |
 | Out of cash | zero cash → status `broke`, craft does not start |
-| Content integrity | `validateContent()` returns 1 problem (the known `pretrain` buffer note) across 53/103/135/24 |
+| Content integrity | `validateContent()` returns 1 problem (the known `pretrain` buffer note) across 57/124/159/24 |
 | ESG power anchor | Own Datacenter bills 10,000 kW x 730 h x $0.09 = ~$657k/mo against its $7.08M cost — 9.3%, matching the "power only ~7%" its own description claims |
 | ESG scale | Gaming PC (0.5 kW) scores ~1 on the power term, Own Datacenter (10 MW) ~97. Logarithmic, so neither end of the ladder rounds away |
 | Greenwashing is a real gamble | Publishing 5 against a real 61: caught in 24/40 runs within 90s. An honest filing: 0/40. The audit rolls on the gap, never on the footprint |

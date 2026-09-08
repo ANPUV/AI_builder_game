@@ -158,6 +158,24 @@ export const RECIPES: Recipe[] = [
   { id: 'observe',      name: 'Trace Everything',buildingId: 'observability', seconds: 2, inputs: [], outputs: [], note: '68% of breached organisations had no AI governance at all; 92% of AI breaches lacked access controls.' },
 
   // ======================================================================
+  // AGENT OPS — work cycles that produce nothing and pay nothing
+  //
+  // Every recipe here consumes agent runs and emits an empty output list. The
+  // agent runs are the point: the same units an Enterprise contract would have
+  // bought at $1,050 a delivery are being spent on your own back office
+  // instead. That opportunity cost IS the price of automation.
+  // ======================================================================
+  { id: 'ops_console',  name: 'Run Agent Ops',   buildingId: 'agent_console',     seconds: 10, inputs: [], outputs: [], note: 'The seat, the audit log, the person who gets paged. No tokens, and no output anyone can sell.' },
+  { id: 'sell_junior',  name: 'Work The Board',  buildingId: 'sales_agent',       seconds: 25, inputs: [i('agent_run', 2)], outputs: [], cost: 6, note: 'One close attempt per cycle against whatever matches its focus. A dry focus costs nothing in tokens and bills the full subscription anyway.' },
+  { id: 'sell_senior',  name: 'Work The Board',  buildingId: 'sales_agent_sr',    seconds: 15, inputs: [i('agent_workflow', 1)], outputs: [], cost: 20, note: 'Planner, worker, critic — pointed at a customer instead of a task. Roughly twice the close rate at four times the running cost.' },
+  { id: 'market_junior',name: 'Run Campaigns',   buildingId: 'marketing_agent',   seconds: 20, inputs: [i('agent_run', 1)], outputs: [], cost: 4, note: 'Demand generation is not lead generation. This changes the mix of who calls, and the board still rings at the rate your unlocked tiers set.' },
+  { id: 'market_senior',name: 'Run Campaigns',   buildingId: 'marketing_agent_sr',seconds: 18, inputs: [i('agent_workflow', 1)], outputs: [], cost: 16 },
+  { id: 'code_junior',  name: 'Build A Chain',   buildingId: 'coding_agent',      seconds: 90, inputs: [i('agent_run', 4)], outputs: [], cost: 25, note: 'Ninety seconds per contract wired end to end, paying full price for every node it places. It will not think about your margin.' },
+  { id: 'code_senior',  name: 'Build A Chain',   buildingId: 'coding_agent_sr',   seconds: 45, inputs: [i('agent_workflow', 3)], outputs: [], cost: 90, note: 'Reuses spare capacity already on the canvas before buying more of it, which is most of what separates a senior engineer from a fast one.' },
+  { id: 'support_run',  name: 'Keep Customers',  buildingId: 'support_agent',     seconds: 24, inputs: [i('agent_run', 2)], outputs: [], cost: 8, note: 'Renewal is cheaper than acquisition in every business ever measured, and it is the half nobody automates first.' },
+  { id: 'review_run',   name: 'Review Actions',  buildingId: 'review_agent',      seconds: 20, inputs: [i('agent_workflow', 1)], outputs: [], cost: 18, note: 'Oversight is a line item. Skipping it is a choice, and Drift is the number that tells you what it cost.' },
+
+  // ======================================================================
   // COMPLIANCE — recurring attestations. Contracts consume them.
   // ======================================================================
   { id: 'run_soc2',     name: 'Maintain SOC 2',   buildingId: 'soc2_program',   seconds: 60, inputs: [], outputs: [i('soc2', 2)], note: 'The 3-12 month observation window is the point. You cannot pay to skip time.' },

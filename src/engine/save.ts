@@ -6,6 +6,7 @@ import {
   RECIPE_BY_ID,
   listingFor,
 } from '../data';
+import { DEFAULT_ADDONS } from '../data/addons';
 import { HOTBAR_SLOTS, STATE_VERSION, createInitialState } from './factory';
 import { activeSharePct } from './venture';
 import type { GameState } from './types';
@@ -41,8 +42,13 @@ export function reviveState(parsed: GameState): GameState | null {
 
   const fresh = createInitialState();
   const state: GameState = { ...fresh, ...parsed };
+  // An addon added after a save was written must land on its own default, not
+  // on `undefined`. That matters most for a feature addon, which defaults OFF:
+  // a save that predates Agentic Ops must not wake up churning contracts.
+  state.addons = { ...DEFAULT_ADDONS, ...(parsed.addons ?? {}) };
 
   for (const m of Object.values(state.machines)) {
+    if (!Number.isFinite(m.revenueEarned) || (m.revenueEarned ?? 0) < 0) m.revenueEarned = 0;
     if (!BUILDING_BY_ID[m.buildingId]) {
       delete state.machines[m.id];
       continue;

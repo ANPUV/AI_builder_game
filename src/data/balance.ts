@@ -179,6 +179,62 @@ export const BALANCE = {
   bankLoanCapBase: 5_000,
   /** Per completed milestone, the draw cap grows by this fraction of its base. */
   bankLoanCapGrowthPerMilestone: 0.4,
+
+  // --- Agentic Ops addon ---------------------------------------------------
+  /**
+   * How many 'agent'-kind nodes may run at once, given a Console. Agents
+   * compound — marketing feeds sales feeds coding — so the cap is the main
+   * brake on "place twenty and alt-tab". It grows with progress, the same
+   * shape as the bank's draw cap.
+   */
+  agentHeadcountBase: 3,
+  agentHeadcountPerMilestones: 2,
+
+  /**
+   * Agent Drift, 0-100: how much of your company is acting without you. Summed
+   * from agentDrift across running agents exactly like Exposure, with the
+   * Reviewer as the only negative term.
+   */
+  /** Above this, a Sales Agent starts ignoring its own focus... */
+  driftFocusFloor: 20,
+  /** ...with the chance rising this fast per point above it, capped below. */
+  driftFocusPerPoint: 0.01,
+  driftFocusMax: 0.35,
+  /** Above this, a Coding Agent starts buying nodes the chain did not need. */
+  driftWasteFloor: 50,
+  driftWastePerPoint: 0.01,
+  driftWasteMax: 0.3,
+  /** Above this, a runaway agent can bill you outright. */
+  driftRunawayFloor: 80,
+  /** Runaway chance per minute at Drift 100, scaled quadratically like a breach. */
+  driftRunawayRateAt100: 1.2,
+  /** A runaway spend costs this fraction of cash on hand, at least the floor. */
+  driftRunawayFraction: 0.06,
+  driftRunawayMin: 2_000,
+
+  /**
+   * Contract churn. Only ever rolled while the Agentic Ops addon is on: the
+   * base game has no churn and this must not change it. A customer served
+   * cleanly for a while is nearly sticky; a neglected one is not.
+   */
+  churnRatePerMin: 0.04,
+  /** Seconds of clean running after which a contract is as sticky as it gets. */
+  churnLoyaltySeconds: 420,
+  /** The most loyalty can cut the churn roll. Never zero — customers do leave. */
+  churnLoyaltyMax: 0.85,
+  /**
+   * Onboarding grace: no customer walks inside this many seconds of signing.
+   * Without it a lead can churn before the player has wired it, which taxes
+   * signing rather than teaching anything about neglect.
+   */
+  churnGraceSeconds: 120,
+
+  /** A Sales Agent will not sign if it would leave less than this in the bank. */
+  agentCashFloor: 0,
+  /** With a Reviewer running, it holds this much back instead. */
+  agentReviewedCashFloor: 25_000,
+  /** Nodes one Coding Agent will place in a single build cycle. */
+  agentChainNodeCap: 6,
 } as const;
 
 /** Convenience: a link's throughput in units per second. */

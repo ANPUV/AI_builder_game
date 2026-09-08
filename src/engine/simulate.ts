@@ -15,9 +15,20 @@ import type { Recipe } from '../data';
 import { SHARED, type Pool } from '../data/vendors';
 import { spawnOffer, tickMarket } from './market';
 import { tickVenture } from './venture';
+import {
+  agentHasWork,
+  agentHeadcount,
+  agentRoleOf,
+  agentsPlaced,
+  hasConsole,
+  marketingBoosts,
+  onAgentCraft,
+  tickAgents,
+  type AgentEvents,
+} from './agents';
 import type { ContractOffer, GameState, Machine, MachineStatus, PoolReport } from './types';
 
-export interface TickEvents {
+export interface TickEvents extends AgentEvents {
   /** Milestone ids completed during this batch of ticks. */
   milestonesCompleted: string[];
   /** One entry per breach suffered: the $ lost. */
@@ -225,6 +236,7 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
   const freeTiers: { p: string; supply: number; serves: number }[] = [];
   let exposure = 0;
   let slop = 0;
+  let drift = 0;
   let burnPerMonth = 0;
 
   // The servers you already run. Only the shared pool gets this; a provider's
@@ -246,6 +258,9 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
     // happens to be mid-craft right now.
     exposure += b.dataRisk;
     slop += b.slopRisk ?? 0;
+    // Drift is how much of the company is acting without you. The Reviewer is
+    // the only negative term, which is what makes oversight a purchase.
+    drift += b.agentDrift ?? 0;
 
     const p = poolOf(m);
     if (p === null) continue; // capacity node with no provider chosen
@@ -289,6 +304,7 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
   state.slopExposureSpike = Math.max(0, (state.slopExposureSpike ?? 0) - (BALANCE.legalFineExposure / BALANCE.legalFineExposureSeconds) * dt);
   state.exposure = Math.max(0, exposure + state.slopExposureSpike);
   state.slop = Math.max(0, slop);
+  state.agentDrift = Math.max(0, Math.min(100, drift));
 
   // 1b --- the hardware price index ----------------------------------------
   // Progress, not wall clock: a slow player is not punished for thinking. The
@@ -401,6 +417,19 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
         state.status[m.id] = 'audited';
         continue;
       }
+      // An agent with nobody to report to does nothing — and still bills. The
+      // Console is the gate, and the reason the first thing you buy in this
+      // addon is a manager rather than a worker.
+      if (b.kind === 'agent' && agentRoleOf(m) !== 'console' && !hasConsole(state)) {
+        state.status[m.id] = 'unmanaged';
+        continue;
+      }
+      // A specialist whose tier is dry waits, spends no tokens, and bills the
+      // full subscription. That is the cost the focus dropdown lets you take on.
+      if (b.kind === 'agent' && !agentHasWork(state, m)) {
+        state.status[m.id] = 'unfocused';
+        continue;
+      }
       // A manual recipe never starts on its own. This is the entire difference
       // between running a content mill and building one.
       if (r.manual && !m.armed) {
@@ -452,6 +481,10 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
         for (const s of r.outputs) m.outputs[s.itemId] = (m.outputs[s.itemId] ?? 0) + s.qty;
       }
 
+      // An agent's whole output is what it DOES. The completed cycle is the
+      // close attempt, or the chain it just wired.
+      if (b.kind === 'agent') onAgentCraft(state, m, events);
+
       if (r.payout !== undefined) {
         let payout = r.payout;
 
@@ -502,6 +535,7 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
         }
 
         state.credits += payout;
+        m.revenueEarned = (m.revenueEarned ?? 0) + payout;
         // Only work actually SOLD counts toward the tech tree. A zero-payout
         // contract still delivers — which is what makes Post To Feed work.
         for (const s of r.inputs) {
@@ -551,11 +585,17 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
   // Reads state.finance, so it has to run after the block above.
   tickVenture(state, dt);
 
+  // 4c --- Agentic Ops addon: churn, and the runaway roll -------------------
+  // After the run loop, so `state.status` reflects this tick: loyalty is
+  // earned by a contract that is actually running, not one merely placed.
+  tickAgents(state, dt, events);
+
   // 5 --- move items along links -------------------------------------------
   transfer(state, dt);
 
   // 6 --- the contract board ------------------------------------------------
-  tickMarket(state, dt, events);
+  // Marketing agents skew WHICH listing is drawn, never how often one is.
+  tickMarket(state, dt, events, marketingBoosts(state));
 
   // 7 --- milestones --------------------------------------------------------
   checkMilestones(state, events);
@@ -671,6 +711,11 @@ export function advance(state: GameState, seconds: number): TickEvents {
     blowouts: [],
     fines: [],
     contractsLost: [],
+    agentSigned: [],
+    agentBuilt: [],
+    agentVetoed: [],
+    churned: [],
+    runaways: [],
   };
   const dt = BALANCE.tickSeconds;
   // Cap catch-up so a backgrounded tab does not freeze on resume.
@@ -694,4 +739,12 @@ export const statusLabel: Record<MachineStatus, string> = {
   audited: 'On hold',
   awaiting: 'Waiting for you',
   broken: 'Blown',
+  unfocused: 'No matching work',
+  unmanaged: 'No Ops Console',
 };
+
+/** Headcount right now, for the UI: placed against what the Console allows. */
+export const agentCapacity = (state: GameState): { used: number; cap: number } => ({
+  used: agentsPlaced(state),
+  cap: agentHeadcount(state),
+});

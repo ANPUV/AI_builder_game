@@ -210,6 +210,37 @@ export function useGame() {
         toast(`${c.buildingName} terminated the contract — three quality misses.`, 'bad');
       }
 
+      // Agentic Ops: an agent acting on its own must never be quiet. It just
+      // spent the player's money without asking, which is the entire point.
+      for (const s of events.agentSigned) {
+        toast(
+          s.offBrief
+            ? `Sales Agent signed ${s.buildingName} for ${money(s.cost)} — off brief. Drift is doing that.`
+            : `Sales Agent signed ${s.buildingName} for ${money(s.cost)}.`,
+          s.offBrief ? 'bad' : 'good',
+        );
+      }
+      for (const v of events.agentVetoed) {
+        toast(
+          `Reviewer blocked a ${v.buildingName} sign at ${money(v.cost)} — it would have emptied the account.`,
+          'info',
+        );
+      }
+      for (const b of events.agentBuilt) {
+        toast(
+          b.wasted > 0
+            ? `Coding Agent wired ${b.buildingName} — ${b.nodes} node(s), plus ${b.wasted} nobody asked for.`
+            : `Coding Agent wired ${b.buildingName} — ${b.nodes} node(s) placed.`,
+          b.wasted > 0 ? 'bad' : 'good',
+        );
+      }
+      for (const c of events.churned) {
+        toast(`${c.buildingName} churned — nobody was looking after that account.`, 'bad');
+      }
+      for (const loss of events.runaways) {
+        toast(`A runaway agent spent ${money(loss)} on its own. Drift is too high.`, 'bad');
+      }
+
       if (now - lastRender >= RENDER_INTERVAL_MS) {
         lastRender = now;
         bump();

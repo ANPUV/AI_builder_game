@@ -24,10 +24,14 @@ import {
   ungroup,
   setClock,
   setEnabled,
+  setFocus,
+  setRarityFloor,
   setRecipe,
   setVendor,
 } from '../engine/factory';
+import FocusPicker from './FocusPicker';
 import {
+  agentCapacity,
   machineComputeDraw,
   machineDrawPerMin,
   machineRatePerMin,
@@ -321,6 +325,46 @@ export default function Inspector({ game, selection, setSelection }: Props) {
           {r?.note ? <div className="blurb" style={{ marginTop: 8, opacity: 0.75 }}>{r.note}</div> : null}
         </div>
       </div>
+
+      {/*
+        An agent's whole configuration is one dropdown. It sells nothing, so
+        what it is POINTED AT is the only decision the player makes about it —
+        and a focus with nothing in it is a specialist you are paying to wait.
+      */}
+      {b.kind === 'agent' && b.agentRole !== 'console' && (
+        <>
+          <div className="field">
+            <div className="tip-kv">
+              <span>Agent Drift</span>
+              <span
+                className="mono"
+                style={{ color: (b.agentDrift ?? 0) > 0 ? 'var(--warn)' : 'var(--good)' }}
+              >
+                {(b.agentDrift ?? 0) > 0 ? `+${b.agentDrift}` : b.agentDrift} · {Math.round(state.agentDrift)} total
+              </span>
+            </div>
+            <div className="tip-kv">
+              <span>Headcount</span>
+              <span className="mono">
+                {agentCapacity(state).used} / {agentCapacity(state).cap}
+              </span>
+            </div>
+          </div>
+          <FocusPicker
+            state={state}
+            focus={machine.focus}
+            rarityFloor={machine.rarityFloor}
+            onFocus={(focus) => {
+              const result = act((s) => setFocus(s, machine.id, focus));
+              if (!result.ok) toast(result.reason, 'bad');
+            }}
+            onRarityFloor={(floor) => {
+              const result = act((s) => setRarityFloor(s, machine.id, floor));
+              if (!result.ok) toast(result.reason, 'bad');
+            }}
+          />
+        </>
+      )}
 
       {b.vendorScoped && (
         <div className="field">

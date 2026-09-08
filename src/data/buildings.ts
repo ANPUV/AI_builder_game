@@ -9,6 +9,10 @@
  *   'capacity' — supplies throughput (kTPM). Exempt from throttling.
  *                May burn a fuel item (a recipe with inputs and no outputs).
  *   'contract' — a customer. Recipes have a `payout` and no outputs.
+ *   'agent'    — an autonomous worker (Agentic Ops addon). Consumes agent runs,
+ *                produces NOTHING and pays NOTHING. It acts on the game itself:
+ *                signing leads, skewing the board, wiring chains, keeping
+ *                customers. Overhead you buy, not a revenue line.
  *
  * ECONOMICS
  *   cost         one-off $ to place. Refunds BALANCE.refundRate on demolish.
@@ -20,7 +24,21 @@
  */
 import type { Vendor } from './vendors';
 
-export type BuildingKind = 'source' | 'factory' | 'capacity' | 'contract';
+export type BuildingKind = 'source' | 'factory' | 'capacity' | 'contract' | 'agent';
+
+/**
+ * What an 'agent'-kind node actually does. The behaviour lives in
+ * engine/agents.ts; this is the switch that selects it.
+ *
+ *   console    the hub. Required before any other agent, and its headcount cap
+ *              is what stops the addon from being "place twenty and alt-tab".
+ *   sales      signs matching leads off the board, by itself, with your money.
+ *   marketing  skews which listings the board draws. Never the rate.
+ *   coding     builds the producer chain for a signed contract nobody wired up.
+ *   support    keeps matching customers from churning.
+ *   review     oversight: negative Drift, and a veto on a sign you cannot afford.
+ */
+export type AgentRole = 'console' | 'sales' | 'marketing' | 'coding' | 'support' | 'review';
 
 export interface Building {
   id: string;
@@ -79,12 +97,40 @@ export interface Building {
    * remove the reason the first paid tier costs $200.
    */
   maxCount?: number;
+
+  /**
+   * The addon this node belongs to, when neither its tier nor the track of the
+   * milestone that unlocks it says so.
+   *
+   * One case: the entry-level Slop contract is unlocked on the MAIN spine,
+   * because the Slop track's first milestone requires work that only that
+   * contract buys — gating it behind its own track would be circular. Without
+   * this it reads as a main-game customer and turns up on the board for a
+   * player who switched Slop off.
+   */
+  addon?: 'homelab' | 'slop' | 'agentic';
+
+  // --- Agentic Ops ---------------------------------------------------------
+  /** Which autonomous behaviour this node runs. Only 'agent'-kind nodes have one. */
+  agentRole?: AgentRole;
+  /**
+   * Added to global Agent Drift while this node is running. Positive for
+   * anything acting on its own; negative for the Reviewer, which is the only
+   * way the number comes back down.
+   */
+  agentDrift?: number;
+  /**
+   * Role-specific strength. Sales: chance of closing a matching lead per work
+   * cycle. Marketing: fraction added to a matching listing's draw weight.
+   * Support: fraction cut off the churn roll. Unused by the other roles.
+   */
+  agentStrength?: number;
 }
 
 export type BuildingTier =
   | 'Demand' | 'Online Models' | 'Local Models' | 'Home Lab' | 'Retrieval'
-  | 'Agents' | 'Slop' | 'Compliance' | 'Capacity' | 'Training' | 'Silicon'
-  | 'Contracts';
+  | 'Agents' | 'Agent Ops' | 'Slop' | 'Compliance' | 'Capacity' | 'Training'
+  | 'Silicon' | 'Contracts';
 
 const B = (b: Building): Building => b;
 
@@ -144,6 +190,23 @@ export const BUILDINGS: Building[] = [
   B({ id: 'multi_agent',   name: 'Multi-Agent Graph',icon: '✧',kind: 'factory', tier: 'Agents', cost: 2400, monthlyCost: 39,  computeDraw: 700, computeSupply: 0, dataRisk: 2, color: '#f26d3d', description: 'LangGraph is free; LangSmith is $39/seat/mo. Planner, workers, critic. Quality up, token burn up faster.' }),
   B({ id: 'eval_gate',     name: 'Eval & Guardrails',icon: '⌾',kind: 'factory', tier: 'Agents', cost: 800,  monthlyCost: 29,  computeDraw: 120, computeSupply: 0, dataRisk: -2, color: '#35c9c0', description: 'Langfuse Core $29/mo. Turns output into output you are willing to sign a contract about.' }),
   B({ id: 'observability', name: 'Observability',   icon: '◔', kind: 'factory', tier: 'Agents', cost: 600,  monthlyCost: 199, computeDraw: 30,  computeSupply: 0, dataRisk: -5, color: '#4a8f8f', description: 'Langfuse Pro $199/mo, Braintrust Pro $249/mo. Cuts Exposure: you cannot contain what you cannot see.' }),
+
+  // ======================================================================
+  // AGENT OPS — the agents that run the business, not the product
+  //
+  // Every node here has monthlyCost and no payout, structurally: an agent
+  // never sells anything. It eats the same agent runs your Enterprise
+  // contracts want, and its case for existing is entirely indirect.
+  // ======================================================================
+  B({ id: 'agent_console',    name: 'Agent Ops Console',    icon: '▦', kind: 'agent', tier: 'Agent Ops', maxCount: 1, agentRole: 'console', agentDrift: 0, cost: 5000,  monthlyCost: 300,  computeDraw: 20,  computeSupply: 0, dataRisk: 0, color: '#5f7a9e', description: 'Somebody has to own the agents. This is that someone. Required before any agent runs, and its headcount cap grows as the company does.' }),
+  B({ id: 'sales_agent',      name: 'Sales Agent',          icon: '➤', kind: 'agent', tier: 'Agent Ops', agentRole: 'sales',     agentDrift: 6,  agentStrength: 0.30, cost: 3000,  monthlyCost: 600,  computeDraw: 120, computeSupply: 0, dataRisk: 1, color: '#c98a3d', description: 'Signs leads off the board on its own, with your cash, whether or not you can service them. Runs on plain agent runs — it closes deals it does not understand.' }),
+  B({ id: 'sales_agent_sr',   name: 'Sales Agent · Senior', icon: '➢', kind: 'agent', tier: 'Agent Ops', agentRole: 'sales',     agentDrift: 9,  agentStrength: 0.65, cost: 14000, monthlyCost: 2200, computeDraw: 240, computeSupply: 0, dataRisk: 1, color: '#e0a24a', description: 'Runs on agent workflows, so it is only as good as the planner behind it — a frontier model in the graph is the difference between a lead closed and a lead lost.' }),
+  B({ id: 'marketing_agent',  name: 'Marketing Agent',      icon: '◎', kind: 'agent', tier: 'Agent Ops', agentRole: 'marketing', agentDrift: 5,  agentStrength: 0.025, cost: 2200, monthlyCost: 450,  computeDraw: 100, computeSupply: 0, dataRisk: 1, color: '#8f6fc4', description: 'Adds 2.5% to the draw weight of every listing it targets. It changes WHICH customers call, never how often the phone rings.' }),
+  B({ id: 'marketing_agent_sr',name:'Marketing Agent · Senior',icon:'◉',kind: 'agent', tier: 'Agent Ops', agentRole: 'marketing', agentDrift: 8,  agentStrength: 0.06, cost: 9000,  monthlyCost: 1600, computeDraw: 220, computeSupply: 0, dataRisk: 1, color: '#a07fd8', description: 'The same lever, worth several juniors. Pointed at one legendary listing it is how a lead you would wait ten minutes for starts arriving.' }),
+  B({ id: 'coding_agent',     name: 'Coding Agent',         icon: '⚒', kind: 'agent', tier: 'Agent Ops', agentRole: 'coding',    agentDrift: 8,  cost: 6000,  monthlyCost: 900,  computeDraw: 180, computeSupply: 0, dataRisk: 2, color: '#3f9e7a', description: 'Builds the producer chain for a contract you signed and never wired, one chain per 90-second cycle. It builds the CHEAPEST legal chain, not the one with the best margin.' }),
+  B({ id: 'coding_agent_sr',  name: 'Coding Agent · Senior',icon: '⚙', kind: 'agent', tier: 'Agent Ops', agentRole: 'coding',    agentDrift: 12, cost: 28000, monthlyCost: 3400, computeDraw: 420, computeSupply: 0, dataRisk: 2, color: '#4dc094', description: 'Half the cycle time, and it wires into nodes you already own before it buys new ones. Still not as good as doing it yourself, and considerably faster.' }),
+  B({ id: 'support_agent',    name: 'Support Agent',        icon: '☎', kind: 'agent', tier: 'Agent Ops', agentRole: 'support',   agentDrift: 5,  agentStrength: 0.55, cost: 8000,  monthlyCost: 1400, computeDraw: 140, computeSupply: 0, dataRisk: 1, color: '#5b93a8', description: 'Customers leave the ones nobody looks after. This is the only node in the addon whose whole job is preventing a bad outcome rather than causing a good one.' }),
+  B({ id: 'review_agent',     name: 'Reviewer Agent',       icon: '⚖', kind: 'agent', tier: 'Agent Ops', agentRole: 'review',    agentDrift: -9, cost: 10000, monthlyCost: 1800, computeDraw: 200, computeSupply: 0, dataRisk: -1, color: '#35c9c0', description: 'Reads every sign before it fires and vetoes the ones that would empty the account. Produces nothing, prevents the expensive thing, and is the only lever that lowers Drift.' }),
 
   // ======================================================================
   // COMPLIANCE — slow, expensive, and the only way into the big money
@@ -247,7 +310,7 @@ export const BUILDINGS: Building[] = [
   B({ id: 'sme_pilot',   name: 'SME On-Prem Pilot',icon: '◍', kind: 'contract',tier: 'Contracts', cost: 2500,  monthlyCost: 0, computeDraw: 6,  computeSupply: 0, dataRisk: 0, color: '#4a9f6a', description: 'A ten-person firm with client confidentiality and no DPO. They cannot use an API and they can afford one box. One to ten concurrent users needs a 24GB card — that is the whole specification.' }),
   B({ id: 'sme_fleet',   name: 'Managed On-Prem',  icon: '◎', kind: 'contract',tier: 'Contracts', cost: 25000, monthlyCost: 0, computeDraw: 14, computeSupply: 0, dataRisk: 0, color: '#3f9f8a', description: 'You are not selling answers any more. You are selling someone else\'s server, and you are on the hook when it dies.' }),
   B({ id: 'sme_msp',     name: 'Regional MSP',     icon: '◉', kind: 'contract',tier: 'Contracts', cost: 150000,monthlyCost: 0, computeDraw: 30, computeSupply: 0, dataRisk: 0, color: '#3a8fa8', description: 'Every box you have sold is a box you now maintain. The margin is real and so is the pager. GDPR fines reach 4% of global annual turnover.' }),
-  B({ id: 'feed_post',   name: 'Post To Feed',     icon: '⌇', kind: 'contract',tier: 'Contracts', cost: 0,     monthlyCost: 0, computeDraw: 2,  computeSupply: 0, dataRisk: 0, slopRisk: 2, color: '#7d8b9c', description: 'You spent real money to make this and nobody is going to pay you for it. Attention was the thing you were buying.' }),
+  B({ id: 'feed_post',   name: 'Post To Feed',     icon: '⌇', kind: 'contract',tier: 'Contracts', addon: 'slop', cost: 0,     monthlyCost: 0, computeDraw: 2,  computeSupply: 0, dataRisk: 0, slopRisk: 2, color: '#7d8b9c', description: 'You spent real money to make this and nobody is going to pay you for it. Attention was the thing you were buying.' }),
   B({ id: 'content_mill',name: 'Content Mill',     icon: '✍', kind: 'contract',tier: 'Contracts', cost: 900,   monthlyCost: 0, computeDraw: 4,  computeSupply: 0, dataRisk: 1, slopRisk: 3, color: '#c98a5f', description: 'Over a thousand unreliable AI-generated news sites were being tracked by 2025. They pay per piece, on delivery, and they will not automate for you.' }),
   B({ id: 'pseo_platform',name:'Programmatic SEO', icon: '⌸', kind: 'contract',tier: 'Contracts', cost: 12000, monthlyCost: 0, computeDraw: 10, computeSupply: 0, dataRisk: 1, slopRisk: 4, color: '#b8923d', description: 'Less per unit than clicking Generate yourself, and it runs while you are asleep. That is the entire argument for building a pipeline.' }),
   B({ id: 'adult_platform',name:'Adult Platform',  icon: '◐', kind: 'contract',tier: 'Contracts', cost: 40000, monthlyCost: 0, computeDraw: 12, computeSupply: 0, dataRisk: 2, slopRisk: 6, color: '#a03d5f', description: 'Age-assurance regimes went live in the UK and were upheld for Texas at the US Supreme Court in 2025. Payment processors moved on storefronts the same summer.' }),

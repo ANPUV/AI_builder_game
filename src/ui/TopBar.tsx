@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { BALANCE, VENDORS, featureEnabled, poolColor, poolName, type Pool } from '../data';
 import Tip from './Tip';
+import { agentCapacity } from '../engine/simulate';
 import { useTheme } from './useTheme';
 import { LANGUAGES, type Lang } from '../i18n';
 import { useLang } from '../i18n/useLang';
@@ -230,6 +231,58 @@ export default function TopBar({
               style={{ color: state.slop > 20 ? 'var(--bad)' : state.slop > 8 ? 'var(--warn)' : 'var(--muted)' }}
             >
               {Math.round(state.slop)}
+            </span>
+          </div>
+        </Tip>
+      )}
+
+      {/* Agentic Ops: how much of the company is acting without you. */}
+      {state.agentDrift !== 0 && (
+        <Tip
+          width={300}
+          content={
+            <>
+              <div className="tip-title">Agent Drift</div>
+              <div className="tip-body">
+                Summed from every agent you are running, exactly like Exposure. Past 20 a Sales
+                Agent starts ignoring the focus you set it; past 50 a Coding Agent buys nodes the
+                chain never needed; past 80 one can bill you outright.
+              </div>
+              <div className="tip-kv">
+                <span>Headcount</span>
+                <span className="mono">
+                  {agentCapacity(state).used} / {agentCapacity(state).cap}
+                </span>
+              </div>
+              {state.agentLosses > 0 && (
+                <div className="tip-kv">
+                  <span>Runaway spend</span>
+                  <span className="mono" style={{ color: 'var(--bad)' }}>
+                    {money(state.agentLosses)}
+                  </span>
+                </div>
+              )}
+              <div className="tip-body">
+                A Reviewer Agent is the only thing that brings this number down — and the only
+                thing that stops a sign you cannot afford.
+              </div>
+            </>
+          }
+        >
+          <div className="stat">
+            <span className="label">{t('top.drift')}</span>
+            <span
+              className="value mono"
+              style={{
+                color:
+                  state.agentDrift > 50
+                    ? 'var(--bad)'
+                    : state.agentDrift > 20
+                      ? 'var(--warn)'
+                      : 'var(--good)',
+              }}
+            >
+              {Math.round(state.agentDrift)}
             </span>
           </div>
         </Tip>

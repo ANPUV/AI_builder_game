@@ -14,6 +14,7 @@ import { craftProgress, NODE_W, ROW_H } from './geometry';
 import type { Machine, MachineStatus } from '../engine/types';
 import { inkOn, money, tpm } from './format';
 import { useContent } from '../i18n/useLang';
+import { useFocusLabel } from './FocusPicker';
 
 const STATUS_COLOR: Record<MachineStatus, string> = {
   running: 'var(--good)',
@@ -26,6 +27,8 @@ const STATUS_COLOR: Record<MachineStatus, string> = {
   audited: '#c46f6f',
   awaiting: '#c9a13d',
   broken: '#ff4d4d',
+  unfocused: '#8f7fc4',
+  unmanaged: 'var(--warn)',
 };
 
 interface Props {
@@ -46,6 +49,7 @@ export default function MachineNode({
   onGenerate,
 }: Props) {
   const { bName, iName, rName } = useContent();
+  const focusLabel = useFocusLabel();
   const b = building(machine.buildingId);
   const r = recipe(machine.recipeId);
   if (!b) return null;
@@ -138,6 +142,13 @@ export default function MachineNode({
                 }}
               >
                 {machine.vendor ? VENDORS[machine.vendor as Vendor].short : 'SET?'}
+              </span>
+            )}
+            {/* An agent's configuration is one dropdown — reading it should not
+                mean opening the inspector. */}
+            {b.kind === 'agent' && b.agentRole !== 'console' && (
+              <span className="vendor-tag" style={{ color: 'var(--muted)' }}>
+                → {focusLabel(machine.focus)}
               </span>
             )}
           </span>

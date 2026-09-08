@@ -2,6 +2,7 @@ import {
   ALL_VENDORS,
   BALANCE,
   BUILDING_BY_ID,
+  LISTING_BY_BUILDING,
   RECIPE_BY_ID,
   STARTING_BUILDINGS,
   STARTING_RECIPES,
@@ -9,16 +10,21 @@ import {
   buildingCostAt,
   isWithdrawn,
   recipe,
+  type FocusTarget,
+  type Rarity,
 } from '../data';
 import { DEFAULT_ADDONS, buildingEnabled } from '../data/addons';
+import { agentHeadcount, agentsPlaced, hasConsole } from './agentRules';
 import { nextId } from './ids';
 import { seedMarket, takeOffer } from './market';
 import type { GameState, Link, Machine, LinkShape } from './types';
 
-// 4 -> 5: GameState gained `vc` and `loans` (Venture Capital addon). Per
-// convention, a save from an older version is discarded on load rather than
-// merged — see save.ts.
-export const STATE_VERSION = 5;
+// 4 -> 5: GameState gained `vc` and `loans` (Venture Capital addon).
+// 5 -> 6: GameState gained `agentDrift` / `agentLosses` and Machine gained
+//         `focus` / `rarityFloor` / `servedFor` (Agentic Ops addon). Per
+//         convention, a save from an older version is discarded on load rather
+//         than merged — see save.ts.
+export const STATE_VERSION = 6;
 
 export function createInitialState(): GameState {
   const state: GameState = {
@@ -40,6 +46,8 @@ export function createInitialState(): GameState {
     breachFreeze: 0,
     breachLosses: 0,
     priceIndex: 1,
+    agentDrift: 0,
+    agentLosses: 0,
     slop: 0,
     slopFines: 0,
     slopExposureSpike: 0,
@@ -129,6 +137,15 @@ export function placeMachine(
         : `You may only have ${b.maxCount} of the ${b.name}`,
     );
   }
+  // Agents compound — marketing feeds sales feeds coding — so how many may run
+  // at once is the addon's main brake, and it is the Console's to raise.
+  if (b.kind === 'agent' && b.agentRole !== 'console') {
+    if (!hasConsole(state)) return fail('Place an Agent Ops Console first — somebody has to own the agents');
+    const cap = agentHeadcount(state);
+    if (agentsPlaced(state) >= cap) {
+      return fail(`Your Console manages ${cap} agents. Clear the next milestone to hire more.`);
+    }
+  }
   const price = buildingCostAt(b, state.priceIndex);
   if (state.credits < price) return fail(`Need ${price} credits for a ${b.name}`);
 
@@ -148,6 +165,8 @@ export function placeMachine(
     crafting: false,
     inputs: {},
     outputs: {},
+    // When the customer signed, for the churn grace (Agentic Ops addon).
+    ...(b.kind === 'contract' ? { signedAt: state.elapsed } : {}),
   };
   return { ok: true, id };
 }
@@ -292,6 +311,39 @@ export function setRecipe(state: GameState, id: string, recipeId: string | null)
     if (link.fromId === id && !outputPorts(m).includes(link.itemId)) delete state.links[link.id];
     if (link.toId === id && !acceptsItem(m, link.itemId)) delete state.links[link.id];
   }
+  return OK;
+}
+
+// --- Agentic Ops ---------------------------------------------------------
+
+/**
+ * Point an agent at a segment of the market: everything, one track, or one
+ * named contract tier. A `tier:` focus is what turns a generalist into a
+ * specialist — including the part where a specialist with a dry tier sits
+ * there billing its subscription.
+ */
+export function setFocus(state: GameState, id: string, focus: FocusTarget): Outcome {
+  const m = state.machines[id];
+  if (!m) return fail('Node not found');
+  if (building(m.buildingId)?.kind !== 'agent') return fail('That node has nothing to focus');
+  if (focus.startsWith('tier:') && !LISTING_BY_BUILDING[focus.slice(5)]) {
+    return fail('No such contract tier');
+  }
+  m.focus = focus;
+  return OK;
+}
+
+/**
+ * The rarity floor under a group focus. Meaningless against a named tier —
+ * picking Federal Program already implies its rarity — so the UI disables it
+ * there rather than offering a contradiction.
+ */
+export function setRarityFloor(state: GameState, id: string, floor: Rarity | null): Outcome {
+  const m = state.machines[id];
+  if (!m) return fail('Node not found');
+  if (building(m.buildingId)?.kind !== 'agent') return fail('That node has nothing to focus');
+  if (floor === null) delete m.rarityFloor;
+  else m.rarityFloor = floor;
   return OK;
 }
 

@@ -130,6 +130,23 @@ const en = {
   'vc.bankDraw': 'Draw a new loan',
   'vc.bankCap': 'Bank will lend up to',
   'vc.bankBorrow': 'Borrow',
+
+  'top.drift': 'Drift',
+  'agent.focus': 'Focus',
+  'agent.focusAll': 'All contracts',
+  'agent.anyIn': 'Any {track} contract',
+  'agent.trackMain': 'Online',
+  'agent.trackHomelab': 'Home Lab',
+  'agent.trackSlop': 'AI Slop',
+  'agent.locked': 'not unlocked yet',
+  'agent.rarityFloor': 'Rarity floor',
+  'agent.rarityAny': 'Any rarity',
+  'agent.orBetter': ' or better',
+  'agent.rarityDisabled': 'A named tier already implies its rarity.',
+  'agent.focusGroupNote':
+    'What this agent chases. It works on anything in the group that clears the rarity floor.',
+  'agent.focusTierNote':
+    'A specialist. It works on this tier and nothing else — and when the tier is dry it waits, spends no tokens, and bills the full subscription anyway.',
 } as const;
 
 export type Key = keyof typeof en;
@@ -245,6 +262,23 @@ const vi: Partial<Record<Key, string>> = {
   'vc.bankCap': 'Ngân hàng cho vay tối đa',
   'vc.bankProceeds': 'Bạn thực nhận',
   'vc.bankBorrow': 'Vay',
+
+  'top.drift': 'Trôi dạt',
+  'agent.focus': 'Mục tiêu',
+  'agent.focusAll': 'Mọi hợp đồng',
+  'agent.anyIn': 'Bất kỳ hợp đồng {track}',
+  'agent.trackMain': 'Trực tuyến',
+  'agent.trackHomelab': 'Home Lab',
+  'agent.trackSlop': 'Nội dung rác',
+  'agent.locked': 'chưa mở khoá',
+  'agent.rarityFloor': 'Độ hiếm tối thiểu',
+  'agent.rarityAny': 'Mọi độ hiếm',
+  'agent.orBetter': ' trở lên',
+  'agent.rarityDisabled': 'Chọn đích danh một hạng thì độ hiếm đã được xác định sẵn.',
+  'agent.focusGroupNote':
+    'Thứ agent này theo đuổi. Nó nhận mọi hợp đồng trong nhóm đạt độ hiếm tối thiểu.',
+  'agent.focusTierNote':
+    'Một chuyên gia. Nó chỉ làm hạng này và không gì khác — khi hạng này không có khách, nó ngồi chờ, không tốn token, và vẫn tính đủ phí thuê bao.',
 };
 
 const DICTS: Record<Lang, Partial<Record<Key, string>>> = { en, vi };

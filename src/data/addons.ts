@@ -38,6 +38,14 @@ export const ADDONS = [
     defaultOn: true,
   },
   {
+    id: 'agentic' as const,
+    kind: 'feature' as const,
+    name: 'Agentic Ops',
+    blurb:
+      'Hire agents to run the business: sales that signs leads by itself, marketing that skews who calls, coding that wires the chain. They sell nothing, bill every month, and your customers start churning without one watching them.',
+    defaultOn: false,
+  },
+  {
     id: 'ventureCapital' as const,
     kind: 'feature' as const,
     name: 'Venture Capital',
@@ -84,18 +92,36 @@ const TRACK_ADDONS = ADDONS.filter(
  * bar with Home Lab switched off. The build-bar tab a node lives in is the
  * other half of the answer.
  */
-const TIER_TRACK: Partial<Record<BuildingTier, AddonTrack>> = {
+const TIER_TRACK: Partial<Record<BuildingTier, AddonId>> = {
   'Home Lab': 'homelab',
   Slop: 'slop',
+  // A feature addon owns a tier too. Agent Ops nodes are unlocked by MAIN-track
+  // milestones (they need the agent runs the main spine already produces), so
+  // the tier is the only signal that they belong to the addon at all.
+  'Agent Ops': 'agentic',
 };
 
 const BUILDINGS_BY_TRACK = new Map<AddonTrack, Set<string>>(
   TRACK_ADDONS.map((a) => {
     const ids = collect(a.id, 'unlocksBuildings');
-    for (const b of BUILDINGS) if (TIER_TRACK[b.tier] === a.id) ids.add(b.id);
+    for (const b of BUILDINGS) {
+      // Three signals, in case any one of them is silent: the milestone that
+      // unlocks it, the tier it lives in, and an explicit claim on the building
+      // for the node neither of those can classify.
+      if (TIER_TRACK[b.tier] === a.id || b.addon === a.id) ids.add(b.id);
+    }
     return [a.id, ids];
   }),
 );
+/** Buildings owned by a feature addon, by the tier they live in. */
+const BUILDINGS_BY_FEATURE = new Map<FeatureAddonId, Set<string>>();
+for (const b of BUILDINGS) {
+  const owner = b.addon ?? TIER_TRACK[b.tier];
+  if (!owner || TRACK_ADDONS.some((a) => a.id === owner)) continue;
+  const set = BUILDINGS_BY_FEATURE.get(owner as FeatureAddonId) ?? new Set<string>();
+  set.add(b.id);
+  BUILDINGS_BY_FEATURE.set(owner as FeatureAddonId, set);
+}
 const RECIPES_BY_TRACK = new Map<AddonTrack, Set<string>>(
   TRACK_ADDONS.map((a) => [a.id, collect(a.id, 'unlocksRecipes')]),
 );
@@ -121,7 +147,12 @@ export function addonOfRecipe(recipeId: string): AddonTrack | null {
  */
 export function buildingEnabled(buildingId: string, addons: AddonSettings): boolean {
   const track = addonOfBuilding(buildingId);
-  return track === null || addons[track];
+  if (track !== null) return addons[track];
+  // Feature addons default OFF, so an absent key must not read as permission.
+  for (const [id, ids] of BUILDINGS_BY_FEATURE) {
+    if (ids.has(buildingId)) return addons[id] ?? DEFAULT_ADDONS[id];
+  }
+  return true;
 }
 
 export function trackEnabled(track: Track, addons: AddonSettings): boolean {

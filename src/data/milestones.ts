@@ -107,8 +107,8 @@ export const MILESTONES: Milestone[] = [
     name: 'Agents In Production',
     blurb: 'You now sell outcomes, not tokens. One agent run is a plan plus a dozen calls, and you eat the cost of every failed attempt.',
     requires: { agent_run: 60 },
-    unlocksBuildings: ['gpt6', 'claude_fable', 'saas_stripe', 'multi_agent'],
-    unlocksRecipes: ['r_gpt6', 'r_fable', 'money_actions', 'run_swarm'],
+    unlocksBuildings: ['gpt6', 'claude_fable', 'saas_stripe', 'multi_agent', 'agent_console', 'sales_agent', 'marketing_agent', 'coding_agent'],
+    unlocksRecipes: ['r_gpt6', 'r_fable', 'money_actions', 'run_swarm', 'ops_console', 'sell_junior', 'market_junior', 'code_junior'],
     reward: 500000,
   },
   {
@@ -127,8 +127,8 @@ export const MILESTONES: Milestone[] = [
     name: 'Own The Weights',
     blurb: 'Rent GPUs, pull open weights, tune them on your own data. Marginal cost per token goes to zero. Fixed cost per month does not.',
     requires: { agent_workflow: 40 },
-    unlocksBuildings: ['weights_mirror', 'rented_h100', 'data_curation', 'finetune_job', 'vllm_server', 'fedramp_program', 'federal'],
-    unlocksRecipes: ['get_weights', 'cap_h100', 'curate', 'lora', 'full_tune', 'serve_local', 'run_fedramp', 'c_fed'],
+    unlocksBuildings: ['weights_mirror', 'rented_h100', 'data_curation', 'finetune_job', 'vllm_server', 'fedramp_program', 'federal', 'sales_agent_sr', 'marketing_agent_sr', 'coding_agent_sr', 'support_agent', 'review_agent'],
+    unlocksRecipes: ['get_weights', 'cap_h100', 'curate', 'lora', 'full_tune', 'serve_local', 'run_fedramp', 'c_fed', 'sell_senior', 'market_senior', 'code_senior', 'support_run', 'review_run'],
     reward: 3000000,
   },
   {

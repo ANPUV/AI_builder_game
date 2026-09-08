@@ -26,7 +26,7 @@ import { useContent, useLang } from '../i18n/useLang';
 /** Tab order. 'Contracts' is special: it renders the contract board. */
 const TABS = [
   'Demand', 'Online Models', 'Local Models', 'Home Lab', 'Retrieval', 'Agents',
-  'Slop', 'Compliance', 'Capacity', 'Training', 'Silicon', 'Contracts',
+  'Agent Ops', 'Slop', 'Compliance', 'Capacity', 'Training', 'Silicon', 'Contracts',
 ] as const;
 export type BuildTab = (typeof TABS)[number];
 

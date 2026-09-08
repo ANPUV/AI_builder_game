@@ -206,7 +206,11 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
         />
       )}
       {game.pendingUnlock ? (
-        <UnlockPanel milestoneId={game.pendingUnlock} onClose={game.dismissUnlock} />
+        <UnlockPanel
+          milestoneId={game.pendingUnlock}
+          addons={game.state.addons}
+          onClose={game.dismissUnlock}
+        />
       ) : (
         game.pendingRaise && (
           <VentureCapitalOffer

@@ -1,4 +1,5 @@
 import { BALANCE, BUILDING_BY_ID, MILESTONE_BY_ID, RECIPE_BY_ID } from '../data';
+import { buildingEnabled, type AddonSettings } from '../data/addons';
 import { inkOn, money, recipeFlow } from './format';
 import { useContent } from '../i18n/useLang';
 
@@ -9,17 +10,26 @@ import { useContent } from '../i18n/useLang';
  */
 export default function UnlockPanel({
   milestoneId,
+  addons,
   onClose,
 }: {
   milestoneId: string;
+  addons: AddonSettings;
   onClose: () => void;
 }) {
   const { bName, bDesc, rName } = useContent();
   const m = MILESTONE_BY_ID[milestoneId];
   if (!m) return null;
 
-  const buildings = m.unlocksBuildings.map((id) => BUILDING_BY_ID[id]).filter(Boolean);
-  const recipes = m.unlocksRecipes.map((id) => RECIPE_BY_ID[id]).filter(Boolean);
+  // A milestone unlocks nodes from addons the player may have switched off.
+  // Announcing a building they cannot build would be a worse surprise than
+  // saying nothing about it.
+  const buildings = m.unlocksBuildings
+    .map((id) => BUILDING_BY_ID[id])
+    .filter((b) => b && buildingEnabled(b.id, addons));
+  const recipes = m.unlocksRecipes
+    .map((id) => RECIPE_BY_ID[id])
+    .filter((r) => r && buildingEnabled(r.buildingId, addons));
   const funding = m.reward * BALANCE.milestoneRewardMultiplier;
 
   return (

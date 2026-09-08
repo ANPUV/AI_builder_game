@@ -219,6 +219,29 @@ export function validateContent(): string[] {
     }
   }
 
+  // An agent never sells anything — that is the entire premise of the Agentic
+  // Ops addon. A payout on one would make automation a revenue line, which is
+  // the one thing it is not.
+  for (const b of BUILDINGS) {
+    if (b.kind === 'agent') {
+      if (!b.agentRole) problems.push(`agent "${b.id}" has no agentRole — it would do nothing at all`);
+      if (b.monthlyCost <= 0 && b.agentRole !== 'console') {
+        problems.push(`agent "${b.id}" costs nothing to run — an agent that bills nothing teaches nothing`);
+      }
+      for (const r of RECIPES_BY_BUILDING[b.id] ?? []) {
+        if (r.payout !== undefined) problems.push(`agent recipe "${r.id}" has a payout — agents produce no revenue`);
+        if (r.outputs.length) problems.push(`agent recipe "${r.id}" emits items — an agent's output is what it DOES`);
+      }
+    } else if (b.agentRole) {
+      problems.push(`building "${b.id}" declares an agentRole but is kind "${b.kind}"`);
+    }
+  }
+  // Exactly one console, or the headcount gate has nothing to hang off.
+  const consoles = BUILDINGS.filter((b) => b.agentRole === 'console');
+  if (BUILDINGS.some((b) => b.kind === 'agent') && consoles.length !== 1) {
+    problems.push(`expected exactly one agent console, found ${consoles.length}`);
+  }
+
   problems.push(...unreachableMilestones());
   return problems;
 }

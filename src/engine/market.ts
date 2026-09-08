@@ -12,6 +12,7 @@ import {
   listingFor,
   type MarketListing,
 } from '../data';
+import { buildingEnabled } from '../data/addons';
 import { nextId } from './ids';
 import type { ContractOffer, GameState } from './types';
 
@@ -21,9 +22,21 @@ export function boardSlots(state: GameState): number {
   return Math.min(MARKET.maxSlots, MARKET.baseSlots + types);
 }
 
-/** The listings that can currently be drawn — chassis the player has unlocked. */
+/**
+ * The listings that can currently be drawn — chassis the player has unlocked
+ * and whose addon is switched on.
+ *
+ * The addon half matters for one node: the entry-level Slop contract is
+ * unlocked on the main spine (its own track's first milestone would be
+ * circular otherwise), so without this check it keeps ringing for a player who
+ * turned Slop off.
+ */
 export function unlockedListings(state: GameState): MarketListing[] {
-  return MARKET_LISTINGS.filter((l) => state.unlockedBuildings.includes(l.buildingId));
+  return MARKET_LISTINGS.filter(
+    (l) =>
+      state.unlockedBuildings.includes(l.buildingId) &&
+      buildingEnabled(l.buildingId, state.addons),
+  );
 }
 
 /** Offers on the board, rarest and best-paying first. */
@@ -60,10 +73,18 @@ export function markOffersSeen(state: GameState): void {
  * a while gets progressively likelier, which is what keeps the top of the
  * ladder reachable — at raw weights the $8M platform lead is a 0.9% draw.
  */
-function effectiveWeight(state: GameState, l: MarketListing): number {
+function effectiveWeight(
+  state: GameState,
+  l: MarketListing,
+  boosts?: Record<string, number>,
+): number {
   const since = state.elapsed - (state.lastOffered[l.buildingId] ?? 0);
   const pity = Math.min(MARKET.maxPity, 1 + since / MARKET.pitySeconds);
-  return l.weight * pity;
+  // Marketing agents (Agentic Ops addon) push on the same lever pity does, so
+  // the two are capped together — neither system was tuned against the other
+  // multiplying it without limit.
+  const boost = Math.min(MARKET.maxPity, boosts?.[l.buildingId] ?? 1);
+  return l.weight * pity * boost;
 }
 
 function countOn(state: GameState, buildingId: string): number {
@@ -83,6 +104,7 @@ const pick = <T,>(rows: T[]): T => rows[Math.floor(Math.random() * rows.length)]
 export function spawnOffer(
   state: GameState,
   listing?: MarketListing,
+  boosts?: Record<string, number>,
 ): ContractOffer | null {
   let chosen = listing;
 
@@ -93,11 +115,11 @@ export function spawnOffer(
     );
     if (!pool.length) return null;
 
-    const total = pool.reduce((sum, l) => sum + effectiveWeight(state, l), 0);
+    const total = pool.reduce((sum, l) => sum + effectiveWeight(state, l, boosts), 0);
     let roll = Math.random() * total;
     chosen = pool[pool.length - 1];
     for (const l of pool) {
-      roll -= effectiveWeight(state, l);
+      roll -= effectiveWeight(state, l, boosts);
       if (roll <= 0) {
         chosen = l;
         break;
@@ -165,7 +187,12 @@ export interface MarketEvents {
  * lead. The arrival rate scales with how many contract tiers you have unlocked
  * — a wider pipeline rings more often.
  */
-export function tickMarket(state: GameState, dt: number, events: MarketEvents): void {
+export function tickMarket(
+  state: GameState,
+  dt: number,
+  events: MarketEvents,
+  boosts?: Record<string, number>,
+): void {
   for (const offer of Object.values(state.offers)) {
     if (state.elapsed >= offer.expiresAt) {
       delete state.offers[offer.id];
@@ -176,7 +203,7 @@ export function tickMarket(state: GameState, dt: number, events: MarketEvents): 
   const perMinute = leadRate(state);
   if (perMinute <= 0) return;
   if (Math.random() < (perMinute / 60) * dt) {
-    const offer = spawnOffer(state);
+    const offer = spawnOffer(state, undefined, boosts);
     if (offer) events.offersArrived.push(offer);
   }
 }

@@ -99,6 +99,22 @@ export function rarityOf(weight: number): Rarity {
   return 'legendary';
 }
 
+// --- focus ----------------------------------------------------------------
+
+/**
+ * What an agent is pointed at (Agentic Ops addon).
+ *
+ * One control, three shapes: everything, a whole track, or one named contract
+ * tier. Sales, Marketing and Support all read the same field, so the player
+ * learns it once — and a `tier:` focus is what turns a generalist into a
+ * specialist that idles, and bills, when its tier is dry.
+ */
+export type FocusTarget = 'all' | `track:${'main' | 'homelab' | 'slop'}` | `tier:${string}`;
+
+/** The listing behind a `tier:` focus, or undefined for the group focuses. */
+export const focusListing = (focus: FocusTarget | undefined): MarketListing | undefined =>
+  focus?.startsWith('tier:') ? LISTING_BY_BUILDING[focus.slice(5)] : undefined;
+
 // --- the board ------------------------------------------------------------
 
 const L = (l: MarketListing): MarketListing => l;

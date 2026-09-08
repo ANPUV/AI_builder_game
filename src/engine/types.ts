@@ -1,7 +1,10 @@
 import type { AddonSettings } from '../data/addons';
+import type { FocusTarget, Rarity } from '../data/market';
 /** A placed node on the canvas. */
 export interface Machine {
   id: string;
+  /** Actual contract payouts earned by this machine; older saves start at zero. */
+  revenueEarned?: number;
   buildingId: string;
   /** null until the player assigns one. A node with no recipe is idle. */
   recipeId: string | null;
@@ -39,6 +42,20 @@ export interface Machine {
   armed?: boolean;
   /** Quality misses on this contract. At BALANCE.strikesBeforeLoss it is lost. */
   strikes?: number;
+
+  // --- Agentic Ops --------------------------------------------------------
+  /** What this agent chases: everything, one track, or one named contract tier. */
+  focus?: FocusTarget;
+  /** Rarity floor, meaningful only for the group focuses. A named tier implies its own. */
+  rarityFloor?: Rarity;
+  /**
+   * How long this contract has been running cleanly, in seconds. Loyalty is
+   * earned, and it is the only thing besides a Support Agent standing between a
+   * customer and the churn roll.
+   */
+  servedFor?: number;
+  /** `elapsed` when this contract was signed. Buys it an onboarding grace. */
+  signedAt?: number;
 }
 
 /**
@@ -69,7 +86,9 @@ export type MachineStatus =
   | 'broke'       // cannot afford this craft's API spend
   | 'audited'     // contract refuses: Exposure, breach freeze, or a failed site audit
   | 'awaiting'    // manual recipe, waiting for the player to press Generate
-  | 'broken';     // hardware failure — repair it or replace it
+  | 'broken'      // hardware failure — repair it or replace it
+  | 'unfocused'   // an agent whose focus has nothing to work on — still billing
+  | 'unmanaged';  // an agent with no Agent Ops Console to report to
 
 /** One provider's rate limit, or your own hardware. */
 export interface PoolReport {
@@ -212,6 +231,15 @@ export interface GameState {
   priceIndex: number;
 
   // --- slop ---------------------------------------------------------------
+  /**
+   * Agent Drift, 0-100 (Agentic Ops addon). Summed from agentDrift across
+   * running agents, exactly like Exposure. High drift is agents acting further
+   * and further outside the brief you set them.
+   */
+  agentDrift: number;
+  /** Cumulative $ lost to runaway agents. */
+  agentLosses: number;
+
   /** Sum of slopRisk across running nodes. Drives every slop incident. */
   slop: number;
   /** Cumulative $ lost to IP and legal fines. */

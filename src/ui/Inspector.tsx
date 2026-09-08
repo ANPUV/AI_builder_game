@@ -30,6 +30,10 @@ import {
   setVendor,
 } from '../engine/factory';
 import FocusPicker from './FocusPicker';
+import { CoolingPicker, coolingSpec } from './CoolingPicker';
+import { setCooling } from '../engine/factory';
+import { coolingOf, effectiveFootprint } from '../engine/esgRules';
+import { featureEnabled } from '../data/addons';
 import {
   agentCapacity,
   machineComputeDraw,
@@ -227,6 +231,7 @@ export default function Inspector({ game, selection, setSelection }: Props) {
     state.unlockedRecipes.includes(opt.id),
   );
   const status = state.status[machine.id] ?? 'idle';
+  const esgOn = featureEnabled('esg', state.addons);
   const isCapacity = b.kind === 'capacity';
   const nodePool = poolOf(machine);
   const poolStat = nodePool ? state.compute.pools[nodePool] : undefined;
@@ -297,6 +302,75 @@ export default function Inspector({ game, selection, setSelection }: Props) {
               </span>
             </div>
           )}
+          {/* The ESG addon's physical line. Shown only with the addon on:
+              a player who never enabled it should not be told their Gaming PC
+              draws half a kilowatt. */}
+          {esgOn && (b.powerKw ?? 0) > 0 && (
+            <div className="kv">
+              <span className="k">Draw</span>
+              <span className="mono">
+                {((b.powerKw ?? 0) * machine.clock * coolingSpec(coolingOf(machine)).pue).toFixed(
+                  (b.powerKw ?? 0) < 10 ? 2 : 0,
+                )}{' '}
+                kW
+                {coolingSpec(coolingOf(machine)).litres > 0
+                  ? ` · ${Math.round((b.powerKw ?? 0) * machine.clock * 730 * coolingSpec(coolingOf(machine)).litres).toLocaleString()} L/mo`
+                  : ' · no water'}
+              </span>
+            </div>
+          )}
+          {esgOn && (b.landUse ?? 0) > 0 && (
+            <div className="kv">
+              <span className="k">Land use</span>
+              <span className="mono" style={{ color: 'var(--warn)' }}>+{b.landUse}</span>
+            </div>
+          )}
+          {esgOn && (b.laborLoad ?? 0) !== 0 && (
+            <div className="kv">
+              <span className="k">Labour load</span>
+              <span
+                className="mono"
+                style={{ color: (b.laborLoad ?? 0) > 0 ? 'var(--bad)' : 'var(--good)' }}
+              >
+                {(b.laborLoad ?? 0) > 0 ? `+${b.laborLoad}` : b.laborLoad} social
+              </span>
+            </div>
+          )}
+          {esgOn && ((b.provenanceRisk ?? 0) !== 0 || (r?.provenanceRisk ?? 0) !== 0) && (
+            <div className="kv">
+              <span className="k">Provenance</span>
+              <span
+                className="mono"
+                style={{
+                  color:
+                    (b.provenanceRisk ?? 0) + (r?.provenanceRisk ?? 0) > 0
+                      ? 'var(--bad)'
+                      : 'var(--good)',
+                }}
+              >
+                {(b.provenanceRisk ?? 0) + (r?.provenanceRisk ?? 0) > 0 ? '+' : ''}
+                {(b.provenanceRisk ?? 0) + (r?.provenanceRisk ?? 0)} governance
+              </span>
+            </div>
+          )}
+          {/* The Footprint ceiling sits beside the Exposure ceiling that is
+              already here — two different doors, and the player should be able
+              to see which one is shut. */}
+          {esgOn && r?.maxFootprint !== undefined && (
+            <div className="kv">
+              <span className="k">Footprint ceiling</span>
+              <span
+                className="mono"
+                style={{
+                  color:
+                    effectiveFootprint(state) > r.maxFootprint ? 'var(--bad)' : 'var(--good)',
+                }}
+              >
+                {Math.round(effectiveFootprint(state))} / {r.maxFootprint}
+                {r.requiresDisclosure ? (state.esg.disclosure ? '' : ' · needs a disclosure') : ''}
+              </span>
+            </div>
+          )}
           {r?.cost ? (
             <div className="kv">
               <span className="k">API spend</span>
@@ -364,6 +438,19 @@ export default function Inspector({ game, selection, setSelection }: Props) {
             }}
           />
         </>
+      )}
+
+      {/* Cooling is an operating decision, not a purchase — same shape as the
+          provider a vendor-scoped node picks after it lands on the canvas. */}
+      {esgOn && (b.powerKw ?? 0) > 0 && (
+        <CoolingPicker
+          state={state}
+          cooling={machine.cooling}
+          onChange={(mode) => {
+            const result = act((s) => setCooling(s, machine.id, mode));
+            if (!result.ok) toast(result.reason, 'bad');
+          }}
+        />
       )}
 
       {b.vendorScoped && (

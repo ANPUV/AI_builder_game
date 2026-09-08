@@ -1,5 +1,7 @@
 import { useRef } from 'react';
 import { BALANCE, VENDORS, featureEnabled, poolColor, poolName, type Pool } from '../data';
+import { esgBillSplit } from '../engine/esg';
+import { disclosureGap } from '../engine/esgRules';
 import Tip from './Tip';
 import { agentCapacity } from '../engine/simulate';
 import { useTheme } from './useTheme';
@@ -22,12 +24,14 @@ export default function TopBar({
   game,
   onSignOut,
   onOpenSettings,
-  onOpenBank,
+  onOpenRaiseFund,
+  onOpenEsg,
 }: {
   game: Game;
   onSignOut?: () => void;
   onOpenSettings: () => void;
-  onOpenBank: () => void;
+  onOpenRaiseFund: () => void;
+  onOpenEsg: () => void;
 }) {
   const { state, speed, setSpeed, save, reset, togglePause, exportFile, importFile, savedAt } =
     game;
@@ -169,8 +173,8 @@ export default function TopBar({
                   </div>
                 </>
               )}
-              <button className="offer-close" style={{ marginTop: 8 }} onClick={onOpenBank}>
-                {t('vc.openBank')}
+              <button className="offer-close" style={{ marginTop: 8 }} onClick={onOpenRaiseFund}>
+                {t('vc.raiseFund')}
               </button>
             </>
           }
@@ -283,6 +287,82 @@ export default function TopBar({
               }}
             >
               {Math.round(state.agentDrift)}
+            </span>
+          </div>
+        </Tip>
+      )}
+
+      {/* ESG addon. Shown from the first tick rather than only once non-zero:
+          the point of the addon is that this number was always running. One
+          stat here, the whole breakdown behind the report button — the top bar
+          was already full before this arrived. */}
+      {featureEnabled('esg', state.addons) && (
+        <Tip
+          width={320}
+          content={
+            <>
+              <div className="tip-title">{t('esg.tipTitle')}</div>
+              <div className="tip-body">{t('esg.tipBody')}</div>
+              <div className="tip-kv">
+                <span>{t('esg.environmental')}</span>
+                <span className="mono">{Math.round(state.esg.environmental)}</span>
+              </div>
+              <div className="tip-kv">
+                <span>{t('esg.social')}</span>
+                <span className="mono">{Math.round(state.esg.social)}</span>
+              </div>
+              <div className="tip-kv">
+                <span>{t('esg.governance')}</span>
+                <span className="mono">{Math.round(state.esg.governance)}</span>
+              </div>
+              <div className="tip-kv">
+                <span>{t('esg.tipBill')}</span>
+                <span className="mono">
+                  {money(esgBillSplit(state).power + esgBillSplit(state).water)}/mo
+                </span>
+              </div>
+              {state.esg.disclosure ? (
+                <>
+                  <div className="tip-kv">
+                    <span>{t('esg.tipDisclosed')}</span>
+                    <span className="mono">{Math.round(state.esg.disclosure.claimed)}</span>
+                  </div>
+                  <div className="tip-kv">
+                    <span>{t('esg.tipActual')}</span>
+                    <span
+                      className="mono"
+                      style={{ color: disclosureGap(state) > 0 ? 'var(--bad)' : 'var(--good)' }}
+                    >
+                      {Math.round(state.esg.footprint)}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="tip-kv">
+                  <span>{t('esg.tipUndisclosed')}</span>
+                  <span className="mono">—</span>
+                </div>
+              )}
+            </>
+          }
+        >
+          <div className="stat">
+            <span className="label">{t('top.footprint')}</span>
+            <span
+              className="value mono"
+              style={{
+                color:
+                  state.esg.footprint > 60
+                    ? 'var(--bad)'
+                    : state.esg.footprint > 30
+                      ? 'var(--warn)'
+                      : 'var(--good)',
+              }}
+            >
+              {Math.round(state.esg.footprint)}
+              {/* A gap is the thing worth interrupting the player about, so it
+                  gets the one mark in the top bar that is not a number. */}
+              {disclosureGap(state) > 0 && <span style={{ color: 'var(--bad)' }}> ▲</span>}
             </span>
           </div>
         </Tip>
@@ -450,9 +530,9 @@ export default function TopBar({
       >
         {theme === 'dark' ? '☀' : '☾'}
       </button>
-      {featureEnabled('ventureCapital', state.addons) && (
-        <button onClick={onOpenBank} title={t('vc.openBank')} aria-label={t('vc.openBank')}>
-          🏦
+      {featureEnabled('esg', state.addons) && (
+        <button onClick={onOpenEsg} title={t('esg.report')} aria-label={t('esg.report')}>
+          ⚘
         </button>
       )}
       <button onClick={onOpenSettings} title={t('top.settings')} aria-label={t('top.settings')}>

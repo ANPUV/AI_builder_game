@@ -61,6 +61,12 @@ export const VI_ITEMS: Record<string, ContentText> = {
   nsfw_content: { name: 'Nội dung người lớn' },
   abliterated_model: { name: 'Mô hình đã gỡ kiểm duyệt' },
   dmca_notice: { name: 'Thông báo gỡ bỏ' },
+
+  // --- ESG addon ---
+  waste_heat: { name: 'Nhiệt thải' },
+  annotated_data: { name: 'Dữ liệu đã gán nhãn' },
+  carbon_credit: { name: 'Tín chỉ carbon' },
+  esg_report: { name: 'Công bố ESG' },
 };
 
 export const VI_BUILDINGS: Record<string, ContentText> = {
@@ -178,6 +184,19 @@ export const VI_BUILDINGS: Record<string, ContentText> = {
   content_mill: { name: 'Xưởng nội dung', description: "Tới năm 2025 đã có hơn một nghìn trang tin do AI tạo, thiếu tin cậy, bị theo dõi. Họ trả tiền theo từng bài khi giao hàng, và họ sẽ không tự động hoá giúp bạn." },
   pseo_platform: { name: 'Nền tảng SEO tự động', description: "Mỗi đơn vị rẻ hơn so với việc tự bấm nút Generate, và nó chạy cả khi bạn đang ngủ. Đó là toàn bộ lý lẽ cho việc xây một quy trình tự động." },
   adult_platform: { name: 'Nền tảng người lớn', description: "Các quy định xác minh độ tuổi đã có hiệu lực ở Anh và được Tối cao Pháp viện Mỹ giữ nguyên đối với bang Texas năm 2025. Các đơn vị xử lý thanh toán siết các cửa hàng ngay trong mùa hè đó." },
+
+  // --- ESG addon ---
+  sustainability_officer: { name: 'Giám đốc Bền vững', description: "Phải có người ký vào bản công bố. Bắt buộc phải có trước khi công bố bất cứ điều gì, và trước mọi thứ khác trong tab này. Là một con người, không phải một dashboard." },
+  renewable_ppa: { name: 'Hợp đồng điện tái tạo', description: "Ký mua 60% phụ tải từ một dự án điện gió hoặc mặt trời. Nó cắt phần carbon và không cắt một xu nào của hóa đơn — PPA là công cụ chốt giá, và đối trừ theo năm không giống với chạy sạch lúc 3 giờ sáng." },
+  demand_response: { name: 'Điều tiết phụ tải', description: "Giảm tải khi lưới điện căng và công ty điện trả tiền cho bạn. Đây là nút trung thực nhất trong tab này: nó tiết kiệm tiền thật và không tiết kiệm chút carbon nào." },
+  closed_loop: { name: 'Cải tạo làm mát kín', description: "Tháo bỏ tháp bay hơi và chạy vòng kín. Mở khóa làm mát vòng kín cho mọi nút bạn sở hữu. Nước giảm còn gần như không, và hóa đơn điện tăng trở lại — không có lựa chọn thứ ba." },
+  heat_recovery: { name: 'Vòng thu hồi nhiệt', description: "Gần như toàn bộ điện năng một rack tiêu thụ đều thoát ra dưới dạng nhiệt ở khoảng 30C. Thu lại, nâng nhiệt bằng bơm nhiệt, và nó thành thứ mạng lưới sưởi khu vực sẵn sàng mua. Cần phần cứng thật tại chỗ mới đáng giá." },
+  carbon_desk: { name: 'Bàn tín chỉ carbon', description: "Đòn bẩy rẻ nhất trong tab này, và đó là điều đầu tiên đáng chú ý về nó. Mua tấn carbon từ một sổ đăng ký bạn chưa kiểm toán, và kiểm toán viên chiết khấu chúng tương ứng." },
+  annotation_coop: { name: 'Hợp tác xã gán nhãn', description: "Việc gán nhãn do những người có mức lương đủ sống, có hợp đồng và có chuyên gia tâm lý trực. Người kiểm duyệt nội dung trong một hợp đồng gia công tại Nairobi từng được ghi nhận nhận $1.32 đến $2 một giờ. Đây là cái giá của phần đã không được trả." },
+  trust_safety: { name: 'Bộ phận An toàn & Tin cậy', description: "Xem lại thứ dây chuyền sắp xuất xưởng, và cả thứ nó đang gây ra cho những người phải nhìn vào đó. Đồng thời giảm Chỉ số Rác — hai vấn đề này vốn luôn là một." },
+  provenance_ledger: { name: 'Sổ nguồn gốc dữ liệu', description: "Manifest C2PA cho thứ bạn xuất xưởng và data card cho thứ bạn huấn luyện. Biết mọi đầu vào đến từ đâu là việc không hào nhoáng, tốn kém, và là thứ duy nhất sống sót qua một cuộc kiểm toán." },
+  esg_auditor: { name: 'Kiểm toán ESG', description: "Một hãng bảo đảm đặt tên mình lên con số của bạn. Chính chữ ký đó mới là thứ bộ phận mua hàng thực sự đang mua." },
+  heat_offtake: { name: 'Hợp đồng bán nhiệt', description: "Công ty nhiệt của thành phố bên cạnh sẽ nhận mọi thứ bạn nâng được lên 70C. Stockholm đã mua nhiệt từ trung tâm dữ liệu nhiều năm nay và Meta tặng không nhiệt thải cho Odense. Nó trả ít và không bao giờ bỏ đi." },
 };
 export const VI_RECIPES: Record<string, ContentText> = {
   organic: { name: "Đăng ký tự nhiên" },

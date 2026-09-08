@@ -15,16 +15,18 @@ import {
 } from '../data';
 import { DEFAULT_ADDONS, buildingEnabled } from '../data/addons';
 import { agentHeadcount, agentsPlaced, hasConsole } from './agentRules';
+import { coolingOptions, freshEsgState, hasOfficer, hasPower, permitBlocked } from './esgRules';
 import { nextId } from './ids';
 import { seedMarket, takeOffer } from './market';
-import type { GameState, Link, Machine, LinkShape } from './types';
+import type { CoolingMode, GameState, Link, Machine, LinkShape } from './types';
 
 // 4 -> 5: GameState gained `vc` and `loans` (Venture Capital addon).
 // 5 -> 6: GameState gained `agentDrift` / `agentLosses` and Machine gained
 //         `focus` / `rarityFloor` / `servedFor` (Agentic Ops addon). Per
 //         convention, a save from an older version is discarded on load rather
 //         than merged — see save.ts.
-export const STATE_VERSION = 6;
+// 6 -> 7: GameState gained `esg` and Machine gained `cooling` (ESG addon).
+export const STATE_VERSION = 7;
 
 export function createInitialState(): GameState {
   const state: GameState = {
@@ -41,6 +43,7 @@ export function createInitialState(): GameState {
     lastOffered: {},
     hotbar: Array<string | null>(HOTBAR_SLOTS).fill(null),
     addons: { ...DEFAULT_ADDONS },
+    linkShape: 'curve',
     exposure: 0,
     breaches: 0,
     breachFreeze: 0,
@@ -53,6 +56,7 @@ export function createInitialState(): GameState {
     slopExposureSpike: 0,
     vc: { raises: [], totalSharePct: 0, declined: [] },
     loans: [],
+    esg: freshEsgState(),
     compute: { pools: {}, demandKtpm: 0, supplyKtpm: 0, satisfaction: 1, tight: [] },
     finance: {
       burnPerMonth: 0,
@@ -136,6 +140,16 @@ export function placeMachine(
         ? `You only get one ${b.name}`
         : `You may only have ${b.maxCount} of the ${b.name}`,
     );
+  }
+  // A planning moratorium stops anything that takes up land. Cash does not fix
+  // this one, which is the entire point of it: the expansion you had already
+  // budgeted for simply cannot be built this minute.
+  if (permitBlocked(state, buildingId)) {
+    return fail(`Planning moratorium — no new ${b.tier} sites until it lifts`);
+  }
+  // Somebody has to own the footprint before you can start managing it.
+  if (b.tier === 'Sustainability' && b.id !== 'sustainability_officer' && !hasOfficer(state)) {
+    return fail('Place a Sustainability Officer first — somebody has to sign for this');
   }
   // Agents compound — marketing feeds sales feeds coding — so how many may run
   // at once is the addon's main brake, and it is the Console's to raise.
@@ -322,6 +336,28 @@ export function setRecipe(state: GameState, id: string, recipeId: string | null)
  * specialist — including the part where a specialist with a dry tier sits
  * there billing its subscription.
  */
+/**
+ * Pick how a node rejects its heat (ESG addon).
+ *
+ * Chosen after placement, the same way a vendor-scoped capacity node picks its
+ * provider: the chassis is the same box either way, and what you do with the
+ * heat is an operating decision rather than a purchase.
+ */
+export function setCooling(state: GameState, id: string, cooling: CoolingMode): Outcome {
+  const m = state.machines[id];
+  if (!m) return fail('No such node');
+  if (!hasPower(m.buildingId)) return fail('That node has nothing to cool');
+  if (!coolingOptions(state).includes(cooling)) {
+    return fail(
+      cooling === 'closed_loop'
+        ? 'Build a Closed-Loop Retrofit first'
+        : 'That cooling design is not available yet',
+    );
+  }
+  m.cooling = cooling;
+  return OK;
+}
+
 export function setFocus(state: GameState, id: string, focus: FocusTarget): Outcome {
   const m = state.machines[id];
   if (!m) return fail('Node not found');
@@ -589,6 +625,7 @@ export function pasteClipboard(
     if (!b) return fail('That chassis no longer exists');
     if (!state.unlockedBuildings.includes(n.buildingId)) return fail(`${b.name} is not unlocked yet`);
     if (isWithdrawn(b, state.priceIndex)) return fail(`${b.name} is no longer sold`);
+    if (permitBlocked(state, n.buildingId)) continue;
     if (!buildingEnabled(n.buildingId, state.addons)) {
       return fail(`${b.name} is switched off in settings`);
     }

@@ -13,7 +13,7 @@
  * somewhere generic.
  */
 export type ItemForm =
-  | 'demand' | 'data' | 'model' | 'silicon' | 'paper' | 'hardware' | 'slop';
+  | 'demand' | 'data' | 'model' | 'silicon' | 'paper' | 'hardware' | 'slop' | 'energy';
 
 export interface Item {
   id: string;
@@ -113,4 +113,10 @@ export const ITEMS: Item[] = [
   { id: 'nsfw_content',name: 'Adult Content',     icon: '◉', form: 'slop',     value: 140,   color: '#b03d5f', note: 'Pays like a regulated contract with none of the paperwork, and every incentive in the payment stack is pointed at you.' },
   { id: 'abliterated_model',name:'Abliterated Model',icon:'⊘',form:'model',    value: 2400,  color: '#a03d6f', note: 'Refusal behaviour in an aligned model is mediated by a single direction in activation space. Ablate it and the refusals stop. Published research, no retraining required.' },
   { id: 'dmca_notice', name: 'Takedown Notice',   icon: '⚖', form: 'paper',    value: 0,     color: '#c4603d', note: 'One AI lab settled a training-data class action for $1.5B over roughly 500,000 works — about $3,000 each. This is one of those.' },
+
+  // --- ESG addon: the footprint, and the paperwork about it ----------------
+  { id: 'waste_heat',    name: 'Waste Heat',       icon: '♨', form: 'energy', value: 4,  color: '#e0704a', note: 'Very nearly all the electricity a rack draws leaves it again as heat. The only question is whether anybody catches it.' },
+  { id: 'annotated_data',name: 'Annotated Data',   icon: '☗', form: 'data',   value: 14, color: '#7ac96b', note: 'Labelled by people who were paid properly for it. Cleaner than a crawl and far more expensive.' },
+  { id: 'carbon_credit', name: 'Carbon Credit',    icon: '❋', form: 'paper',  value: 0,  color: '#4ca86b', note: 'A tonne somebody else did not emit, on a registry you did not audit. Priced anywhere from three dollars to fifty, for reasons with little to do with tonnes.' },
+  { id: 'esg_report',    name: 'ESG Disclosure',   icon: '⌑', form: 'paper',  value: 0,  color: '#5f9e7a', note: 'What a procurement officer asks for in place of asking what you actually run. CSRD and ISSB both want one; neither of them checks the meter.' },
 ];

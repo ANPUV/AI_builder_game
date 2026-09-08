@@ -168,6 +168,10 @@ export const BALANCE = {
   vcDownRoundRepaymentCap: 3.0,
   /** Exposure at or above this counts as weak when terms are set, alongside negative operating income. */
   vcDownRoundExposure: 30,
+  /** Size of a raise the player asks for directly (not tied to a milestone) at milestone 0. Grows with progress like bankLoanCapBase does — see vcOnDemandCapitalGrowthPerMilestone. */
+  vcOnDemandCapitalBase: 8_000,
+  /** Per completed milestone, the on-demand raise size grows by this fraction of its base. Steeper than the loan's growth rate: equity is the option with no repayment SCHEDULE pressure, so it can afford to scale faster. */
+  vcOnDemandCapitalGrowthPerMilestone: 0.5,
 
   /** Bank loan interest, per sim-month, locked in at draw time. ~12.7% APR — real venture debt runs prime+1-2% at a bank, 8-13% all-in. Cheap to carry; the cost is the fee below. */
   bankLoanRatePerMonth: 0.01,
@@ -235,6 +239,123 @@ export const BALANCE = {
   agentReviewedCashFloor: 25_000,
   /** Nodes one Coding Agent will place in a single build cycle. */
   agentChainNodeCap: 6,
+
+  // --- ESG addon -----------------------------------------------------------
+  /**
+   * Real hours in one billing month. `monthSeconds` of simulated time stands for
+   * a month of wall clock, so one sim-second is `hoursPerMonth / monthSeconds`
+   * real hours — which is what turns a node's kW into a power bill.
+   *
+   * Sanity check on the whole scale: Own Datacenter draws 10MW, so it bills
+   * 10,000 x 0.09 x 730 = about $657k a month against its $7.08M monthly cost.
+   * That is 9%, and the node's own description says power is "only ~7%".
+   */
+  hoursPerMonth: 730,
+  /** $/kWh at grid index 1.0. US industrial average sits near nine cents. */
+  gridPriceBasePerKwh: 0.09,
+  /** $/litre. Industrial water runs $1-3 per cubic metre — cheap, which is the point. */
+  waterPricePerLitre: 0.0015,
+
+  /**
+   * The grid index, 1.0 -> gridIndexMax, built exactly like the hardware price
+   * index: partly your progress, partly your own provisioned load. PJM's
+   * capacity auction cleared near $28.92/MW-day for 2024/25 and about
+   * $269.92/MW-day for 2025/26, and data centre demand is what everyone
+   * involved blames. Set gridIndexMax to 1 to switch the escalation off.
+   */
+  gridIndexMax: 3.0,
+  gridIndexProgressWeight: 0.45,
+  gridIndexLoadWeight: 0.55,
+  /** Own kW at which the load term saturates. One Own Datacenter is 10,000. */
+  gridIndexSaturationKw: 24_000,
+
+  /**
+   * Cooling. PUE multiplies the node's draw; the litres figure is water
+   * evaporated per kWh of IT load. Evaporative is the cheapest to run and it is
+   * why a data centre turns up in a drought story; air pays for the same job in
+   * electricity instead. 1.8 L/kWh is roughly the industry mean WUE.
+   */
+  coolingPue: { air: 1.55, evaporative: 1.15, closed_loop: 1.2, immersion: 1.03 },
+  coolingLitresPerKwh: { air: 0, evaporative: 1.8, closed_loop: 0.1, immersion: 0 },
+
+  /**
+   * The Environmental score is logarithmic in carbon-bearing load, because the
+   * ladder spans a Gaming PC at half a kilowatt and Own Datacenter at ten
+   * megawatts. Linear, every home node rounds to zero and one datacenter pins
+   * the meter.
+   */
+  esgPowerScaleKw: 5,
+  esgPowerCeilKw: 20_000,
+  esgWaterScaleLitres: 1_000,
+  esgWaterCeilLitres: 15_000_000,
+  /** Summed landUse at which the land term reads 100. */
+  esgLandCeil: 20,
+  /** Summed laborLoad / provenanceRisk at which those pillars read 100. */
+  esgLaborCeil: 20,
+  esgProvenanceCeil: 25,
+
+  /** How the three physical terms make up the Environmental pillar. */
+  esgPowerWeight: 0.55,
+  esgWaterWeight: 0.25,
+  esgLandWeight: 0.2,
+  /** How the three pillars make up the headline Footprint. */
+  esgEnvWeight: 0.5,
+  esgSocialWeight: 0.2,
+  esgGovernanceWeight: 0.3,
+
+  /** Water restriction: p = rate * (environmental/100)^2 per minute. */
+  waterRestrictionRateAt100: 1.2,
+  waterRestrictionSeconds: 45,
+  /** What a restricted capacity node still supplies while it runs. */
+  waterCurtailmentFactor: 0.5,
+
+  /** Permit freeze: p = rate * (land/landCeil)^2 per minute, once past the threshold. */
+  landPermitThreshold: 8,
+  landPermitRatePerMin: 0.9,
+  permitFreezeSeconds: 90,
+
+  /** Labour dispute: p = rate * (social/100)^2 per minute. Costs time, not cash. */
+  disputeRatePerMin: 1.0,
+  disputeSeconds: 40,
+
+  /** Export-control shock: p = rate * (governance/100)^2 per minute. */
+  exportShockRatePerMin: 0.5,
+  /** Added to the hardware price index, decaying over exportShockSeconds. */
+  exportShockIndex: 0.8,
+  exportShockSeconds: 90,
+
+  /**
+   * The audit. p = rate * (gap/100)^2 per minute, where gap is the real
+   * Footprint minus what you published. A commissioned audit is not immunity,
+   * it is a much smaller multiplier — the number was true when it was signed.
+   */
+  esgAuditRateAt100: 3.0,
+  auditedShield: 0.15,
+  /** A caught understatement costs this fraction of cash, at least the floor. */
+  esgFineFraction: 0.14,
+  esgFineMin: 20_000,
+  /** And spikes Exposure by this much, for this long. */
+  esgFineExposure: 20,
+
+  /** What a commissioned audit costs, and the observation window before it lands. */
+  esgAuditCost: 45_000,
+  esgAuditSeconds: 60,
+  /** Self-certifying is cheap and instant. That is the entire temptation. */
+  esgSelfCertifyCost: 2_000,
+
+  /** One carbon credit purchase: what it costs and what it takes off the E score. */
+  carbonCreditCost: 12_000,
+  carbonCreditRelief: 6,
+  /** Most relief credits may ever provide. Offsets are not a substitute for the estate. */
+  carbonCreditMaxRelief: 24,
+  /** Credits decay: a retired tonne does not keep working. Points per month. */
+  carbonCreditDecayPerMonth: 1.5,
+  /**
+   * How much of your credit relief the auditor allows. A 2023 investigation into
+   * one major registry's rainforest credits concluded the large majority
+   * represented no real reduction, and the auditor has read it.
+   */
+  offsetAuditDiscount: 0.35,
 } as const;
 
 /** Convenience: a link's throughput in units per second. */

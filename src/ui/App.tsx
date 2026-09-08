@@ -7,9 +7,12 @@ import {
   setHotkey,
 } from '../engine/factory';
 import { hasUnseenOffers, markOffersSeen } from '../engine/market';
+import { featureEnabled } from '../data';
 import BankDialog from './BankDialog';
 import BuildDialog, { type BuildTab } from './BuildDialog';
+import RaiseFundDialog from './RaiseFundDialog';
 import SettingsDialog from './SettingsDialog';
+import EsgDialog from './EsgDialog';
 import Canvas, { machineIds, type Pending, type Selection } from './Canvas';
 import Canvas3D from './Canvas3D';
 import Coach from './Coach';
@@ -35,7 +38,9 @@ export default function App({ onSignOut }: { onSignOut?: () => void } = {}) {
 function GameShell({ onSignOut }: { onSignOut?: () => void }) {
   const { t } = useLang();
   const game = useGame();
-  const [threeD, setThreeD] = useState(true);
+  // 2D is the editor you build in; the 3D floor is a view of what you built.
+  // Opening straight into it put a camera between the player and the work.
+  const [threeD, setThreeD] = useState(false);
   const FactoryCanvas = threeD ? Canvas3D : Canvas;
   const [selection, setSelection] = useState<Selection>(null);
   const [pending, setPending] = useState<Pending | null>(null);
@@ -43,6 +48,7 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
   const [dialog, setDialog] = useState<BuildTab | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bankOpen, setBankOpen] = useState(false);
+  const [esgOpen, setEsgOpen] = useState(false);
   /** The tech tree lives in a left drawer now, closed until asked for. */
   const [treeOpen, setTreeOpen] = useState(false);
 
@@ -112,7 +118,8 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
         game={game}
         onSignOut={onSignOut}
         onOpenSettings={() => setSettingsOpen(true)}
-        onOpenBank={() => setBankOpen(true)}
+        onOpenRaiseFund={game.openRaiseFund}
+        onOpenEsg={() => setEsgOpen(true)}
       />
       <div className="body">
         <FactoryCanvas
@@ -125,6 +132,15 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
         >
           <div className="left-rail">
             <button className="rail-btn" onClick={() => setThreeD(!threeD)}>{threeD ? '2D editor' : '3D floor'}</button>
+            {featureEnabled('ventureCapital', game.state.addons) && (
+              <button
+                className="rail-btn"
+                onClick={() => setBankOpen(true)}
+                title={t('vc.openBank')}
+              >
+                {t('vc.openBank')}
+              </button>
+            )}
             <button className="build-fab" onClick={() => openDialog()} title={t('build.openTitle')}>
               <span>＋</span>
               {hasUnseenOffers(game.state) && <span className="reddot" />}
@@ -173,6 +189,8 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
         <SettingsDialog
           addons={game.state.addons}
           onToggleAddon={game.setAddon}
+          linkShape={game.state.linkShape}
+          onLinkShape={game.setLinkShape}
           onClose={() => setSettingsOpen(false)}
         />
       )}
@@ -185,6 +203,24 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
             setBankOpen(false);
           }}
           onClose={() => setBankOpen(false)}
+        />
+      )}
+
+      {esgOpen && (
+        <EsgDialog
+          state={game.state}
+          onPublish={game.publishDisclosure}
+          onBuyCredits={game.buyCarbonCredits}
+          onClose={() => setEsgOpen(false)}
+        />
+      )}
+
+      {game.raiseFundOpen && (
+        <RaiseFundDialog
+          state={game.state}
+          offer={game.raiseFundOffer}
+          onConfirm={game.confirmRaiseFund}
+          onClose={game.closeRaiseFund}
         />
       )}
 

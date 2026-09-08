@@ -1,6 +1,9 @@
 # ESG addon — plan
 
-**Status:** plan only, nothing built yet. Written 8 Sep 2026.
+**Status:** built and shipped, 8 Sep 2026. Written and implemented the same day.
+
+What changed on the way from plan to code is recorded in `## Built` at the foot of
+this document — the plan is left as written so the two can be compared.
 
 Grounded in what's already shipped. The capacity ladder already carries the physical numbers
 this addon needs, as flavour text nothing reads: **Colo Rack Bay** is "~120kW each, liquid
@@ -541,3 +544,76 @@ ends up using it, delete it and put the water on the chassis.
    above are from memory: the PJM clearing prices, Google's 2023 water figure, the Nairobi
    moderator pay band, the export-control dates, and the Odense district-heating claim in
    particular.
+
+---
+
+## Built
+
+Shipped 8 Sep 2026. `npm run check:esg` covers it: 64 assertions, including the
+mandatory closing block proving the base game is untouched with the addon off.
+
+### What the plan got right
+
+The whole spine survived contact with the code. The addon is a `kind: 'feature'`
+entry owning the `Sustainability` tier through `TIER_TRACK`; no `Track` change and
+no `FocusTarget` change were needed. `maxFootprint` reuses the `maxExposure`
+`onHold` branch verbatim, the power bill rides the rent line, and every incident is
+the breach roll with a different meter in it.
+
+### What changed
+
+- **`Building.addon` already existed.** The plan proposed putting the heat contract
+  in the `Sustainability` tier and teaching `BuildDialog` to skip contract-kind
+  cards. Unnecessary: the repo had since grown an explicit per-building addon
+  override for exactly this case (the entry-level Slop contract). District Heat
+  Offtake is `tier: 'Contracts', addon: 'esg'`, and `unlockedListings` already
+  filters the board by `buildingEnabled`.
+- **Waste heat is a node, not a capacity output.** The plan had capacity nodes emit
+  `waste_heat` as a second output. That would have let an unwired output buffer
+  fill and block a capacity node — taking the factory's throughput with it. Instead
+  a **Heat Recovery Loop** produces it, gated by `requiresOnSite: { tier: 'Capacity',
+  count: 2 }`, which reuses the shipped site-audit mechanism and touches no capacity
+  recipe at all.
+- **`provenanceRisk` is on recipes as well as buildings.** The corpus choice is made
+  per craft, so the chassis alone could not carry it. `surveyNode` sums both.
+- **A third status, `'disputed'`.** The plan named two. A labour dispute needed its
+  own, rather than borrowing `'audited'` and lying about why a node stopped.
+- **`BuildDialog.TABS` is now exhaustiveness-checked.** Adding the tier without
+  adding its tab was a silent failure — the nodes existed, validated and placed from
+  the hotbar, but had no card anywhere. Caught by looking at the running game, not by
+  the type checker, so there is now a `MissingTab` type that stops compiling if the
+  two lists ever disagree again.
+
+### Numbers the headless run settled
+
+- **The power anchor holds.** Own Datacenter bills `10,000 kW x 730 h x $0.09` =
+  about $657k against its $7.08M monthly cost — 9.3%, against the "power only ~7%"
+  its own description has claimed since long before this addon existed.
+- **Live, an air-cooled datacenter on a saturated grid pays 24.6%** of its monthly
+  cost in electricity. Every multiple over the anchor is a choice: 55% for air
+  cooling, and a grid index that is the player's own buildout coming back at them.
+- **The E score had to be logarithmic.** A Gaming PC is 0.5 kW and Own Datacenter is
+  10 MW. Linear, the home rig rounds to zero and one datacenter pins the meter
+  forever. `logScore` puts a Gaming PC at ~1 and a datacenter at ~97 on the power
+  term.
+- **A lone datacenter scores 61, not 90.** It is an environmental problem and
+  nothing else — it employs nobody and buys nothing untraceable — so the blend sits
+  well below the pillar. A realistic Act III estate (datacenter + colo + curation +
+  slop) clears the Enterprise ceiling of 55, which is the assertion that actually
+  protects the gate.
+- **The audit is calibrated.** Publishing 5 against a real 61 is caught in 24 runs
+  out of 40 within 90 seconds; an honest filing is caught 0 times out of 40. The
+  quadratic does the work — a small understatement is a genuine gamble and a large
+  one is not.
+- **Being caught shuts the door twice.** The Exposure spike closes the security gate
+  in the same tick the voided disclosure closes the ESG one. Emergent, not designed,
+  and worth keeping.
+
+### Still open
+
+Everything in §10 stands. The Internet arrow is still deferred, and §10.6 is the one
+that matters before this goes in front of anybody: **the real-world figures in the
+node descriptions are from memory and have not been fact-checked.** The PJM clearing
+prices, Google's 2023 water figure, the Nairobi pay band, the export-control dates
+and the Odense district-heating claim all need verifying against a source, per the
+house rule that every number in a `description` is checkable.

@@ -266,6 +266,17 @@ export const MARKET_LISTINGS: MarketListing[] = [
       'Aggregator that has already lost two processors',
     ],
   }),
+  // ESG addon. A long window and a low weight: the utility is in no hurry and
+  // there is only ever one of them next door.
+  L({
+    buildingId: 'heat_offtake', weight: 20, ttl: 400,
+    leads: [
+      'Municipal heat network, two streets away',
+      'District utility wants your reject water at 70C',
+      'Council housing scheme costing its winter gas bill',
+      'Greenhouse cooperative that would rather not burn anything',
+    ],
+  }),
 ];
 
 export const LISTING_BY_BUILDING: Record<string, MarketListing> = Object.fromEntries(

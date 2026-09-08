@@ -181,6 +181,10 @@ Measured through the console above, not asserted:
 | Rate limiting | satisfaction 0.47 → 12 answers/min; 0.16 → 9; 0.08 → 0. Degrades, does not cliff |
 | Out of cash | zero cash → status `broke`, craft does not start |
 | Content integrity | `validateContent()` returns 1 problem (the known `pretrain` buffer note) across 53/103/135/24 |
+| ESG power anchor | Own Datacenter bills 10,000 kW x 730 h x $0.09 = ~$657k/mo against its $7.08M cost — 9.3%, matching the "power only ~7%" its own description claims |
+| ESG scale | Gaming PC (0.5 kW) scores ~1 on the power term, Own Datacenter (10 MW) ~97. Logarithmic, so neither end of the ladder rounds away |
+| Greenwashing is a real gamble | Publishing 5 against a real 61: caught in 24/40 runs within 90s. An honest filing: 0/40. The audit rolls on the gap, never on the footprint |
+| ESG leaves the base game alone | With the addon off: no power bill, no events, `burnPerMonth` exactly the chassis subscriptions, no placement blocked — and the meter still computes, so switching it on mid-run shows a number that was already true |
 
 ## Known rough edges
 

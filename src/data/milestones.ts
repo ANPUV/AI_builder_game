@@ -89,8 +89,8 @@ export const MILESTONES: Milestone[] = [
     name: 'The Security Review',
     blurb: 'The median B2B sales cycle is 84 days and rising, and the delay is due diligence. Certification is not overhead — it is the sales motion.',
     requires: { soc2: 4 },
-    unlocksBuildings: ['turbopuffer', 'deepseek_flash'],
-    unlocksRecipes: ['rag_tpuf', 'd_dsflash'],
+    unlocksBuildings: ['turbopuffer', 'deepseek_flash', 'sustainability_officer', 'heat_recovery', 'heat_offtake', 'carbon_desk', 'trust_safety'],
+    unlocksRecipes: ['rag_tpuf', 'd_dsflash', 'esg_own', 'esg_heat', 'c_heat', 'esg_credits', 'esg_ts'],
     reward: 80000,
   },
   {
@@ -98,8 +98,8 @@ export const MILESTONES: Milestone[] = [
     name: 'Frontier Reasoning',
     blurb: 'Cheap models cannot plan. For anything multi-step you need a frontier model in the loop — and you will feel the price.',
     requires: { verified_answer: 600 },
-    unlocksBuildings: ['gemini_pro', 'claude_opus', 'api_tier5', 'mcp_server', 'saas_notion', 'harness', 'iso_program', 'enterprise'],
-    unlocksRecipes: ['r_gemini', 'r_opus', 'r_grok', 'cap_t5', 'mcp_tools', 'saas_actions', 'run_agent', 'run_iso', 'c_ent'],
+    unlocksBuildings: ['gemini_pro', 'claude_opus', 'api_tier5', 'mcp_server', 'saas_notion', 'harness', 'iso_program', 'enterprise', 'demand_response', 'annotation_coop'],
+    unlocksRecipes: ['r_gemini', 'r_opus', 'r_grok', 'cap_t5', 'mcp_tools', 'saas_actions', 'run_agent', 'run_iso', 'c_ent', 'esg_dr', 'esg_annotate'],
     reward: 200000,
   },
   {
@@ -127,8 +127,8 @@ export const MILESTONES: Milestone[] = [
     name: 'Own The Weights',
     blurb: 'Rent GPUs, pull open weights, tune them on your own data. Marginal cost per token goes to zero. Fixed cost per month does not.',
     requires: { agent_workflow: 40 },
-    unlocksBuildings: ['weights_mirror', 'rented_h100', 'data_curation', 'finetune_job', 'vllm_server', 'fedramp_program', 'federal', 'sales_agent_sr', 'marketing_agent_sr', 'coding_agent_sr', 'support_agent', 'review_agent'],
-    unlocksRecipes: ['get_weights', 'cap_h100', 'curate', 'lora', 'full_tune', 'serve_local', 'run_fedramp', 'c_fed', 'sell_senior', 'market_senior', 'code_senior', 'support_run', 'review_run'],
+    unlocksBuildings: ['weights_mirror', 'rented_h100', 'data_curation', 'finetune_job', 'vllm_server', 'fedramp_program', 'federal', 'sales_agent_sr', 'marketing_agent_sr', 'coding_agent_sr', 'support_agent', 'review_agent', 'provenance_ledger', 'esg_auditor'],
+    unlocksRecipes: ['get_weights', 'cap_h100', 'curate', 'lora', 'full_tune', 'serve_local', 'run_fedramp', 'c_fed', 'sell_senior', 'market_senior', 'code_senior', 'support_run', 'review_run', 'esg_ledger', 'esg_assure', 'curate_licensed', 'curate_annotated', 'curate_synth'],
     reward: 3000000,
   },
   {
@@ -136,8 +136,8 @@ export const MILESTONES: Milestone[] = [
     name: 'Sovereign Inference',
     blurb: 'Nothing leaves your perimeter. Health and finance will now talk to you — and they pay roughly 180x what a consumer does.',
     requires: { sovereign_answer: 200 },
-    unlocksBuildings: ['hipaa_program', 'regulated', 'airgap_deploy', 'rented_b200'],
-    unlocksRecipes: ['run_hipaa', 'c_reg', 'serve_airgap', 'cap_b200', 'verify_sov'],
+    unlocksBuildings: ['hipaa_program', 'regulated', 'airgap_deploy', 'rented_b200', 'renewable_ppa', 'closed_loop'],
+    unlocksRecipes: ['run_hipaa', 'c_reg', 'serve_airgap', 'cap_b200', 'verify_sov', 'esg_ppa', 'esg_retrofit'],
     reward: 9000000,
   },
   {

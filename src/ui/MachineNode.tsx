@@ -29,6 +29,9 @@ const STATUS_COLOR: Record<MachineStatus, string> = {
   broken: '#ff4d4d',
   unfocused: '#8f7fc4',
   unmanaged: 'var(--warn)',
+  curtailed: '#4a8fa8',
+  disputed: '#c98a3d',
+  disclosed: '#5f9e7a',
 };
 
 interface Props {

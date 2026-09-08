@@ -56,7 +56,19 @@ export interface Machine {
   servedFor?: number;
   /** `elapsed` when this contract was signed. Buys it an onboarding grace. */
   signedAt?: number;
+
+  // --- ESG addon ----------------------------------------------------------
+  /** How this node rejects its heat. Only meaningful on a node with `powerKw`. */
+  cooling?: CoolingMode;
 }
+
+/**
+ * How a node rejects heat (ESG addon). The trade is the whole mechanic: air
+ * pays in electricity and drinks nothing, evaporative is the cheapest to run
+ * and is why a data centre turns up in a drought story, and buying your way out
+ * of both costs capital.
+ */
+export type CoolingMode = 'air' | 'evaporative' | 'closed_loop' | 'immersion';
 
 /**
  * How a belt is drawn. Cosmetic only — routing does not affect throughput —
@@ -88,7 +100,10 @@ export type MachineStatus =
   | 'awaiting'    // manual recipe, waiting for the player to press Generate
   | 'broken'      // hardware failure — repair it or replace it
   | 'unfocused'   // an agent whose focus has nothing to work on — still billing
-  | 'unmanaged';  // an agent with no Agent Ops Console to report to
+  | 'unmanaged'   // an agent with no Agent Ops Console to report to
+  | 'curtailed'   // capacity throttled by a water restriction (ESG addon)
+  | 'disputed'    // stopped by a labour dispute (ESG addon)
+  | 'disclosed';  // contract refuses: no disclosure on file, or Footprint over its ceiling
 
 /** One provider's rate limit, or your own hardware. */
 export interface PoolReport {
@@ -193,6 +208,69 @@ export interface Loan {
   monthsRemaining: number;
 }
 
+/**
+ * What the company last told the world about its footprint (ESG addon).
+ *
+ * The gate on the big contracts reads `claimed`, not the live number. That is
+ * the entire mechanic: publishing an understatement is available, cheap and
+ * profitable, and the audit rolls on the gap between the two.
+ */
+export interface Disclosure {
+  /** The number published. May be lower than the truth — that is the choice. */
+  claimed: number;
+  /** True Footprint at the moment of publication, so the audit has a baseline. */
+  actual: number;
+  /** `state.elapsed` when it was published. Disclosures go stale on their own. */
+  publishedAt: number;
+  /** Commissioned from an assurance firm rather than self-certified. */
+  audited: boolean;
+}
+
+/**
+ * ESG addon state. Present even when the addon is off — cheap, and it avoids a
+ * nullable check in every consumer, exactly like `vc`.
+ */
+export interface EsgState {
+  /** The three pillars, each 0-100, recomputed every tick from running nodes. */
+  environmental: number;
+  social: number;
+  governance: number;
+  /** The headline, 0-100. A weighted blend of the three. High is bad. */
+  footprint: number;
+
+  /** Live physical totals, for the report and the tooltips. */
+  powerKw: number;
+  waterLitresPerMonth: number;
+  landUse: number;
+  /** Best `cleanFraction` running: a PPA is signed for a company, not a rack. */
+  cleanFraction: number;
+
+  /** 1.0 -> BALANCE.gridIndexMax. Your own buildout is half of it. */
+  gridIndex: number;
+
+  /** Relief bought from the credits desk, decaying. Discounted by the auditor. */
+  carbonRelief: number;
+
+  disclosure: Disclosure | null;
+  /** Seconds left on a commissioned audit's observation window. */
+  auditPending: number;
+
+  /** Seconds remaining: no new Capacity / Silicon / Sustainability placements. */
+  permitFreeze: number;
+  /** Seconds remaining: capacity nodes supply BALANCE.waterCurtailmentFactor. */
+  waterFreeze: number;
+  /** Seconds remaining: every node leaning on human labour is stopped. */
+  disputeFreeze: number;
+  /** Added to the hardware price index by an export-control shock, decaying. */
+  shockSpike: number;
+
+  /** Cumulative $, for the report. */
+  powerPaid: number;
+  waterPaid: number;
+  fines: number;
+  heatRevenue: number;
+}
+
 export interface GameState {
   version: number;
   machines: Record<string, Machine>;
@@ -259,9 +337,19 @@ export interface GameState {
    */
   addons: AddonSettings;
 
+  /**
+   * How belts are drawn when the player has not styled one individually.
+   * A link's own `shape` still wins, so a per-belt choice made in the
+   * inspector survives changing this.
+   */
+  linkShape: LinkShape;
+
   // --- Venture Capital addon ------------------------------------------------
   vc: VentureState;
   loans: Loan[];
+
+  // --- ESG addon ------------------------------------------------------------
+  esg: EsgState;
 
   /** Per-tick derived values; not persisted meaningfully but harmless. */
   compute: ComputeReport;

@@ -4,6 +4,7 @@ import {
   ITEM_BY_ID,
   LINK_RATE_PER_SEC,
   MILESTONES,
+  featureEnabled,
   trackEnabled,
   building,
   listingFor,
@@ -15,6 +16,15 @@ import type { Recipe } from '../data';
 import { SHARED, type Pool } from '../data/vendors';
 import { spawnOffer, tickMarket } from './market';
 import { tickVenture } from './venture';
+import {
+  emptySurvey,
+  esgBillPerMonth,
+  surveyNode,
+  tickEsg,
+  writeEsg,
+  type EsgEvents,
+} from './esg';
+import { coolingOf, effectiveFootprint } from './esgRules';
 import {
   agentHasWork,
   agentHeadcount,
@@ -28,7 +38,7 @@ import {
 } from './agents';
 import type { ContractOffer, GameState, Machine, MachineStatus, PoolReport } from './types';
 
-export interface TickEvents extends AgentEvents {
+export interface TickEvents extends AgentEvents, EsgEvents {
   /** Milestone ids completed during this batch of ticks. */
   milestonesCompleted: string[];
   /** One entry per breach suffered: the $ lost. */
@@ -238,6 +248,9 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
   let slop = 0;
   let drift = 0;
   let burnPerMonth = 0;
+  // The ESG addon's physical survey rides along in this same pass: the power,
+  // water, land, labour and provenance the factory has been externalising.
+  const survey = emptySurvey();
 
   // The servers you already run. Only the shared pool gets this; a provider's
   // rate limit is not something you can self-provision.
@@ -261,16 +274,23 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
     // Drift is how much of the company is acting without you. The Reviewer is
     // the only negative term, which is what makes oversight a purchase.
     drift += b.agentDrift ?? 0;
+    // Footprint is architectural too: a rack you own draws power whether or
+    // not it happens to be mid-craft right now.
+    surveyNode(survey, m.buildingId, m.recipeId, m.clock, coolingOf(m));
 
     const p = poolOf(m);
     if (p === null) continue; // capacity node with no provider chosen
     if (!wouldWork(m, r)) continue;
 
     if (b.kind === 'capacity') {
+      // A water restriction rations cooling, and a rack you cannot cool is a
+      // rack you cannot run flat out. This costs throughput, not cash, which is
+      // what makes it the nastiest event in the ESG addon.
+      const curtail = curtailFactor(state, b.powerKw);
       if (b.servesNodes !== undefined) {
-        freeTiers.push({ p, supply: machineComputeSupply(m), serves: b.servesNodes });
+        freeTiers.push({ p, supply: machineComputeSupply(m) * curtail, serves: b.servesNodes });
       } else {
-        pool(p).supplyKtpm += machineComputeSupply(m);
+        pool(p).supplyKtpm += machineComputeSupply(m) * curtail;
       }
     } else {
       const slot = pool(p);
@@ -305,6 +325,13 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
   state.exposure = Math.max(0, exposure + state.slopExposureSpike);
   state.slop = Math.max(0, slop);
   state.agentDrift = Math.max(0, Math.min(100, drift));
+  // Written whether or not the addon is on, so switching it on mid-run shows a
+  // number that was already true rather than one that starts at zero.
+  writeEsg(state, survey);
+  // Folded into the burn rather than debited separately, so the power bill
+  // flows through operatingPerMin and the top bar cannot show a net figure that
+  // quietly excludes the electricity.
+  burnPerMonth += esgBillPerMonth(state);
 
   // 1b --- the hardware price index ----------------------------------------
   // Progress, not wall clock: a slow player is not punished for thinking. The
@@ -318,7 +345,10 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
       clamp01(
         BALANCE.priceIndexProgressWeight * clamp01(progress) +
           BALANCE.priceIndexBuildoutWeight * clamp01(buildout),
-      );
+      ) +
+    // An export-control shock (ESG addon) lands on top and decays away, the
+    // same shape a legal fine's Exposure spike has.
+    state.esg.shockSpike;
 
   // 2 --- rent --------------------------------------------------------------
   state.credits -= (burnPerMonth / BALANCE.monthSeconds) * dt;
@@ -375,6 +405,7 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
   // 4 --- run nodes ---------------------------------------------------------
   let revenuePerMin = 0;
   let cogsPerMin = 0;
+  const esgOn = featureEnabled('esg', state.addons);
 
   for (const m of machines) {
     const b = building(m.buildingId);
@@ -412,9 +443,30 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
         (state.breachFreeze > 0 ||
           (r.maxExposure !== undefined && state.exposure > r.maxExposure)));
 
+    // The ESG addon's own gate. It reads the number you PUBLISHED, falling back
+    // to the truth when you have published nothing — so not disclosing is
+    // honest by default and the lie has to be chosen. Reported separately from
+    // `audited` so the inspector can say which of the two doors is shut.
+    const esgHold =
+      isContract &&
+      esgOn &&
+      ((r.requiresDisclosure === true && state.esg.disclosure === null) ||
+        (r.maxFootprint !== undefined && effectiveFootprint(state) > r.maxFootprint));
+
+    // A labour dispute stops the part of the factory that runs on people.
+    const disputed = esgOn && state.esg.disputeFreeze > 0 && (b.laborLoad ?? 0) > 0;
+
     if (!m.crafting) {
       if (onHold) {
         state.status[m.id] = 'audited';
+        continue;
+      }
+      if (esgHold) {
+        state.status[m.id] = 'disclosed';
+        continue;
+      }
+      if (disputed) {
+        state.status[m.id] = 'disputed';
         continue;
       }
       // An agent with nobody to report to does nothing — and still bills. The
@@ -536,6 +588,10 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
 
         state.credits += payout;
         m.revenueEarned = (m.revenueEarned ?? 0) + payout;
+        // Heat sold back to a district network. Tracked separately because it
+        // is the only line in the ESG addon that runs the other way, and the
+        // report's whole argument rests on being able to show it.
+        if (b.addon === 'esg') state.esg.heatRevenue += payout;
         // Only work actually SOLD counts toward the tech tree. A zero-payout
         // contract still delivers — which is what makes Post To Feed work.
         for (const s of r.inputs) {
@@ -557,9 +613,15 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
     cogsPerMin += machineCogsPerMin(m) * eff;
     state.status[m.id] = onHold
       ? 'audited'
-      : !isCapacity && satisfaction < 0.999
-        ? 'throttled'
-        : 'running';
+      : esgHold
+        ? 'disclosed'
+        : disputed
+          ? 'disputed'
+          : isCapacity && esgOn && state.esg.waterFreeze > 0 && (b.powerKw ?? 0) > 0
+            ? 'curtailed'
+            : !isCapacity && satisfaction < 0.999
+              ? 'throttled'
+              : 'running';
   }
 
   // Contracts pay in lumps, so the instantaneous rate swings wildly. Smooth it
@@ -590,6 +652,11 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
   // earned by a contract that is actually running, not one merely placed.
   tickAgents(state, dt, events);
 
+  // 4d --- ESG addon: the bill's bookkeeping, the incidents, the audit -------
+  // After the run loop, so `state.status` is current, and after tickVenture so
+  // nothing here can be mistaken for financing.
+  tickEsg(state, dt, events);
+
   // 5 --- move items along links -------------------------------------------
   transfer(state, dt);
 
@@ -601,6 +668,18 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
   checkMilestones(state, events);
 
   state.elapsed += dt;
+}
+
+/**
+ * What a capacity node still supplies while cooling water is rationed. 1 when
+ * the ESG addon is off, when no restriction is running, or for a rate limit
+ * bought from somebody else — you cannot ration a bill.
+ */
+function curtailFactor(state: GameState, powerKw: number | undefined): number {
+  if (!featureEnabled('esg', state.addons)) return 1;
+  if (state.esg.waterFreeze <= 0) return 1;
+  if (!powerKw) return 1;
+  return BALANCE.waterCurtailmentFactor;
 }
 
 function wouldWork(m: Machine, r: Recipe): boolean {
@@ -716,6 +795,9 @@ export function advance(state: GameState, seconds: number): TickEvents {
     agentVetoed: [],
     churned: [],
     runaways: [],
+    esgIncidents: [],
+    esgFines: [],
+    disclosuresPublished: [],
   };
   const dt = BALANCE.tickSeconds;
   // Cap catch-up so a backgrounded tab does not freeze on resume.
@@ -741,6 +823,9 @@ export const statusLabel: Record<MachineStatus, string> = {
   broken: 'Blown',
   unfocused: 'No matching work',
   unmanaged: 'No Ops Console',
+  curtailed: 'Water restricted',
+  disputed: 'Labour dispute',
+  disclosed: 'Disclosure required',
 };
 
 /** Headcount right now, for the UI: placed against what the Console allows. */

@@ -69,6 +69,28 @@ export interface Recipe {
   slopSale?: 'generic' | 'nsfw';
   /** This craft can produce nothing at all — the distraction risk. */
   slopGenerated?: boolean;
+
+  // --- ESG addon ----------------------------------------------------------
+  /**
+   * Contract refuses to run above this Footprint. Mirrors `maxExposure`, with
+   * one difference that is the whole point of the addon: it reads the number
+   * you PUBLISHED, falling back to the real one when you have published
+   * nothing. Not disclosing is honest by default; the lie has to be chosen.
+   */
+  maxFootprint?: number;
+  /**
+   * Contract will not run at all without a currently-valid disclosure on file.
+   * Only ever put on a contract unlocked AFTER the Sustainability Officer, or
+   * the gate shuts before the player owns the tool that opens it.
+   */
+  requiresDisclosure?: boolean;
+  /**
+   * Added to the Governance score while this recipe is the one selected. Where
+   * the training corpus came from is a choice made per craft, not per chassis.
+   */
+  provenanceRisk?: number;
+  /** Litres per craft, for water that is not a function of how a building is cooled. */
+  waterLitres?: number;
 }
 
 import type { BuildingTier } from './buildings';
@@ -178,6 +200,18 @@ export const RECIPES: Recipe[] = [
   // ======================================================================
   // COMPLIANCE — recurring attestations. Contracts consume them.
   // ======================================================================
+  // --- ESG addon: overhead bought against a number that was already running.
+  { id: 'esg_own',      name: 'Own The Number',  buildingId: 'sustainability_officer', seconds: 20, inputs: [], outputs: [], note: 'Reads every meter in the company and writes it down. Publishing what it finds is a separate decision, and it is yours.' },
+  { id: 'esg_ppa',      name: 'Contract Clean Supply', buildingId: 'renewable_ppa', seconds: 30, inputs: [], outputs: [], note: 'Annual matching against hourly consumption is the whole argument about corporate clean power. This buys the matching, not the hours.' },
+  { id: 'esg_dr',       name: 'Shed On Signal',  buildingId: 'demand_response', seconds: 20, inputs: [], outputs: [], note: 'The utility pays you to be somewhere else when the grid is tight. Nothing about your carbon changes; the invoice does.' },
+  { id: 'esg_retrofit', name: 'Run Sealed',      buildingId: 'closed_loop', seconds: 40, inputs: [], outputs: [], note: 'Sealed loop, dry coolers, no evaporation. Unlocks closed-loop cooling on every node you own.' },
+  { id: 'esg_heat',     name: 'Recover Heat',    buildingId: 'heat_recovery', seconds: 14, inputs: [], outputs: [i('waste_heat', 6)], cost: 8, requiresOnSite: { tier: 'Capacity', count: 2 }, note: 'A rack rejects heat at about 30C and a district network wants 70C, so the heat pump is most of the cost. Needs real capacity on site — there is nothing to recover from a rate limit.' },
+  { id: 'esg_credits',  name: 'Retire Tonnes',   buildingId: 'carbon_desk', seconds: 25, inputs: [], outputs: [i('carbon_credit', 1)], cost: 12000, note: 'A 2023 investigation into one major registry concluded the large majority of its rainforest credits represented no real reduction. The auditor has read it; the relief here is discounted accordingly.' },
+  { id: 'esg_annotate', name: 'Label Properly',  buildingId: 'annotation_coop', seconds: 16, inputs: [i('document', 3)], outputs: [i('annotated_data', 4)], cost: 40, note: 'A living wage, a contract, and somebody to talk to after a shift on the moderation queue. A Kenyan court ruled in 2025 that moderators could bring their claims there.' },
+  { id: 'esg_ts',       name: 'Review The Queue',buildingId: 'trust_safety', seconds: 12, inputs: [], outputs: [], note: 'Looks at what the pipeline is about to ship, and at what looking at it does to the people doing the looking.' },
+  { id: 'esg_ledger',   name: 'Track Provenance',buildingId: 'provenance_ledger', seconds: 18, inputs: [], outputs: [], note: 'C2PA manifests out, data cards in. Unglamorous, and the only thing that survives an audit.' },
+  { id: 'esg_assure',   name: 'Commission Assurance', buildingId: 'esg_auditor', seconds: 45, inputs: [], outputs: [i('esg_report', 1)], cost: 3000, note: 'An assurance firm puts its own name on your number. That signature is what a procurement officer is actually buying.' },
+
   { id: 'run_soc2',     name: 'Maintain SOC 2',   buildingId: 'soc2_program',   seconds: 60, inputs: [], outputs: [i('soc2', 2)], note: 'The 3-12 month observation window is the point. You cannot pay to skip time.' },
   { id: 'run_iso',      name: 'Maintain ISO 42001',buildingId:'iso_program',    seconds: 60, inputs: [], outputs: [i('iso42001', 2)], note: 'The only AI framework that produces a certificate a procurement officer accepts.' },
   { id: 'run_hipaa',    name: 'Maintain HIPAA',   buildingId: 'hipaa_program',  seconds: 60, inputs: [], outputs: [i('hipaa_baa', 2)] },
@@ -200,7 +234,10 @@ export const RECIPES: Recipe[] = [
   // TRAINING — Act III-A
   // ======================================================================
   { id: 'get_weights', name: 'Pull Weights',   buildingId: 'weights_mirror', seconds: 20, inputs: [], outputs: [i('open_weights', 2)], note: 'Llama, Qwen, DeepSeek, Mistral Large 3. Free to download; the GPUs to serve them are not.' },
-  { id: 'curate',      name: 'Curate Corpus',  buildingId: 'data_curation',  seconds: 12, inputs: [i('web_page', 6), i('document', 2)], outputs: [i('training_tokens', 6)], cost: 4, note: 'Common Crawl is free. Licensed data is a $10M-250M annual lump sum, not a per-token price.' },
+  { id: 'curate',      name: 'Curate Corpus',  buildingId: 'data_curation',  seconds: 12, inputs: [i('web_page', 6), i('document', 2)], outputs: [i('training_tokens', 6)], cost: 4, provenanceRisk: 6, note: 'Common Crawl is free, and free is what a lawsuit gets priced against. Scrape it, dedupe it, and hope nobody asks where any particular sentence came from.' },
+  { id: 'curate_licensed',name:'Licensed Corpus',buildingId: 'data_curation',  seconds: 12, inputs: [i('web_page', 4), i('document', 4)], outputs: [i('training_tokens', 7)], cost: 260, provenanceRisk: 0, note: 'A $10M-250M annual lump sum, not a per-token price. Everything in the pile has a name and a signature behind it, and the price is what that costs.' },
+  { id: 'curate_annotated',name:'Annotated Corpus',buildingId:'data_curation', seconds: 12, inputs: [i('annotated_data', 4)], outputs: [i('training_tokens', 9)], cost: 30, provenanceRisk: 0, note: 'Labelled by people who were paid for it. The best tokens per craft in the game, and the co-op that makes them costs more per month than most contracts pay.' },
+  { id: 'curate_synth', name: 'Synthetic Corpus',buildingId: 'data_curation',  seconds: 9,  inputs: [i('draft_answer', 10)], outputs: [i('training_tokens', 8)], cost: 12, provenanceRisk: 3, note: 'Generate your own training data. Epoch puts the exhaustion of usable public text somewhere between 2026 and 2032, so everyone is trying it — and a model trained on model output drifts. This raises the Slop Index for exactly that reason.' },
   { id: 'lora',        name: 'LoRA Fine-Tune', buildingId: 'finetune_job',   seconds: 30, inputs: [i('open_weights', 1), i('training_tokens', 20)], outputs: [i('lora_adapter', 1)], cost: 300, note: 'Together: $0.48 per 1M tokens under 16B. Adapters are megabytes and hot-swap onto one served base.' },
   { id: 'full_tune',   name: 'Domain Tune',    buildingId: 'finetune_job',   seconds: 60, inputs: [i('open_weights', 1), i('training_tokens', 60), i('lora_adapter', 2)], outputs: [i('tuned_model', 1)], cost: 1500, note: 'OpenAI stops accepting new fine-tuning jobs on 6 Jan 2027. Open weights are the only path left.' },
 
@@ -225,14 +262,14 @@ export const RECIPES: Recipe[] = [
   { id: 'c_consumer_raw',name:'Freemium Tier',   buildingId: 'consumer_app', seconds: 12, inputs: [i('draft_answer', 8)], outputs: [], payout: 9,   maxExposure: 90, note: 'Ship ungraded output to free users. It pays almost nothing and it is how most products start.' },
   { id: 'c_consumer',   name: 'Prosumer Subs',   buildingId: 'consumer_app',  seconds: 12, inputs: [i('answer', 6)], outputs: [], payout: 17, maxExposure: 70, note: '$3 an answer-unit. Consumers never run a security review — and never pay enterprise money either.' },
   { id: 'c_smb',        name: 'SMB Pilot',       buildingId: 'smb_pilot',     seconds: 16, inputs: [i('verified_answer', 8)], outputs: [], payout: 56, maxExposure: 45, note: 'ACV under $15k, closes in 14-30 days. Roughly 10-15% of pilots ever reach production.' },
-  { id: 'c_mid',        name: 'Mid-Market SaaS', buildingId: 'midmarket',     seconds: 30, inputs: [i('verified_answer', 20), i('soc2', 1)], outputs: [], payout: 270, maxExposure: 30, note: 'They will not sign without SOC 2, and they will ask who your subprocessors are.' },
-  { id: 'c_ent',        name: 'Enterprise Seats',buildingId: 'enterprise',    seconds: 40, inputs: [i('verified_answer', 24), i('agent_run', 4), i('iso42001', 1)], outputs: [], payout: 1050, maxExposure: 18, note: 'Median B2B cycle is 84 days and rising — the delay is security due diligence, which is to say Exposure.' },
-  { id: 'c_ent_agents', name: 'Enterprise Agents',buildingId:'enterprise',    seconds: 40, inputs: [i('agent_workflow', 6), i('iso42001', 1)], outputs: [], payout: 1800, maxExposure: 18, note: 'Outcome pricing. You get paid for work delivered, and you eat the cost of every failed attempt.' },
-  { id: 'c_reg',        name: 'Health / Finance',buildingId: 'regulated',     seconds: 45, inputs: [i('verified_answer', 40), i('hipaa_baa', 1), i('soc2', 1)], outputs: [], payout: 5400, maxExposure: 10, note: 'HIPAA, HITRUST, FFIEC, SR 11-7. Pays extremely well and will not let your data leave the building.' },
-  { id: 'c_fed',        name: 'Federal Program', buildingId: 'federal',       seconds: 60, inputs: [i('sovereign_answer', 60), i('fedramp', 1)], outputs: [], payout: 22000, maxExposure: 4, note: 'DoD took 98.9% of $91.8B in 2026 federal AI award value. Sovereign output only — no exceptions.' },
+  { id: 'c_mid',        name: 'Mid-Market SaaS', buildingId: 'midmarket',     seconds: 30, inputs: [i('verified_answer', 20), i('soc2', 1)], outputs: [], payout: 270, maxExposure: 30, maxFootprint: 72, note: 'They will not sign without SOC 2, and they will ask who your subprocessors are.' },
+  { id: 'c_ent',        name: 'Enterprise Seats',buildingId: 'enterprise',    seconds: 40, inputs: [i('verified_answer', 24), i('agent_run', 4), i('iso42001', 1)], outputs: [], payout: 1050, maxExposure: 18, maxFootprint: 55, requiresDisclosure: true, note: 'Median B2B cycle is 84 days and rising — the delay is security due diligence, which is to say Exposure.' },
+  { id: 'c_ent_agents', name: 'Enterprise Agents',buildingId:'enterprise',    seconds: 40, inputs: [i('agent_workflow', 6), i('iso42001', 1)], outputs: [], payout: 1800, maxExposure: 18, maxFootprint: 55, requiresDisclosure: true, note: 'Outcome pricing. You get paid for work delivered, and you eat the cost of every failed attempt.' },
+  { id: 'c_reg',        name: 'Health / Finance',buildingId: 'regulated',     seconds: 45, inputs: [i('verified_answer', 40), i('hipaa_baa', 1), i('soc2', 1)], outputs: [], payout: 5400, maxExposure: 10, maxFootprint: 42, requiresDisclosure: true, note: 'HIPAA, HITRUST, FFIEC, SR 11-7. Pays extremely well and will not let your data leave the building.' },
+  { id: 'c_fed',        name: 'Federal Program', buildingId: 'federal',       seconds: 60, inputs: [i('sovereign_answer', 60), i('fedramp', 1)], outputs: [], payout: 22000, maxExposure: 4, maxFootprint: 30, requiresDisclosure: true, note: 'DoD took 98.9% of $91.8B in 2026 federal AI award value. Sovereign output only — no exceptions.' },
   { id: 'c_hw_chips',   name: 'Sell Accelerators',buildingId:'hyperscaler',   seconds: 25, inputs: [i('accelerator', 40)], outputs: [], payout: 1500000, note: 'BOM on a GB200-class part is ~$14,200 against a ~$65,000 street price. 78% gross margin.' },
   { id: 'c_hw_racks',   name: 'Sell Racks',      buildingId: 'hyperscaler',   seconds: 30, inputs: [i('gpu_rack', 1)], outputs: [], payout: 3100000, note: 'Hyperscaler capex for 2026 is guided near $710B across the big four. They are buying everything you can build.' },
-  { id: 'c_api',        name: 'Run API Platform',buildingId: 'api_platform',  seconds: 60, inputs: [i('frontier_model', 1), i('sovereign_answer', 300)], outputs: [i('frontier_model', 1)], payout: 11000000, maxExposure: 20, note: 'Anthropic reported a $65B run rate; OpenAI $40B+. Pure token resale earns 0% — OpenRouter takes no markup at all.' },
+  { id: 'c_api',        name: 'Run API Platform',buildingId: 'api_platform',  seconds: 60, inputs: [i('frontier_model', 1), i('sovereign_answer', 300)], outputs: [i('frontier_model', 1)], payout: 11000000, maxExposure: 20, maxFootprint: 50, requiresDisclosure: true, note: 'Anthropic reported a $65B run rate; OpenAI $40B+. Pure token resale earns 0% — OpenRouter takes no markup at all.' },
 
   // ======================================================================
   // HOME LAB — weights, parts, and throughput you own
@@ -295,6 +332,7 @@ export const RECIPES: Recipe[] = [
   // ======================================================================
   // CONTRACTS — SME on-prem. The audit is the mechanic.
   // ======================================================================
+  { id: 'c_heat',      name: 'District Heat',    buildingId: 'heat_offtake', seconds: 18, inputs: [i('waste_heat', 10)], outputs: [], payout: 120, maxExposure: 95, note: 'Stockholm Exergi has been buying data centre heat into the city network for years, and Meta hands Odense its waste heat for nothing. It pays badly, it never churns, and it is the only node in this addon that pays at all.' },
   { id: 'c_sme_pilot', name: 'SME On-Prem Pilot', buildingId: 'sme_pilot', seconds: 20, inputs: [i('onprem_answer', 10)], outputs: [], payout: 190, maxExposure: 65, requiresOnSite: { tier: 'Home Lab', count: 1 }, note: 'They will send someone to look at the machine. One to ten concurrent users needs a 24GB card — that is the entire hardware specification, and it is why this business exists.' },
   { id: 'c_sme_fleet', name: 'Managed On-Prem',   buildingId: 'sme_fleet', seconds: 35, inputs: [i('onprem_answer', 30), i('verified_answer', 6)], outputs: [], payout: 1150, maxExposure: 45, requiresOnSite: { tier: 'Home Lab', count: 3 }, note: 'You are not selling answers any more. You are selling someone else\'s server, and you are on the hook when it dies.' },
   { id: 'c_sme_msp',   name: 'Regional MSP',      buildingId: 'sme_msp',   seconds: 45, inputs: [i('onprem_answer', 80)], outputs: [], payout: 6400, maxExposure: 32, requiresOnSite: { tier: 'Home Lab', count: 6 }, note: 'Every box you have sold is a box you now maintain. GDPR fines reach 4% of global annual turnover, and that is the number that pays your invoice.' },

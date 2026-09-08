@@ -14,6 +14,7 @@
     "card": "node tools/build-reference-card.mjs",
     "progression": "node tools/progression-test.mjs",
     "check:agents": "node tools/agent-test.mjs",
+    "check:esg": "node tools/esg-test.mjs",
     "cf:login": "wrangler login",
     "cf:whoami": "wrangler whoami",
     "deploy": "npm run check:secrets && npm run build && wrangler deploy",

@@ -22,10 +22,12 @@ import {
   declineRaise,
   drawLoan,
   loanProceeds,
+  onDemandRaiseOffer,
   raiseOfferFor,
   type RaiseOffer,
 } from '../engine/venture';
-import type { GameState } from '../engine/types';
+import { buyCarbonCredits, publishDisclosure } from '../engine/esg';
+import type { GameState, LinkShape } from '../engine/types';
 import type { AddonId } from '../data/addons';
 import { money } from './format';
 
@@ -79,6 +81,15 @@ export function useGame() {
    * what you unlocked, then decide whether to fund it.
    */
   const [pendingRaise, setPendingRaise] = useState<RaiseOffer | null>(null);
+  /**
+   * The on-demand raise dialog, opened from the Venture Capital tooltip
+   * rather than fired by a milestone. `raiseFundOpen` is the dialog's
+   * visibility; `raiseFundOffer` is that dialog's own snapshot, taken once
+   * at open time so its terms don't drift while the player is reading them —
+   * `null` there means "no room on the cap table," not "not open."
+   */
+  const [raiseFundOpen, setRaiseFundOpen] = useState(false);
+  const [raiseFundOffer, setRaiseFundOffer] = useState<RaiseOffer | null>(null);
 
   const repaint = useCallback(() => bump(), []);
 
@@ -122,6 +133,8 @@ export function useGame() {
     setPendingUnlock(null);
     setFreshUnlocks([]);
     setPendingRaise(null);
+    setRaiseFundOpen(false);
+    setRaiseFundOffer(null);
     if (import.meta.env.DEV) {
       const bridge = (window as unknown as { __ai?: Record<string, unknown> }).__ai;
       if (bridge) bridge.state = stateRef.current;
@@ -240,6 +253,20 @@ export function useGame() {
       for (const loss of events.runaways) {
         toast(`A runaway agent spent ${money(loss)} on its own. Drift is too high.`, 'bad');
       }
+      // ESG addon. Each of these stops something rather than merely costing
+      // money, so none of them may pass silently.
+      for (const incident of events.esgIncidents) {
+        toast(incident.detail, 'bad');
+      }
+      for (const f of events.esgFines) {
+        toast(
+          `Your disclosure was audited and it was ${Math.round(f.gap)} points optimistic. ${money(f.amount)} fine, and every contract that needed one has stopped.`,
+          'bad',
+        );
+      }
+      for (const d of events.disclosuresPublished) {
+        toast(`Assurance complete — footprint ${Math.round(d.claimed)} published.`, 'good');
+      }
 
       if (now - lastRender >= RENDER_INTERVAL_MS) {
         lastRender = now;
@@ -270,6 +297,30 @@ export function useGame() {
     dismissUnlock: () => setPendingUnlock(null),
     freshUnlocks,
     pendingRaise,
+    raiseFundOpen,
+    raiseFundOffer,
+
+    /** Open the on-demand raise dialog, snapshotting today's terms. */
+    openRaiseFund: useCallback(() => {
+      setRaiseFundOffer(onDemandRaiseOffer(stateRef.current!));
+      setRaiseFundOpen(true);
+    }, []),
+
+    /** Close it without accepting. No side effect — it can be asked again later. */
+    closeRaiseFund: useCallback(() => setRaiseFundOpen(false), []),
+
+    /** Accept the on-demand raise offer shown in the dialog. */
+    confirmRaiseFund: useCallback(() => {
+      const state = stateRef.current!;
+      const offer = raiseFundOffer;
+      if (!offer) return;
+      const result = acceptRaise(state, offer);
+      if (result.ok) toast('Funding round closed', 'good');
+      else toast(result.reason, 'bad');
+      setRaiseFundOpen(false);
+      persist();
+      bump();
+    }, [raiseFundOffer, persist, toast]),
 
     /** Accept or decline the pending raise offer. Declining is permanent. */
     resolveRaise: useCallback((accept: boolean) => {
@@ -287,6 +338,42 @@ export function useGame() {
       persist();
       bump();
     }, [pendingRaise, persist, toast]),
+
+    /**
+     * Publish a footprint number (ESG addon).
+     *
+     * `claimed` is only honoured on the self-certified route — an assurance
+     * firm reports what it finds, which is the whole difference between them.
+     */
+    publishDisclosure: useCallback((mode: 'audit' | 'self', claimed?: number) => {
+      const state = stateRef.current!;
+      const result = publishDisclosure(state, mode, claimed);
+      if (!result.ok) {
+        toast(result.reason, 'bad');
+        return;
+      }
+      toast(
+        mode === 'audit'
+          ? 'Assurance engagement opened. The observation window is not something you can pay to skip.'
+          : `Self-certified at ${Math.round(claimed ?? state.esg.footprint)}. Nobody has checked it.`,
+        mode === 'audit' ? 'good' : 'info',
+      );
+      persist();
+      bump();
+    }, [persist, toast]),
+
+    /** Buy a block of carbon credits (ESG addon). Relief decays. */
+    buyCarbonCredits: useCallback(() => {
+      const state = stateRef.current!;
+      const result = buyCarbonCredits(state);
+      if (!result.ok) {
+        toast(result.reason, 'bad');
+        return;
+      }
+      toast('Credits retired. The auditor will allow rather less of that than you did.', 'info');
+      persist();
+      bump();
+    }, [persist, toast]),
 
     /** Draw a new bank loan. Multiple can be outstanding at once. */
     drawLoan: useCallback((amount: number) => {
@@ -325,6 +412,13 @@ export function useGame() {
      * this is a preference, and losing it to a crash before the next autosave
      * would be a small but pointless annoyance.
      */
+    /** Default belt style. Per-belt choices in the inspector still win. */
+    setLinkShape: useCallback((shape: LinkShape) => {
+      stateRef.current!.linkShape = shape;
+      persist();
+      bump();
+    }, []),
+
     setAddon: useCallback((id: AddonId, on: boolean) => {
       const state = stateRef.current!;
       state.addons = { ...state.addons, [id]: on };
@@ -370,6 +464,8 @@ export function useGame() {
         setPendingUnlock(null);
         setFreshUnlocks([]);
         setPendingRaise(null);
+        setRaiseFundOpen(false);
+        setRaiseFundOffer(null);
         if (import.meta.env.DEV) {
           const bridge = (window as unknown as { __ai?: Record<string, unknown> }).__ai;
           if (bridge) bridge.state = stateRef.current;

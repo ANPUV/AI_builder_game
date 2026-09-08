@@ -46,6 +46,14 @@ export const ADDONS = [
     defaultOn: false,
   },
   {
+    id: 'esg' as const,
+    kind: 'feature' as const,
+    name: 'ESG & Footprint',
+    blurb:
+      'The bill you have not been getting. Every rack you own draws power, drinks water and takes up land; the pipeline runs on people nobody photographs. Meter all of it, pay for it, and publish a number the big contracts will read — honestly, or not.',
+    defaultOn: false,
+  },
+  {
     id: 'ventureCapital' as const,
     kind: 'feature' as const,
     name: 'Venture Capital',
@@ -99,6 +107,7 @@ const TIER_TRACK: Partial<Record<BuildingTier, AddonId>> = {
   // milestones (they need the agent runs the main spine already produces), so
   // the tier is the only signal that they belong to the addon at all.
   'Agent Ops': 'agentic',
+  Sustainability: 'esg',
 };
 
 const BUILDINGS_BY_TRACK = new Map<AddonTrack, Set<string>>(

@@ -242,6 +242,59 @@ export function validateContent(): string[] {
     problems.push(`expected exactly one agent console, found ${consoles.length}`);
   }
 
+  // --- ESG addon ----------------------------------------------------------
+  // Nothing in the Sustainability tier sells anything: it is overhead bought
+  // against a number that was already running. The one exception is the heat
+  // contract, which lives in the Contracts tier with the rest of the board.
+  for (const b of BUILDINGS) {
+    if (b.tier !== 'Sustainability') continue;
+    if (b.monthlyCost <= 0) {
+      problems.push(`sustainability node "${b.id}" costs nothing to run — overhead that bills nothing teaches nothing`);
+    }
+    for (const r of RECIPES_BY_BUILDING[b.id] ?? []) {
+      if (r.payout !== undefined) {
+        problems.push(`sustainability recipe "${r.id}" has a payout — this tier is a cost, not a revenue line`);
+      }
+    }
+  }
+  // Exactly one officer, or the disclosure gate has nothing to hang off.
+  const officers = BUILDINGS.filter((b) => b.id === 'sustainability_officer');
+  if (BUILDINGS.some((b) => b.tier === 'Sustainability') && officers.length !== 1) {
+    problems.push(`expected exactly one sustainability officer, found ${officers.length}`);
+  }
+  for (const r of RECIPES) {
+    // A disclosure requirement with no ceiling is a door with no frame: the
+    // player publishes anything at all and walks through it.
+    if (r.requiresDisclosure && r.maxFootprint === undefined) {
+      problems.push(`recipe "${r.id}" requires a disclosure but sets no maxFootprint — publishing any number at all would satisfy it`);
+    }
+    if (r.maxFootprint !== undefined && r.payout === undefined) {
+      problems.push(`recipe "${r.id}" has a Footprint ceiling but is not a contract — only a customer can refuse over one`);
+    }
+  }
+  // A node that draws power but occupies no land, or takes land while drawing
+  // nothing, is almost always a data-entry slip rather than a design decision.
+  for (const b of BUILDINGS) {
+    if ((b.landUse ?? 0) > 0 && !(b.powerKw ?? 0) && b.tier !== 'Sustainability') {
+      problems.push(`building "${b.id}" takes up land but draws no power — check the ESG fields`);
+    }
+    if ((b.cleanFraction ?? 0) > 1) problems.push(`building "${b.id}" has cleanFraction above 1`);
+  }
+  // The first contract demanding a disclosure must not arrive before the node
+  // that can publish one, or the ladder dead-ends with nothing saying why.
+  {
+    const order: string[] = [];
+    for (const m of MILESTONES) order.push(...m.unlocksBuildings, ...m.unlocksRecipes);
+    const officerAt = order.indexOf('sustainability_officer');
+    for (const r of RECIPES) {
+      if (!r.requiresDisclosure) continue;
+      const at = order.indexOf(r.id);
+      if (at >= 0 && (officerAt < 0 || officerAt > at)) {
+        problems.push(`recipe "${r.id}" needs a disclosure but unlocks before the Sustainability Officer does`);
+      }
+    }
+  }
+
   problems.push(...unreachableMilestones());
   return problems;
 }

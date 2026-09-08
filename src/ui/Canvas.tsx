@@ -20,12 +20,14 @@ import {
   type Clipboard,
 } from '../engine/factory';
 import {
+  GRID,
   inboundPos,
   inputPortPos,
   linkPath,
   nodeHeight,
   NODE_W,
   outputPortPos,
+  snap,
   type Point,
 } from './geometry';
 import { inkOn, money } from './format';
@@ -283,8 +285,8 @@ export default function Canvas({
     // Background.
     if (pending) {
       const world = toWorld(e.clientX, e.clientY);
-      const x = Math.round(world.x - NODE_W / 2);
-      const y = Math.round(world.y - 30);
+      const x = snap(world.x - NODE_W / 2);
+      const y = snap(world.y - 30);
       const result = act((s) =>
         pending.offerId
           ? signOffer(s, pending.offerId, x, y)
@@ -339,12 +341,16 @@ export default function Canvas({
 
     if (drag.mode === 'node') {
       const world = toWorld(e.clientX, e.clientY);
-      const dx = world.x - drag.startWorld.x;
-      const dy = world.y - drag.startWorld.y;
       drag.moved = true;
+      // Snap the lead node onto the grid and move everything else by the same
+      // offset. Snapping each node on its own would land them all on the grid
+      // but silently rewrite the spacing of a selection the player arranged.
+      const lead = drag.origins[0];
+      const dx = snap(lead.x + world.x - drag.startWorld.x) - lead.x;
+      const dy = snap(lead.y + world.y - drag.startWorld.y) - lead.y;
       act((s) => {
         for (const o of drag.origins) {
-          moveMachine(s, o.id, Math.round(o.x + dx), Math.round(o.y + dy));
+          moveMachine(s, o.id, o.x + dx, o.y + dy);
         }
       });
       return;
@@ -496,7 +502,7 @@ export default function Canvas({
         held.pastes += 1;
         const x = at ? at.x : held.x + PASTE_STEP * held.pastes;
         const y = at ? at.y : held.y + PASTE_STEP * held.pastes;
-        const result = act((s) => pasteClipboard(s, held.clip, Math.round(x), Math.round(y)));
+        const result = act((s) => pasteClipboard(s, held.clip, snap(x), snap(y)));
         if (!result.ok) {
           toast(result.reason, 'bad');
           return;
@@ -544,7 +550,7 @@ export default function Canvas({
       });
   })();
   const links = Object.values(state.links);
-  const gridSize = 28 * view.zoom;
+  const gridSize = GRID * view.zoom;
   const selectedSet = new Set(selectedIds);
 
   return (
@@ -580,7 +586,7 @@ export default function Canvas({
             const d = linkPath(
               outputPortPos(from, link.itemId),
               inboundPos(to, link.itemId),
-              link.shape,
+              link.shape ?? state.linkShape,
             );
             const flowing = (from.outputs[link.itemId] ?? 0) > 0.001;
             const isSelected = selection?.kind === 'link' && selection.id === link.id;
@@ -604,7 +610,11 @@ export default function Canvas({
             );
           })}
           {ghost && (
-            <path className="wire ghost" d={linkPath(ghost.from, ghost.to)} pointerEvents="none" />
+            <path
+              className="wire ghost"
+              d={linkPath(ghost.from, ghost.to, state.linkShape)}
+              pointerEvents="none"
+            />
           )}
         </g>
       </svg>

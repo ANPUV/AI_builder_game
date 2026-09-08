@@ -183,15 +183,15 @@ footer { border-top:1px solid var(--line); padding-top:14px; color:var(--muted);
       <p class="sub">Every node, price and exposure ceiling in the game, generated straight from <code>src/data/</code>. Money only ever comes from contract nodes; everything else is cost.</p>
     </div>
     <div class="stampline">
-      <b>53</b> items · <b>104</b> buildings<br>
-      <b>136</b> recipes · <b>24</b> milestones · <b>18</b> contracts<br>
-      generated 2026-09-07 · <span style="color:var(--bad)">1 content problems</span>
+      <b>57</b> items · <b>124</b> buildings<br>
+      <b>159</b> recipes · <b>24</b> milestones · <b>19</b> contracts<br>
+      generated 2026-09-08 · <span style="color:var(--bad)">1 content problems</span>
     </div>
   </header>
 
   <div class="searchbar">
     <input id="q" type="search" placeholder="Filter nodes and items — try “verified”, “deepseek”, “capacity”" autocomplete="off" aria-label="Filter the catalog">
-    <span class="hint" id="qhint">104 nodes · 53 items</span>
+    <span class="hint" id="qhint">124 nodes · 57 items</span>
   </div>
 
   
@@ -267,6 +267,13 @@ footer { border-top:1px solid var(--line); padding-top:14px; color:var(--muted);
     <td class="num">$56</td>
     <td class="num">$210</td>
     <td><div class="ceil"><div class="track"><div class="fill" style="width:45%"></div></div><span class="v">45</span></div></td>
+  </tr><tr data-search="district heat offtake district heat waste heat">
+    <td><div class="nm" style="--gc:#e0704a"><span class="g">♨</span>District Heat Offtake</div>
+        <div class="sub2" style="padding-left:23px">District Heat</div></td>
+    <td><span class="stacks"><span class="chip" style="--c:#e0704a" title="Waste Heat — Very nearly all the electricity a rack draws leaves it again as heat. The only question is whether anybody catches it."><b>♨</b>Waste Heat<i>10</i></span></span></td>
+    <td class="num">$120</td>
+    <td class="num">$400</td>
+    <td><div class="ceil"><div class="track"><div class="fill" style="width:95%"></div></div><span class="v">95</span></div></td>
   </tr><tr data-search="sme on-prem pilot sme on-prem pilot on-prem answer">
     <td><div class="nm" style="--gc:#4a9f6a"><span class="g">◍</span>SME On-Prem Pilot</div>
         <div class="sub2" style="padding-left:23px">SME On-Prem Pilot</div></td>
@@ -937,15 +944,15 @@ footer { border-top:1px solid var(--line); padding-top:14px; color:var(--muted);
       <div class="stat"><span>place <b>$200</b></span><span>draws <b>5k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>Own The Weights</b></span></div>
       <div style="display:flex;flex-direction:column;gap:5px"><span class="io">makes <span class="stacks"><span class="chip" style="--c:#8a8f9e" title="Open Weights — Llama, Qwen, DeepSeek, Mistral Large 3. Free to download. Expensive to serve."><b>⬡</b>Open Weights</span></span></span></div>
     </div>
-  </div><div class="node" data-search="data curation data_curation training factory common crawl is free; licensed corpora are $10m-250m annual lump sums. dedupe and filter or you train on slop. curate corpus training tokens web page customer document">
+  </div><div class="node" data-search="data curation data_curation training factory common crawl is free; licensed corpora are $10m-250m annual lump sums. dedupe and filter or you train on slop. curate corpus licensed corpus annotated corpus synthetic corpus training tokens web page customer document annotated data draft answer">
     <div class="id">
       <div class="t" style="--gc:#6b7f6b"><span class="g">≋</span>Data Curation</div>
       <div class="m"><span class="kind">Factory</span> data_curation</div>
     </div>
     <div class="body">
       <p>Common Crawl is free; licensed corpora are $10M-250M annual lump sums. Dedupe and filter or you train on slop.</p>
-      <div class="stat"><span>place <b>$4,000</b></span><span>rent <b>$800/mo</b></span><span>draws <b>200k</b></span><span>risk <span class="risk warn">+3</span></span><span>unlocked by <b>Own The Weights</b></span></div>
-      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#5f8a7a" title="Web Page — Fetched by a search API. Exa $7/1k, Tavily $8/1k, Brave $5/1k."><b>⌘</b>Web Page</span><span class="chip" style="--c:#8a7f6b" title="Customer Document — The private corpus. This is what makes RAG worth building."><b>▤</b>Customer Document</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#4ce0c8" title="Training Tokens — Chinchilla says ~20 tokens per parameter. Modern frontier runs go far past that to cut serving cost."><b>⁂</b>Training Tokens</span></span></span></div>
+      <div class="stat"><span>place <b>$4,000</b></span><span>rent <b>$800/mo</b></span><span>draws <b>200k</b></span><span>risk <span class="risk warn">+3</span></span><span>unlocked by <b>Own The Weights</b></span><span><b>4</b> recipes</span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#5f8a7a" title="Web Page — Fetched by a search API. Exa $7/1k, Tavily $8/1k, Brave $5/1k."><b>⌘</b>Web Page</span><span class="chip" style="--c:#8a7f6b" title="Customer Document — The private corpus. This is what makes RAG worth building."><b>▤</b>Customer Document</span><span class="chip" style="--c:#7ac96b" title="Annotated Data — Labelled by people who were paid properly for it. Cleaner than a crawl and far more expensive."><b>☗</b>Annotated Data</span><span class="chip" style="--c:#8f9bb3" title="Draft Answer — Ungraded output from a cheap model. Needs a judge before you can ship it."><b>○</b>Draft Answer</span></span></span><span class="io">makes <span class="stacks"><span class="chip" style="--c:#4ce0c8" title="Training Tokens — Chinchilla says ~20 tokens per parameter. Modern frontier runs go far past that to cut serving cost."><b>⁂</b>Training Tokens</span></span></span></div>
     </div>
   </div><div class="node" data-search="fine-tune job finetune_job training factory together charges $0.48 per 1m tokens for a &lt;=16b lora. a 7b run on 10m tokens costs about $5. lora fine-tune domain tune lora adapter tuned model open weights training tokens lora adapter">
     <div class="id">
@@ -1068,7 +1075,7 @@ footer { border-top:1px solid var(--line); padding-top:14px; color:var(--muted);
     <p class="empty hidden">Nothing in Silicon matches.</p>
   </div><div class="sec" data-group>
     <header style="border-top:none;padding-top:0">
-      <p class="eyebrow">Contracts · 15 nodes</p>
+      <p class="eyebrow">Contracts · 16 nodes</p>
       <p class="lede">The only source of revenue in the game. Each one audits your Exposure before it pays.</p>
     </header>
     <div class="nodelist"><div class="node" data-search="consumer app consumer_app contracts contract prosumer subscriptions. pays little per answer, never does security review, churns constantly. freemium tier prosumer subs draft answer answer">
@@ -1180,6 +1187,16 @@ footer { border-top:1px solid var(--line); padding-top:14px; color:var(--muted);
       <p>Every box you have sold is a box you now maintain. The margin is real and so is the pager. GDPR fines reach 4% of global annual turnover.</p>
       <div class="stat"><span>place <b>$150k</b></span><span>draws <b>30k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>The Rack In The Basement</b></span></div>
       <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#3fc46a" title="On-Prem Answer — Generated on a box in the customer's own building. Never crossed a network they do not own — which is the entire product."><b>◈</b>On-Prem Answer</span></span></span></div>
+    </div>
+  </div><div class="node" data-search="district heat offtake heat_offtake contracts contract the municipal heat utility next door will take everything you can lift to 70c. stockholm has been buying data centre heat for years and meta gives odense its waste heat for nothing. it pays little and it never churns. district heat waste heat">
+    <div class="id">
+      <div class="t" style="--gc:#e0704a"><span class="g">♨</span>District Heat Offtake</div>
+      <div class="m"><span class="kind">Contract</span> heat_offtake</div>
+    </div>
+    <div class="body">
+      <p>The municipal heat utility next door will take everything you can lift to 70C. Stockholm has been buying data centre heat for years and Meta gives Odense its waste heat for nothing. It pays little and it never churns.</p>
+      <div class="stat"><span>place <b>$9,000</b></span><span>rent <b>$600/mo</b></span><span>draws <b>4k</b></span><span>risk <span class="risk zero">0</span></span><span>unlocked by <b>The Security Review</b></span></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><span class="io">takes <span class="stacks"><span class="chip" style="--c:#e0704a" title="Waste Heat — Very nearly all the electricity a rack draws leaves it again as heat. The only question is whether anybody catches it."><b>♨</b>Waste Heat</span></span></span></div>
     </div>
   </div><div class="node" data-search="post to feed feed_post contracts contract you spent real money to make this and nobody is going to pay you for it. attention was the thing you were buying. post to feed generated text generated image">
     <div class="id">
@@ -1323,6 +1340,11 @@ footer { border-top:1px solid var(--line); padding-top:14px; color:var(--muted);
       <td class="num">$11</td>
       <td class="desc">Generated on a box in the customer's own building. Never crossed a network they do not own — which is the entire product.</td>
       <td class="sub2">Qwen3 Local 32B, gpt-oss-120b Local</td>
+    </tr><tr data-search="annotated data annotated_data labelled by people who were paid properly for it. cleaner than a crawl and far more expensive.">
+      <td><span class="chip" style="--c:#7ac96b" title="Annotated Data — Labelled by people who were paid properly for it. Cleaner than a crawl and far more expensive."><b>☗</b>Annotated Data</span></td>
+      <td class="num">$14</td>
+      <td class="desc">Labelled by people who were paid properly for it. Cleaner than a crawl and far more expensive.</td>
+      <td class="sub2">Annotation Co-op</td>
     </tr></tbody></table></div>
     <p class="empty hidden">No match.</p>
   </div><div class="sec" data-group>
@@ -1354,6 +1376,16 @@ footer { border-top:1px solid var(--line); padding-top:14px; color:var(--muted);
       <td class="num">—</td>
       <td class="desc">One AI lab settled a training-data class action for $1.5B over roughly 500,000 works — about $3,000 each. This is one of those.</td>
       <td class="sub2">—</td>
+    </tr><tr data-search="carbon credit carbon_credit a tonne somebody else did not emit, on a registry you did not audit. priced anywhere from three dollars to fifty, for reasons with little to do with tonnes.">
+      <td><span class="chip" style="--c:#4ca86b" title="Carbon Credit — A tonne somebody else did not emit, on a registry you did not audit. Priced anywhere from three dollars to fifty, for reasons with little to do with tonnes."><b>❋</b>Carbon Credit</span></td>
+      <td class="num">—</td>
+      <td class="desc">A tonne somebody else did not emit, on a registry you did not audit. Priced anywhere from three dollars to fifty, for reasons with little to do with tonnes.</td>
+      <td class="sub2">Carbon Credits Desk</td>
+    </tr><tr data-search="esg disclosure esg_report what a procurement officer asks for in place of asking what you actually run. csrd and issb both want one; neither of them checks the meter.">
+      <td><span class="chip" style="--c:#5f9e7a" title="ESG Disclosure — What a procurement officer asks for in place of asking what you actually run. CSRD and ISSB both want one; neither of them checks the meter."><b>⌑</b>ESG Disclosure</span></td>
+      <td class="num">—</td>
+      <td class="desc">What a procurement officer asks for in place of asking what you actually run. CSRD and ISSB both want one; neither of them checks the meter.</td>
+      <td class="sub2">ESG Audit</td>
     </tr></tbody></table></div>
     <p class="empty hidden">No match.</p>
   </div><div class="sec" data-group>

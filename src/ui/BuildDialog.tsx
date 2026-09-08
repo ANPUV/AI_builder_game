@@ -11,6 +11,7 @@ import {
   poolColor,
   takesItems,
   type Building,
+  type BuildingTier,
   type Pool,
   type Vendor,
 } from '../data';
@@ -26,9 +27,20 @@ import { useContent, useLang } from '../i18n/useLang';
 /** Tab order. 'Contracts' is special: it renders the contract board. */
 const TABS = [
   'Demand', 'Online Models', 'Local Models', 'Home Lab', 'Retrieval', 'Agents',
-  'Agent Ops', 'Slop', 'Compliance', 'Capacity', 'Training', 'Silicon', 'Contracts',
+  'Agent Ops', 'Slop', 'Compliance', 'Sustainability', 'Capacity', 'Training', 'Silicon',
+  'Contracts',
 ] as const;
 export type BuildTab = (typeof TABS)[number];
+
+/**
+ * Every BuildingTier must appear above, or that tier's nodes have no tab and
+ * become unbuildable from the UI with nothing anywhere saying why. Adding a
+ * tier without a tab is a silent failure, so make it a loud one: this line
+ * stops compiling the moment the two lists disagree.
+ */
+type MissingTab = Exclude<BuildingTier, BuildTab>;
+const _everyTierHasATab: MissingTab extends never ? true : MissingTab = true;
+void _everyTierHasATab;
 
 /**
  * Where a node runs, which is the distinction players actually shop by.

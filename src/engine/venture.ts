@@ -126,6 +126,45 @@ export function acceptRaise(state: GameState, offer: RaiseOffer): Outcome {
   return OK;
 }
 
+/** Size of a raise the player asks for directly, growing with progress the same way `loanCap` does. */
+export function onDemandRaiseCapital(state: GameState): number {
+  return (
+    BALANCE.vcOnDemandCapitalBase *
+    (1 + state.completedMilestones.length * BALANCE.vcOnDemandCapitalGrowthPerMilestone)
+  );
+}
+
+/**
+ * The term sheet on offer right now, for a raise the player asks for
+ * directly from the Venture Capital tooltip rather than one tied to a
+ * milestone landing. Same down-round and repayment-cap math as a milestone
+ * raise — `acceptRaise` doesn't care which produced the offer, it just needs
+ * a `milestoneId`-shaped key that can't collide with a real milestone, so
+ * this mints one instead of reusing an id from `MILESTONES`.
+ *
+ * Null only when the cap table has nothing left to sell — there is no
+ * "already decided" state for an on-demand raise the way there is for a
+ * milestone's one-time offer, so closing this one without accepting has no
+ * side effect and the player can just ask again later.
+ */
+export function onDemandRaiseOffer(state: GameState): RaiseOffer | null {
+  if (!featureEnabled('ventureCapital', state.addons)) return null;
+
+  const committed = activeSharePct(state);
+  const remaining = BALANCE.vcMaxTotalSharePct - committed;
+  if (remaining <= 0) return null;
+
+  const downRound = isDownRound(state);
+  const capital = onDemandRaiseCapital(state);
+  const asked =
+    BALANCE.vcBaseSharePct * (1 - committed) * (downRound ? BALANCE.vcDownRoundShareMult : 1);
+  const sharePct = Math.min(asked, remaining);
+  if (sharePct <= 0) return null;
+
+  const cap = downRound ? BALANCE.vcDownRoundRepaymentCap : BALANCE.vcRepaymentCap;
+  return { milestoneId: nextId('ondemand'), capital, sharePct, owed: capital * cap, downRound };
+}
+
 /** Turn the offer down. Permanent — mirrors a milestone itself only firing once. */
 export function declineRaise(state: GameState, milestoneId: string): void {
   if (!state.vc.declined.includes(milestoneId)) state.vc.declined.push(milestoneId);

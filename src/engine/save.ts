@@ -4,6 +4,7 @@ import {
   BUILDING_BY_ID,
   MILESTONE_BY_ID,
   RECIPE_BY_ID,
+  contractTermSeconds,
   listingFor,
 } from '../data';
 import { DEFAULT_ADDONS } from '../data/addons';
@@ -56,6 +57,16 @@ export function reviveState(parsed: GameState): GameState | null {
     if (m.recipeId && !RECIPE_BY_ID[m.recipeId]) m.recipeId = null;
     // A provider that no longer exists in the data leaves the node unconfigured.
     if (m.vendor && !ALL_VENDORS.includes(m.vendor as never)) m.vendor = null;
+    // Contract terms arrived after saves already existed. A customer signed
+    // before the feature has no term written down, and dating one from when it
+    // was signed would expire the whole book in the tick after the update — so
+    // an undated contract starts its first term now, and a chassis that has no
+    // term at all (nothing to pay, nothing to renew) keeps none.
+    const chassis = BUILDING_BY_ID[m.buildingId];
+    if (chassis.kind === 'contract' && m.termEndsAt === undefined) {
+      const term = contractTermSeconds(m.buildingId);
+      if (term > 0) m.termEndsAt = state.elapsed + term;
+    }
   }
   for (const l of Object.values(state.links)) {
     if (!state.machines[l.fromId] || !state.machines[l.toId]) delete state.links[l.id];

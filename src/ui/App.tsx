@@ -24,6 +24,7 @@ import UnlockPanel from './UnlockPanel';
 import VentureCapitalOffer from './VentureCapitalOffer';
 import { money } from './format';
 import { useGame } from './useGame';
+import { useTheme } from './useTheme';
 import { LangProvider, useLang } from '../i18n/useLang';
 
 export default function App({ onSignOut }: { onSignOut?: () => void } = {}) {
@@ -38,6 +39,14 @@ export default function App({ onSignOut }: { onSignOut?: () => void } = {}) {
 function GameShell({ onSignOut }: { onSignOut?: () => void }) {
   const { t } = useLang();
   const game = useGame();
+  /**
+   * Theme is owned here rather than by whichever component happens to draw its
+   * toggle. `useTheme` is local state that writes `data-theme` onto the root in
+   * an effect, so it has to live somewhere that is always mounted — hanging it
+   * off the Settings dialog would mean the page rendered unthemed until the
+   * player opened Settings, and flipped the moment they did.
+   */
+  const { theme, toggleTheme } = useTheme();
   // 2D is the editor you build in; the 3D floor is a view of what you built.
   // Opening straight into it put a camera between the player and the work.
   const [threeD, setThreeD] = useState(false);
@@ -185,6 +194,9 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
       </div>
       {settingsOpen && (
         <SettingsDialog
+          game={game}
+          theme={theme}
+          onToggleTheme={toggleTheme}
           addons={game.state.addons}
           onToggleAddon={game.setAddon}
           linkShape={game.state.linkShape}

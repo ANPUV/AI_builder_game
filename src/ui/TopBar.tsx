@@ -1,12 +1,9 @@
-import { useRef } from 'react';
 import { BALANCE, VENDORS, featureEnabled, poolColor, poolName, type Pool } from '../data';
 import { esgBillSplit } from '../engine/esg';
 import { disclosureGap } from '../engine/esgRules';
 import Tip from './Tip';
 import { agentCapacity } from '../engine/simulate';
 import { raiseCapReached } from '../engine/venture';
-import { useTheme } from './useTheme';
-import { LANGUAGES, type Lang } from '../i18n';
 import { useLang } from '../i18n/useLang';
 import type { Game } from './useGame';
 import { money, tpm } from './format';
@@ -32,11 +29,10 @@ export default function TopBar({
   onOpenSettings: () => void;
   onOpenEsg: () => void;
 }) {
-  const { state, speed, setSpeed, save, reset, togglePause, exportFile, importFile, savedAt } =
-    game;
-  const fileInput = useRef<HTMLInputElement>(null);
-  const { theme, toggleTheme } = useTheme();
-  const { lang, setLang, t } = useLang();
+  // Save, export, import, language, theme and reset all moved to the Settings
+  // dialog's Others tab: the bar keeps what you use while actually playing.
+  const { state, speed, setSpeed, togglePause, savedAt } = game;
+  const { t } = useLang();
   const paused = speed === 0;
   const { demandKtpm, supplyKtpm, satisfaction } = state.compute;
   // Show the pool that is hurting, not an average that hides it.
@@ -500,44 +496,6 @@ export default function TopBar({
         </span>
       )}
 
-      <button onClick={save}>{t('top.save')}</button>
-      <button onClick={exportFile} title={t('top.exportTitle')}>
-        {t('top.export')}
-      </button>
-      <button onClick={() => fileInput.current?.click()} title={t('top.importTitle')}>
-        {t('top.import')}
-      </button>
-      <input
-        ref={fileInput}
-        type="file"
-        accept="application/json,.json"
-        style={{ display: 'none' }}
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          // Reset the input so picking the same file twice still fires.
-          e.target.value = '';
-          if (file) void importFile(file);
-        }}
-      />
-      <select
-        className="lang-select"
-        value={lang}
-        title={t('top.language')}
-        aria-label={t('top.language')}
-        onChange={(e) => setLang(e.target.value as Lang)}
-      >
-        {LANGUAGES.map((l) => (
-          <option key={l.code} value={l.code}>
-            {l.label}
-          </option>
-        ))}
-      </select>
-      <button
-        onClick={toggleTheme}
-        title={theme === 'dark' ? t('top.toLight') : t('top.toDark')}
-      >
-        {theme === 'dark' ? '☀' : '☾'}
-      </button>
       {featureEnabled('esg', state.addons) && (
         <button onClick={onOpenEsg} title={t('esg.report')} aria-label={t('esg.report')}>
           ⚘
@@ -545,14 +503,6 @@ export default function TopBar({
       )}
       <button onClick={onOpenSettings} title={t('top.settings')} aria-label={t('top.settings')}>
         ⚙
-      </button>
-      <button
-        className="danger"
-        onClick={() => {
-          if (confirm(t('top.resetConfirm'))) reset();
-        }}
-      >
-        {t('top.reset')}
       </button>
       {onSignOut && <button onClick={onSignOut}>{t('top.signOut')}</button>}
     </div>

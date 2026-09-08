@@ -57,6 +57,16 @@ export interface Machine {
   /** `elapsed` when this contract was signed. Buys it an onboarding grace. */
   signedAt?: number;
 
+  // --- contract term ------------------------------------------------------
+  /**
+   * `elapsed` at which this contract's term runs out and the node freezes.
+   * Absent on anything that is not a contract, and on contracts that pay
+   * nothing — those have no term. See BALANCE.contractTermMonthsPerDecade.
+   */
+  termEndsAt?: number;
+  /** How many times this customer has been re-signed. Display only. */
+  renewals?: number;
+
   // --- ESG addon ----------------------------------------------------------
   /** How this node rejects its heat. Only meaningful on a node with `powerKw`. */
   cooling?: CoolingMode;
@@ -103,7 +113,8 @@ export type MachineStatus =
   | 'unmanaged'   // an agent with no Agent Ops Console to report to
   | 'curtailed'   // capacity throttled by a water restriction (ESG addon)
   | 'disputed'    // stopped by a labour dispute (ESG addon)
-  | 'disclosed';  // contract refuses: no disclosure on file, or Footprint over its ceiling
+  | 'disclosed'   // contract refuses: no disclosure on file, or Footprint over its ceiling
+  | 'expired';    // the contract's term ran out — re-sign it or demolish it
 
 /** One provider's rate limit, or your own hardware. */
 export interface PoolReport {

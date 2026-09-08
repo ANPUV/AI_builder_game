@@ -8,8 +8,10 @@ import {
   STARTING_RECIPES,
   building,
   buildingCostAt,
+  contractTermSeconds,
   isWithdrawn,
   recipe,
+  renewalCost,
   type FocusTarget,
   type Rarity,
 } from '../data';
@@ -26,6 +28,10 @@ import type { CoolingMode, GameState, Link, Machine, LinkShape } from './types';
 //         convention, a save from an older version is discarded on load rather
 //         than merged — see save.ts.
 // 6 -> 7: GameState gained `esg` and Machine gained `cooling` (ESG addon).
+// Contract terms (`termEndsAt` / `renewals`) deliberately did NOT bump this.
+// Both fields are optional and save.ts dates any contract missing one from the
+// moment it loads, so an existing factory keeps every customer it had rather
+// than being discarded for a field it could not have written.
 export const STATE_VERSION = 7;
 
 export function createInitialState(): GameState {
@@ -179,10 +185,51 @@ export function placeMachine(
     crafting: false,
     inputs: {},
     outputs: {},
-    // When the customer signed, for the churn grace (Agentic Ops addon).
-    ...(b.kind === 'contract' ? { signedAt: state.elapsed } : {}),
+    // When the customer signed, for the churn grace (Agentic Ops addon), and
+    // when the term runs out. A zero term means this one never expires.
+    ...(b.kind === 'contract'
+      ? {
+          signedAt: state.elapsed,
+          ...(contractTermSeconds(buildingId) > 0
+            ? { termEndsAt: state.elapsed + contractTermSeconds(buildingId) }
+            : {}),
+        }
+      : {}),
   };
   return { ok: true, id };
+}
+
+/** True once a contract's term has run out. Anything else is never expired. */
+export const isExpired = (state: GameState, m: Machine): boolean =>
+  m.termEndsAt !== undefined && state.elapsed >= m.termEndsAt;
+
+/**
+ * Re-sign an expired contract for another full term.
+ *
+ * The customer has not gone anywhere and neither has your wiring — this is a
+ * renewal, not a new deal, so the node keeps its position, its links and its
+ * buffers and simply starts its clock again. Strikes are forgiven with it:
+ * a renegotiated contract does not carry last term's complaints.
+ */
+export function renewContract(state: GameState, machineId: string): Outcome {
+  const m = state.machines[machineId];
+  if (!m) return fail('That node is gone');
+  const b = BUILDING_BY_ID[m.buildingId];
+  if (!b || b.kind !== 'contract') return fail('Only a contract can be re-signed');
+  const term = contractTermSeconds(m.buildingId);
+  if (term <= 0) return fail(`${b.name} has no term to renew`);
+  if (!isExpired(state, m)) return fail(`${b.name} is still running`);
+
+  const price = renewalCost(m.buildingId, state.priceIndex);
+  if (state.credits < price) return fail(`Re-signing ${b.name} costs ${Math.round(price)}`);
+
+  state.credits -= price;
+  m.termEndsAt = state.elapsed + term;
+  m.signedAt = state.elapsed;
+  m.servedFor = 0;
+  m.strikes = 0;
+  m.renewals = (m.renewals ?? 0) + 1;
+  return { ok: true };
 }
 
 /**

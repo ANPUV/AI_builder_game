@@ -52,6 +52,18 @@ export const MILESTONE_BY_BUILDING: Record<string, Milestone> = unlockIndex('unl
 export const MILESTONE_BY_RECIPE: Record<string, Milestone> = unlockIndex('unlocksRecipes');
 
 /**
+ * What it costs to put an expired contract back on its feet.
+ *
+ * A fraction of what the chassis costs to place TODAY, not what it cost when
+ * you signed it — the same index that makes a rack dearer makes re-signing the
+ * customer who runs on it dearer too.
+ */
+export const renewalCost = (buildingId: string, priceIndex: number): number => {
+  const b = BUILDING_BY_ID[buildingId];
+  return b ? buildingCostAt(b, priceIndex) * BALANCE.contractRenewalFraction : 0;
+};
+
+/**
  * THE HARDWARE PRICE INDEX ------------------------------------------------
  * Between mid-2024 and September 2026 a 32GB DDR5 kit went from about $95 to
  * about $400, a 2TB NVMe from $120 to $379, and an RTX PRO 6000 from $8,565 to

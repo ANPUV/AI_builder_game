@@ -509,6 +509,23 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
   color: var(--muted);
 }
 .wiki-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+/* The language toggle carries an emoji flag, which the system colour-emoji
+   face draws at its own size — so give it a fixed square and centre the glyph
+   rather than letting it set the button's height against its neighbours. */
+/* Settings rows that are a label plus one control, rather than a checkbox. */
+.settings-row-line {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line-soft);
+}
+.settings-actions { display: flex; gap: 8px; }
+.settings-actions button { flex: 1; }
+
+.lang-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 28px; padding: 0;
+  font-size: 15px; line-height: 1;
+}
 .card .blurb { font-size: 10px; color: var(--muted); line-height: 1.4; margin-bottom: 7px; }
 
 .req { margin-bottom: 5px; font-size: 11px; }

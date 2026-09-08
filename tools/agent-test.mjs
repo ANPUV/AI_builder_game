@@ -60,7 +60,7 @@ function world({ agentic = true, credits = 5_000_000 } = {}) {
 }
 
 const run = (s, seconds) => {
-  const events = { milestonesCompleted: [], breaches: [], offersArrived: [], offersExpired: [], blowouts: [], fines: [], contractsLost: [], agentSigned: [], agentBuilt: [], agentVetoed: [], churned: [], runaways: [] };
+  const events = { milestonesCompleted: [], breaches: [], offersArrived: [], offersExpired: [], blowouts: [], fines: [], contractsLost: [], agentSigned: [], agentBuilt: [], agentVetoed: [], churned: [], agentRenewed: [], runaways: [] };
   const dt = data.BALANCE.tickSeconds;
   for (let t = 0; t < seconds; t += dt) sim.step(s, dt, events);
   return events;
@@ -85,7 +85,7 @@ const feed = (s) => {
   }
 };
 const runFed = (s, seconds) => {
-  const events = { milestonesCompleted: [], breaches: [], offersArrived: [], offersExpired: [], blowouts: [], fines: [], contractsLost: [], agentSigned: [], agentBuilt: [], agentVetoed: [], churned: [], runaways: [] };
+  const events = { milestonesCompleted: [], breaches: [], offersArrived: [], offersExpired: [], blowouts: [], fines: [], contractsLost: [], agentSigned: [], agentBuilt: [], agentVetoed: [], churned: [], agentRenewed: [], runaways: [] };
   const dt = data.BALANCE.tickSeconds;
   for (let t = 0; t < seconds; t += dt) { feed(s); sim.step(s, dt, events); }
   return events;
@@ -231,7 +231,7 @@ check(`a neglected contract churns (${neglected}/40 runs of 10 min)`, neglected 
   for (let i = 0; i < 40; i += 1) {
     const s = world();
     const c = factory.placeMachine(s, 'consumer_app', 500, 300);
-    const ev = { milestonesCompleted: [], breaches: [], offersArrived: [], offersExpired: [], blowouts: [], fines: [], contractsLost: [], agentSigned: [], agentBuilt: [], agentVetoed: [], churned: [], runaways: [] };
+    const ev = { milestonesCompleted: [], breaches: [], offersArrived: [], offersExpired: [], blowouts: [], fines: [], contractsLost: [], agentSigned: [], agentBuilt: [], agentVetoed: [], churned: [], agentRenewed: [], runaways: [] };
     const dt = data.BALANCE.tickSeconds;
     for (let t = 0; t < 600; t += dt) {
       if (s.machines[c.id]) s.machines[c.id].servedFor = data.BALANCE.churnLoyaltySeconds;

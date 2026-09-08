@@ -17,6 +17,7 @@
  * (MARKET.pitySeconds). Without it the last contract in the game, at 2.2
  * weight against a board total near 250, would essentially never appear.
  */
+import { BALANCE } from './balance';
 import { BUILDINGS } from './buildings';
 import { RECIPES, type Recipe } from './recipes';
 
@@ -298,4 +299,35 @@ export function bestRecipeFor(buildingId: string, unlockedRecipes: string[]): Re
   return RECIPES.filter(
     (r) => r.buildingId === buildingId && r.payout !== undefined && unlockedRecipes.includes(r.id),
   ).sort((a, b) => (b.payout ?? 0) - (a.payout ?? 0))[0];
+}
+
+/**
+ * The best a chassis could ever pay, ignoring what the player has unlocked.
+ *
+ * Contract terms read this rather than `bestRecipeFor`, because a term fixed
+ * at signing must not depend on unlock state that can change underneath it —
+ * an Enterprise signed before Agents In Production would otherwise get a
+ * shorter term than the identical one signed after, for no reason the player
+ * can see.
+ */
+export const topPayoutOf = (buildingId: string): number =>
+  RECIPES.reduce(
+    (best, r) => (r.buildingId === buildingId ? Math.max(best, r.payout ?? 0) : best),
+    0,
+  );
+
+/**
+ * How long a freshly signed contract of this chassis runs, in seconds.
+ *
+ * Zero means forever: a contract that pays nothing is not on a clock. See
+ * BALANCE.contractTermMonthsPerDecade for why the scale is logarithmic.
+ */
+export function contractTermSeconds(buildingId: string): number {
+  const payout = topPayoutOf(buildingId);
+  if (payout <= 0) return 0;
+  const months = Math.max(
+    BALANCE.contractTermMinMonths,
+    BALANCE.contractTermMonthsPerDecade * Math.log10(payout),
+  );
+  return months * BALANCE.monthSeconds;
 }

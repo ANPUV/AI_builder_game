@@ -32,6 +32,8 @@ const STATUS_COLOR: Record<MachineStatus, string> = {
   curtailed: '#4a8fa8',
   disputed: '#c98a3d',
   disclosed: '#5f9e7a',
+  // A dead contract, not a stalled one: the same red the danger tokens use.
+  expired: 'var(--bad)',
 };
 
 /**

@@ -304,6 +304,41 @@ Footprint ceiling and only applies with that addon on.
 
 Home Lab and AI Slop have their own ladders; see those sections.
 
+### Contracts run a term, then freeze
+
+**A contract is a term, not a marriage.** When it runs out the node freezes
+where it stands: it stops delivering and stops paying, but keeps its position,
+its links and its buffers. Re-signing costs **25% of what the chassis costs to
+place today** — at today's price index, not what you paid originally — and it
+picks up mid-chain.
+
+Term length follows **what the deal pays**, on a log scale, because payouts
+span six orders of magnitude. Each 10x on the cheque buys about 0.85 more
+billing months of runway:
+
+| Contract | Pays | Term |
+| --- | --- | --- |
+| Post To Feed | $0 | **never expires** |
+| Consumer App | $17 | 5.2 min |
+| SMB Pilot | $56 | 7.4 min |
+| Mid-Market SaaS | $270 | 10.3 min |
+| Enterprise | $1,800 | 13.8 min |
+| Federal / DoD | $22,000 | 18.5 min |
+| API Platform | $11M | 29.9 min |
+
+So the cheap high-volume work comes back around constantly and the rare deals
+are stable — which is the right way round, because a $2M lead you had to save
+up for should not evaporate while you are still wiring it.
+
+**A contract that pays nothing has no term.** Post To Feed is the case: it is
+not a customer, it is you posting into the void, and putting that on a renewal
+clock would charge rent on a lesson.
+
+Leaving one frozen is not free. An expired contract earns no loyalty, so with
+the Agentic Ops addon on, the churn roll will eventually take the account for
+good — neglect still costs you the customer, it just takes longer than
+ignoring a live one does.
+
 ### Exposure ceilings are the real gate
 
 A contract **refuses to run** above its ceiling and reads **Security hold**
@@ -548,7 +583,7 @@ at $1,050 a delivery — and spend them acting on the game itself.
 | Sales Agent | $3,000 | $600 | Signs matching leads off the board by itself, with your money |
 | Marketing Agent | $2,200 | $450 | Skews *which* listings the board draws. Never the rate. |
 | Coding Agent | $6,000 | $900 | Builds the producer chain for a signed contract nobody wired up |
-| Support Agent | $8,000 | $1,400 | Keeps matching customers from churning |
+| Support Agent | $8,000 | $1,400 | Keeps matching customers from churning — **and re-signs them when their term ends**, out of your cash, without asking |
 | Reviewer Agent | $10,000 | $1,800 | Oversight: negative Drift, and a veto on a sign you cannot afford |
 
 Senior variants of Sales, Marketing and Coding unlock at milestone 9 and cost
@@ -579,6 +614,11 @@ Support Agent watching a customer stops it.
 
 So Agentic Ops is not a pure upgrade. It is overhead you buy, and switching it
 on introduces a decay the base game does not have.
+
+The Support Agent is the addon's answer to contract terms: it renews any
+account it is watching the moment the term lapses, holding back the same cash
+floor a Sales Agent does. Below that floor it declines and the contract stays
+frozen — an agent will not bankrupt you to keep a customer.
 
 The Coding Agent will place and wire up to **6 nodes** for a contract you
 signed and never built. The Sales Agent will not sign below a cash floor of
@@ -786,6 +826,8 @@ Plus **600 kTPM** of ordinary servers you always have.
 | Link throughput | 240 units/min |
 | Buffer per item | 400 units |
 | Demolish refund | 50% |
+| Contract re-sign | 25% of today's place cost |
+| Contract term | ~0.85 billing months per 10x of payout; $0 payouts never expire |
 | Clock range | 0.25× – 2.5×, draw scales `clock ^ 1.6` |
 | Billing month | 300 game-seconds |
 | Breach rate at exposure 100 | 2.4/min, quadratic below |
@@ -859,9 +901,23 @@ a building to inspect it; <kbd>Shift</kbd>-drag moves it. Select an output
 under **Connect**, then click its destination to create a belt. Requires WebGL2;
 its labels are currently English-only.
 
+### Settings
+
+The top bar carries only what you use while playing: the readouts, pause and
+the speed buttons. Everything else lives behind the gear, on three tabs.
+
+| Tab | Holds |
+| --- | --- |
+| **Addons** | The five on/off switches below |
+| **Connections** | Belt routing: curve, straight or elbow |
+| **Others** | Language, light/dark, save, export, import, and reset |
+
+The language control is a single flag button showing the flag of the language
+you would switch *to*.
+
 ### Addons
 
-Toggle any of the five in **Settings**. Tracks (Home Lab, AI Slop) default
+Toggle any of the five in **Settings → Addons**. Tracks (Home Lab, AI Slop) default
 **on**; features (Agentic Ops, ESG, Venture Capital) default **off**. Turning a
 track off hides its nodes and milestones; turning a feature off removes its
 mechanic from the simulation entirely.

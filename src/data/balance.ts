@@ -240,6 +240,31 @@ export const BALANCE = {
   /** Nodes one Coding Agent will place in a single build cycle. */
   agentChainNodeCap: 6,
 
+  // --- contract terms ------------------------------------------------------
+  /**
+   * A contract is a term, not a marriage. When it runs out the node freezes —
+   * it stops delivering and stops paying, but keeps its wiring and its buffers
+   * — until you re-sign it.
+   *
+   * Term length is set by what the deal pays, on a log scale, because payouts
+   * span six orders of magnitude ($9 a delivery to $11M) and anything linear
+   * would either make the consumer tier permanent or make the API Platform
+   * expire before it had earned its own signing cost back. Months per decade
+   * of payout, so each 10x on the cheque buys this much more runway:
+   *
+   *   $9  -> 0.8 months (~4 game-minutes)     $22k -> 3.7 months (~18 min)
+   *   $270 -> 2.1 months (~10 min)            $11M -> 6.0 months (~30 min)
+   *
+   * A contract that pays nothing never expires. Post To Feed is the case: it
+   * is not a customer, it is you posting into the void, and putting that on a
+   * renewal clock would charge rent on a lesson.
+   */
+  contractTermMonthsPerDecade: 0.85,
+  /** Nothing runs shorter than this, whatever the arithmetic says. */
+  contractTermMinMonths: 0.8,
+  /** Re-signing costs this fraction of what the chassis costs to place today. */
+  contractRenewalFraction: 0.25,
+
   // --- ESG addon -----------------------------------------------------------
   /**
    * Real hours in one billing month. `monthSeconds` of simulated time stands for

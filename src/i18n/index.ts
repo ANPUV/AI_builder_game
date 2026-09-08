@@ -12,6 +12,10 @@
  * translation is missing falls back to English rather than showing the key.
  */
 export const LANGUAGES = [
+  // The top bar shows one button carrying the flag of the language you are NOT
+  // in, so switching is one click and costs the width of a button rather than
+  // of the longest language name. The flag itself is drawn in ui/Flag.tsx,
+  // keyed off `code` — the emoji has no glyph on Windows.
   { code: 'en', label: 'English' },
   { code: 'vi', label: 'Tiếng Việt' },
 ] as const;
@@ -50,6 +54,7 @@ const en = {
   'top.toLight': 'Switch to light mode',
   'top.toDark': 'Switch to dark mode',
   'top.language': 'Language',
+  'top.switchTo': 'Switch to {lang}',
 
   'side.nextStep': 'Next step',
   'side.inspector': 'Inspector',
@@ -156,6 +161,11 @@ const en = {
     'A specialist. It works on this tier and nothing else — and when the tier is dry it waits, spends no tokens, and bills the full subscription anyway.',
   'settings.tabAddons': 'Add-ons',
   'settings.tabConnection': 'Connections',
+  'settings.tabOthers': 'Others',
+  'settings.othersNote':
+    'The controls you touch once a session, kept out of the top bar.',
+  'settings.othersSave': 'Save file',
+  'settings.othersDanger': 'Start over',
   'settings.connectionNote':
     'How belts are drawn. A belt you have styled on its own in the inspector keeps that style.',
   'settings.connectionKeep': 'Cosmetic only — nothing in the simulation reads it.',
@@ -246,6 +256,7 @@ const vi: Partial<Record<Key, string>> = {
   'top.toLight': 'Chuyển sang giao diện sáng',
   'top.toDark': 'Chuyển sang giao diện tối',
   'top.language': 'Ngôn ngữ',
+  'top.switchTo': 'Chuyển sang {lang}',
 
   'side.nextStep': 'Bước tiếp theo',
   'side.inspector': 'Bảng chi tiết',
@@ -352,6 +363,11 @@ const vi: Partial<Record<Key, string>> = {
     'Một chuyên gia. Nó chỉ làm hạng này và không gì khác — khi hạng này không có khách, nó ngồi chờ, không tốn token, và vẫn tính đủ phí thuê bao.',
   'settings.tabAddons': 'Mở rộng',
   'settings.tabConnection': 'Kết nối',
+  'settings.tabOthers': 'Khác',
+  'settings.othersNote':
+    'Những tuỳ chọn bạn chỉ dùng một lần mỗi phiên, để ngoài thanh trên cùng.',
+  'settings.othersSave': 'Tệp lưu',
+  'settings.othersDanger': 'Chơi lại từ đầu',
   'settings.connectionNote':
     'Cách vẽ băng chuyền. Băng chuyền bạn đã đổi kiểu riêng trong bảng thông tin vẫn giữ nguyên kiểu đó.',
   'settings.connectionKeep': 'Chỉ là hiển thị — mô phỏng không đọc giá trị này.',

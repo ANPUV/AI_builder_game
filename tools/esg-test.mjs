@@ -61,7 +61,7 @@ function world({ esg: on = true, credits = 2_000_000_000 } = {}) {
 const events = () => ({
   milestonesCompleted: [], breaches: [], offersArrived: [], offersExpired: [],
   blowouts: [], fines: [], contractsLost: [], agentSigned: [], agentBuilt: [],
-  agentVetoed: [], churned: [], runaways: [],
+  agentVetoed: [], churned: [], agentRenewed: [], runaways: [],
   esgIncidents: [], esgFines: [], disclosuresPublished: [],
 });
 

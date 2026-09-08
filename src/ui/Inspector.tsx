@@ -9,6 +9,7 @@ import {
   poolColor,
   poolName,
   recipe,
+  renewalCost,
   type Vendor,
 } from '../data';
 import {
@@ -19,6 +20,7 @@ import {
   groupOf,
   removeMachine,
   removeMachines,
+  renewContract,
   repairCost,
   repairMachine,
   triggerCraft,
@@ -244,6 +246,9 @@ export default function Inspector({ game, selection, setSelection }: Props) {
   const nodePool = poolOf(machine);
   const poolStat = nodePool ? state.compute.pools[nodePool] : undefined;
   const refund = currentCost(state, machine.buildingId) * BALANCE.refundRate;
+  /** Seconds left on this contract's term. NaN-free: undefined term reads 0. */
+  const termLeft = machine.termEndsAt === undefined ? 0 : machine.termEndsAt - state.elapsed;
+  const reSignPrice = renewalCost(machine.buildingId, state.priceIndex);
   const selectedGroup = groupOf(state, machine.id);
   /**
    * Nodes close enough to be one rig. Grouping is opt-in and proximity is the
@@ -318,6 +323,20 @@ export default function Inspector({ game, selection, setSelection }: Props) {
                 style={{ color: b.dataRisk > 0 ? 'var(--bad)' : 'var(--good)' }}
               >
                 {b.dataRisk > 0 ? `+${b.dataRisk} exposure` : `${b.dataRisk} exposure`}
+              </span>
+            </div>
+          )}
+          {/* How long this customer is yours for. A contract that pays nothing
+              has no term, so there is nothing to count down. */}
+          {machine.termEndsAt !== undefined && (
+            <div className="kv">
+              <span className="k">Term</span>
+              <span
+                className="mono"
+                style={{ color: termLeft <= 0 ? 'var(--bad)' : termLeft < 60 ? 'var(--warn)' : undefined }}
+              >
+                {termLeft <= 0 ? 'ended' : `${Math.ceil(termLeft)}s left`}
+                {machine.renewals ? ` · ${machine.renewals}x re-signed` : ''}
               </span>
             </div>
           )}
@@ -588,6 +607,30 @@ export default function Inspector({ game, selection, setSelection }: Props) {
         audit it was counting toward — and still bills its monthly cost. Repair
         is priced at today's replacement cost, not what you originally paid.
       */}
+      {/* The term ran out. The customer has not left and neither has your
+          wiring — the node is frozen exactly where it stood, so re-signing
+          costs a fraction of a new one and picks up mid-chain. Leave it and
+          the churn roll will eventually take the account for good. */}
+      {machine.termEndsAt !== undefined && termLeft <= 0 && (
+        <div className="tip-warn" style={{ marginBottom: 8 }}>
+          <b>Term ended.</b> {bName(b)} has stopped delivering and stopped
+          paying. Its links and buffers are intact — re-sign it and it picks up
+          where it left off.
+          <button
+            className="primary"
+            style={{ width: '100%', marginTop: 8 }}
+            disabled={state.credits < reSignPrice}
+            onClick={() => {
+              const outcome = act((s) => renewContract(s, machine.id));
+              if (!outcome.ok) toast(outcome.reason, 'bad');
+              else toast(`Re-signed ${bName(b)} for ${money(reSignPrice)}`, 'good');
+            }}
+          >
+            Re-sign for {money(reSignPrice)}
+          </button>
+        </div>
+      )}
+
       {machine.broken && (
         <div className="tip-warn" style={{ marginBottom: 8 }}>
           <b>Blown.</b> Whatever this bay was holding is gone. It is still billing{' '}

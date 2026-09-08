@@ -24,6 +24,7 @@ import {
   listingFor,
   rarityOf,
   recipe,
+  renewalCost,
   type AgentRole,
   type FocusTarget,
   type Rarity,
@@ -31,7 +32,7 @@ import {
 } from '../data';
 import { buildingEnabled, featureEnabled } from '../data/addons';
 import { RARITY_ORDER } from '../data/market';
-import { addLink, placeMachine, signOffer } from './factory';
+import { addLink, isExpired, placeMachine, renewContract, signOffer } from './factory';
 import { agentRoleOf, isAgent } from './agentRules';
 import type { ContractOffer, GameState, Machine } from './types';
 
@@ -54,6 +55,8 @@ export interface AgentEvents {
   agentVetoed: { buildingName: string; cost: number }[];
   /** Customers who walked because nobody was looking after them. */
   churned: { buildingName: string }[];
+  /** Contracts a Support Agent re-signed on its own, and what each cost. */
+  agentRenewed: { buildingName: string; cost: number }[];
   /** Runaway agent spend: what a tick of nobody watching cost. */
   runaways: number[];
 }
@@ -407,6 +410,31 @@ export function tickAgents(state: GameState, dt: number, events: AgentEvents): v
 
   for (const m of Object.values(state.machines)) {
     if (building(m.buildingId)?.kind !== 'contract') continue;
+
+    // Renewals. A Support Agent's job is keeping customers, and a term running
+    // out is the most ordinary way to lose one — so it re-signs the contracts
+    // it is watching without being asked, out of your cash, and holds the same
+    // floor back that a Sales Agent does. A contract nobody renews stays frozen
+    // and stops earning loyalty, so the churn roll below will eventually take
+    // it: neglect still costs you the customer, it just takes longer.
+    if (isExpired(state, m)) {
+      const price = renewalCost(m.buildingId, state.priceIndex);
+      if (
+        supported.has(m.id) &&
+        state.credits - price >= cashFloor(state) &&
+        renewContract(state, m.id).ok
+      ) {
+        events.agentRenewed.push({
+          buildingName: building(m.buildingId)?.name ?? 'A customer',
+          cost: price,
+        });
+        continue;
+      }
+      // Nobody re-signed it. Deliberately NOT a `continue`: an expired contract
+      // falls through to the churn roll below, where it earns no loyalty and is
+      // eventually lost for good. Skipping the roll would make freezing a
+      // contract the safest thing that can happen to it.
+    }
 
     // Loyalty is earned by running, not by existing: a contract sitting on
     // hold or starved is exactly the neglected customer this models.

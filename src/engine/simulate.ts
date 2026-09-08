@@ -456,6 +456,15 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
     // A labour dispute stops the part of the factory that runs on people.
     const disputed = esgOn && state.esg.disputeFreeze > 0 && (b.laborLoad ?? 0) > 0;
 
+    // The term ran out. Unlike an Exposure hold this is not a door that swings
+    // back open on its own, so it is checked ahead of the craft loop rather
+    // than inside `if (!m.crafting)`: the node freezes where it stands, keeps
+    // its progress and its buffers, and stays there until somebody re-signs it.
+    if (isContract && m.termEndsAt !== undefined && state.elapsed >= m.termEndsAt) {
+      state.status[m.id] = 'expired';
+      continue;
+    }
+
     if (!m.crafting) {
       if (onHold) {
         state.status[m.id] = 'audited';
@@ -793,6 +802,7 @@ export function advance(state: GameState, seconds: number): TickEvents {
     agentSigned: [],
     agentBuilt: [],
     agentVetoed: [],
+    agentRenewed: [],
     churned: [],
     runaways: [],
     esgIncidents: [],
@@ -826,6 +836,7 @@ export const statusLabel: Record<MachineStatus, string> = {
   curtailed: 'Water restricted',
   disputed: 'Labour dispute',
   disclosed: 'Disclosure required',
+  expired: 'Term ended',
 };
 
 /** Headcount right now, for the UI: placed against what the Console allows. */

@@ -3,7 +3,7 @@ import { esgBillSplit } from '../engine/esg';
 import { disclosureGap } from '../engine/esgRules';
 import Tip from './Tip';
 import { agentCapacity } from '../engine/simulate';
-import { raiseCapReached } from '../engine/venture';
+import { raiseCapReached, raiseCeiling } from '../engine/venture';
 import { useLang } from '../i18n/useLang';
 import type { Game } from './useGame';
 import { money, tpm } from './format';
@@ -141,7 +141,7 @@ export default function TopBar({
                 )}
                 {vcCapReached && (
                   <div className="tip-body" style={{ color: 'var(--warn)' }}>
-                    {t('vc.capReached', { pct: Math.round(BALANCE.vcMaxTotalSharePct * 100) })}
+                    {t('vc.capReached', { pct: Math.round(raiseCeiling(state) * 100) })}
                   </div>
                 )}
                 {activeRaises.length > 0 && (

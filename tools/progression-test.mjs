@@ -5,6 +5,9 @@
  *   node tools/progression-test.mjs --verbose  per-milestone build log
  *   node tools/progression-test.mjs --budget 60  sim-minutes allowed per milestone
  *   node tools/progression-test.mjs --stall 20   sim-minutes of no delivery before STUCK
+ *   node tools/progression-test.mjs --addons all  every addon on (or: none, or a,b,c list)
+ *   node tools/progression-test.mjs --tune bankLoanTermMonths=18  try a BALANCE change
+ *   node tools/progression-test.mjs --cost soc2_program=12000     try a price change
  *
  * `validateContent()` catches milestones that point at ids which do not exist,
  * and `unreachableMilestones()` catches circular unlock gates statically. Neither
@@ -41,11 +44,15 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
 const VERBOSE = argv.includes('--verbose');
+const TRACE = argv.includes('--trace');   // cash, rent and delivery every sim-minute
 const BUDGET_MIN = Number(argv[argv.indexOf('--budget') + 1]) || 90;
 const BUDGET_SEC = BUDGET_MIN * 60;
 const STALL_MIN = Number(argv[argv.indexOf('--stall') + 1]) || 12;
 const STALL_SEC = STALL_MIN * 60;
 const PLAN_EVERY = 5; // sim-seconds between planning passes
+// `--addons all` switches every addon on, `none` every one off, `a,b` a list.
+// Absent, the game's own defaults apply (tracks on, feature addons off).
+const ADDONS_ARG = argv.includes('--addons') ? argv[argv.indexOf('--addons') + 1] : null;
 
 // --- bundle data + engine as ONE module graph ----------------------------
 // They must share module instances (BALANCE, id counters), so one entry point.
@@ -56,16 +63,61 @@ writeFileSync(
   entry,
   `export * as data from ${JSON.stringify(join(root, 'src/data/index.ts'))};\n` +
     `export * as factory from ${JSON.stringify(join(root, 'src/engine/factory.ts'))};\n` +
-    `export * as simulate from ${JSON.stringify(join(root, 'src/engine/simulate.ts'))};\n`,
+    `export * as simulate from ${JSON.stringify(join(root, 'src/engine/simulate.ts'))};\n` +
+    `export * as venture from ${JSON.stringify(join(root, 'src/engine/venture.ts'))};\n` +
+    `export * as agents from ${JSON.stringify(join(root, 'src/engine/agents.ts'))};\n` +
+    `export * as esg from ${JSON.stringify(join(root, 'src/engine/esg.ts'))};\n` +
+    `export * as addons from ${JSON.stringify(join(root, 'src/data/addons.ts'))};\n`,
 );
 await build({
   entryPoints: [entry],
   bundle: true, format: 'esm', platform: 'node', outfile: bundle, logLevel: 'warning',
 });
-const { data: D, factory: F, simulate: S } = await import(pathToFileURL(bundle).href);
+const { data: D, factory: F, simulate: S, venture: V, agents: A, esg: E, addons: AD } =
+  await import(pathToFileURL(bundle).href);
 rmSync(tmp, { recursive: true, force: true });
 
 const { BUILDINGS, RECIPES, MILESTONES, RECIPE_BY_ID, BUILDING_BY_ID, TRACKS } = D;
+
+/**
+ * Balance experiments without editing the data.
+ *
+ *   --tune bankLoanTermMonths=18,vcBaseSharePct=0.04   BALANCE keys
+ *   --cost soc2_program=12000                          a building's base cost
+ *
+ * For asking "would this rebalance actually clear the wall" before committing
+ * a number to `balance.ts`. Both are reported in the header so a pasted run can
+ * never be mistaken for the shipped numbers.
+ */
+const tuned = [];
+for (const [flag, apply] of [
+  ['--tune', (k, v) => { if (!(k in D.BALANCE)) { console.error(`unknown BALANCE key "${k}"`); process.exit(2); } D.BALANCE[k] = Number(v); }],
+  ['--cost', (k, v) => { const b = BUILDING_BY_ID[k]; if (!b) { console.error(`unknown building "${k}"`); process.exit(2); } b.cost = Number(v); }],
+]) {
+  if (!argv.includes(flag)) continue;
+  for (const pair of (argv[argv.indexOf(flag) + 1] ?? '').split(',').filter(Boolean)) {
+    const [k, v] = pair.split('=');
+    apply(k, v);
+    tuned.push(`${flag === '--cost' ? 'cost ' : ''}${k}=${v}`);
+  }
+}
+
+/** The addon switches this run plays under. */
+function addonSettings() {
+  const base = { ...AD.DEFAULT_ADDONS };
+  if (ADDONS_ARG === null) return base;
+  const ids = AD.ADDONS.map((a) => a.id);
+  if (ADDONS_ARG === 'all') for (const id of ids) base[id] = true;
+  else if (ADDONS_ARG === 'none') for (const id of ids) base[id] = false;
+  else {
+    for (const id of ids) base[id] = false;
+    for (const id of ADDONS_ARG.split(',')) {
+      if (!ids.includes(id)) { console.error(`unknown addon "${id}" — have ${ids.join(', ')}`); process.exit(2); }
+      base[id] = true;
+    }
+  }
+  return base;
+}
 
 // --- helpers -------------------------------------------------------------
 const money = (n) => `$${Math.round(n).toLocaleString('en-US')}`;
@@ -81,10 +133,45 @@ function feeds(s, machineId, itemId) {
 
 let placed = [];
 const buildLog = [];
-function place(s, buildingId, note) {
+/**
+ * Capex the current planning pass may still spend. Set by `plan()` to a slice
+ * of free cash once the bank is big enough for that to matter: a funding round
+ * converted into two hundred rent-bearing nodes in a single pass is how the
+ * first all-addons run went from $180k to bankrupt inside two milestones.
+ */
+let capexLeft = Infinity;
+const CAPEX_FRACTION = 0.2;
+const CAPEX_BUDGET_FROM = 20_000;   // below this, spend freely: the early game has no slack to ration
+/**
+ * A producer the main track needs, has none of, and cannot afford yet — the
+ * SOC 2 Program at $30k is the first. While one is set, nothing else is bought:
+ * a greedy planner that keeps feeding the side tracks never accumulates the
+ * lump, and the real game is the main spine.
+ */
+let savingFor = null;
+/**
+ * While saving, small purchases still go through.
+ *
+ * Freezing the whole factory to accumulate a lump is what a spreadsheet would
+ * do, not a player: the $150 node that widens the chain pays for itself long
+ * before the $30,000 one is affordable, and refusing it makes the save take
+ * longer, not shorter. Only purchases big enough to actually push the target
+ * out of reach are held.
+ */
+const SAVING_LETS_THROUGH = 0.12;   // of the target's price
+function place(s, buildingId, note, priority = false) {
+  const cost = D.buildingCostAt(BUILDING_BY_ID[buildingId], s.priceIndex);
+  if (
+    !priority && savingFor && buildingId !== savingFor.buildingId &&
+    cost > savingFor.cost * SAVING_LETS_THROUGH
+  ) {
+    return { ok: false, reason: `saving for ${savingFor.name}` };
+  }
+  if (!priority && cost > capexLeft) return { ok: false, reason: 'capex budget for this pass is spent' };
   const n = machines(s).length;
   const res = F.placeMachine(s, buildingId, (n % 10) * 220, Math.floor(n / 10) * 190);
   if (res.ok) {
+    capexLeft -= cost;
     buildLog.push(BUILDING_BY_ID[buildingId]?.name ?? buildingId);
     placed.push(`${BUILDING_BY_ID[buildingId]?.name ?? buildingId}${note ? ` (${note})` : ''}`);
   }
@@ -93,8 +180,36 @@ function place(s, buildingId, note) {
 
 const MAX_COPIES = 40;        // per recipe — a safety valve, reported when it binds
 const MAX_NODES = 500;
-const CASH_RESERVE = 1500;    // keep this much banked for API spend and rent
-const TARGET_MINUTES = 6;     // aim to finish the milestone in about this long
+const CASH_RESERVE = 400;     // keep at least this much banked for API spend
+const RENT_MIN = 3;           // plus this many minutes of rent...
+const RUNWAY_MIN = 8;         // ...and never build past this many minutes of net burn
+const TARGET_MINUTES = Number(argv[argv.indexOf('--target') + 1]) || 6;   // aim to finish each milestone in about this long; --target N
+
+/**
+ * Cash the auto-player refuses to spend on capex. Milestones pay nothing, so
+ * with $2,000 to start a flat floor of a few hundred is all the early game can
+ * afford — while at $200k of venture money a flat floor is useless: a round
+ * spent to the last dollar on nodes that each bill monthly is exactly how a
+ * run goes from six figures to bankrupt in one milestone. So the floor scales
+ * with the rent and with what the factory is losing per minute.
+ */
+function reserve(s) {
+  const f = s.finance ?? {};
+  const rentPerMin = ((f.burnPerMonth ?? 0) / D.BALANCE.monthSeconds) * 60;
+  return Math.max(CASH_RESERVE, rentPerMin * RENT_MIN, -Math.min(0, f.netPerMin ?? 0) * RUNWAY_MIN);
+}
+
+// Seeded, so a run either reproduces or has found a real change. `--seed N`.
+{
+  let a = (Number(argv[argv.indexOf('--seed') + 1]) || 1) >>> 0;
+  Math.random = () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 const poolOfBuilding = (b) => b?.vendor ?? 'shared';
 const everPlaced = {};        // recipeId -> how many we have EVER built
 
@@ -192,7 +307,7 @@ function stockTo(s, recipe, want, why) {
   const target = Math.min(want, MAX_COPIES);
   for (let i = have.length; i < target; i++) {
     if (machines(s).length >= MAX_NODES) break;
-    if (s.credits < CASH_RESERVE + D.buildingCostAt(BUILDING_BY_ID[recipe.buildingId], s.priceIndex)) break;
+    if (s.credits < reserve(s) + D.buildingCostAt(BUILDING_BY_ID[recipe.buildingId], s.priceIndex)) break;
     // Buy the rate limit BEFORE the node that will draw on it. A pool sitting at
     // exactly 100% is not reported `tight` — nothing is being throttled yet — so
     // waiting for that signal deadlocks: no headroom, so no node; no node, so no
@@ -201,7 +316,8 @@ function stockTo(s, recipe, want, why) {
       buyCapacityFor(s, poolOfBuilding(BUILDING_BY_ID[recipe.buildingId]), 1);
       if (!fitsOnPool(s, BUILDING_BY_ID[recipe.buildingId])) break;
     }
-    const res = place(s, recipe.buildingId, `${recipe.name} x${i + 1} — ${why}`);
+    const res = place(s, recipe.buildingId, `${recipe.name} x${i + 1} — ${why}`,
+      savingFor?.buildingId === recipe.buildingId);
     if (!res.ok) break;
     everPlaced[recipe.id] = (everPlaced[recipe.id] ?? 0) + 1;
     F.setRecipe(s, res.id, recipe.id);
@@ -267,26 +383,37 @@ function realize(s, need) {
 
 const inputsOf = (r) => r.inputs ?? [];
 
-/** Put buyers on the board for `itemId`; returns the contract and its nodes. */
-function ensureContractNodes(s, itemId, wantRate) {
+/** The contract recipe we would rather sell `itemId` through, or null. */
+function buyerFor(s, itemId) {
   const cands = RECIPES.filter(
     (r) => isContract(r) && (r.inputs ?? []).some((i) => i.itemId === itemId) &&
       s.unlockedRecipes.includes(r.id),
   ).sort((a, b) => (b.maxExposure ?? 999) - (a.maxExposure ?? 999));
-  if (!cands.length) return null;
+  return cands[0] ?? null;
+}
 
-  const r = cands[0];
+/** Put buyers on the board for `itemId`; returns the contract and its nodes. */
+function ensureContractNodes(s, itemId, wantRate) {
+  const r = buyerFor(s, itemId);
+  if (!r) return null;
   const per = rateIn(r, itemId);
   const want = per > 0 ? Math.min(CONTRACT_COPIES, Math.max(1, Math.ceil(wantRate / per))) : 1;
 
   for (let i = machinesOf(s, r.id).length; i < want; i++) {
     // Contract chassis normally arrive as offers; sign one if it is on the board.
+    // Signing an offer costs the chassis price too, so it goes through the same
+    // saving gate as a placement.
     const offer = Object.values(s.offers).find((o) => o.buildingId === r.buildingId);
     const n = machines(s).length;
+    const priority = savingFor?.buildingId === r.buildingId;
+    const chassis = D.buildingCostAt(BUILDING_BY_ID[r.buildingId], s.priceIndex);
+    if (offer && !priority && savingFor && chassis > savingFor.cost * SAVING_LETS_THROUGH) break;
+    if (offer && !priority && D.buildingCostAt(BUILDING_BY_ID[r.buildingId], s.priceIndex) > capexLeft) break;
     const res = offer
       ? F.signOffer(s, offer.id, (n % 10) * 220, Math.floor(n / 10) * 190)
-      : place(s, r.buildingId, r.name);
+      : place(s, r.buildingId, r.name, priority);
     if (!res.ok) break;
+    if (offer) capexLeft -= D.buildingCostAt(BUILDING_BY_ID[r.buildingId], s.priceIndex);
     if (offer) buildLog.push(BUILDING_BY_ID[r.buildingId]?.name ?? r.buildingId);
     F.setRecipe(s, res.id, r.id);
   }
@@ -310,7 +437,7 @@ function buyCapacityFor(s, pool, extraDrawers = 0) {
     (b) => b.kind === 'capacity' && s.unlockedBuildings.includes(b.id) &&
       !!b.vendorScoped === (pool !== 'shared') && (b.computeSupply ?? 0) > 0 &&
       !D.isWithdrawn(b, s.priceIndex) &&
-      D.buildingCostAt(b, s.priceIndex) <= Math.max(0, s.credits - CASH_RESERVE) &&
+      D.buildingCostAt(b, s.priceIndex) <= Math.max(0, s.credits - reserve(s)) &&
       // A tier that covers fewer nodes than already draw here contributes nothing.
       (b.servesNodes == null || b.servesNodes >= drawers) &&
       !(b.servesNodes != null &&
@@ -364,7 +491,7 @@ function ensureControls(s) {
   const control = BUILDINGS.filter(
     (b) => (b.dataRisk ?? 0) < 0 && s.unlockedBuildings.includes(b.id) &&
       !D.isWithdrawn(b, s.priceIndex) &&
-      D.buildingCostAt(b, s.priceIndex) <= Math.max(0, s.credits - CASH_RESERVE) &&
+      D.buildingCostAt(b, s.priceIndex) <= Math.max(0, s.credits - reserve(s)) &&
       !machines(s).some((m) => m.buildingId === b.id),
   ).sort((a, b) => (a.dataRisk ?? 0) - (b.dataRisk ?? 0))[0];
 
@@ -401,7 +528,7 @@ function trimOverdraw(s) {
       (b) => b.kind === 'capacity' && s.unlockedBuildings.includes(b.id) &&
         !!b.vendorScoped === (pool !== 'shared') && (b.computeSupply ?? 0) > 0 &&
         !D.isWithdrawn(b, s.priceIndex) &&
-        D.buildingCostAt(b, s.priceIndex) <= Math.max(0, s.credits - CASH_RESERVE) &&
+        D.buildingCostAt(b, s.priceIndex) <= Math.max(0, s.credits - reserve(s)) &&
         (b.servesNodes == null || b.servesNodes >= p.drawers),
     );
     if (affordable) continue;
@@ -413,11 +540,156 @@ function trimOverdraw(s) {
   }
 }
 
+// --- contracts on a term ---------------------------------------------------
+/**
+ * Re-sign every contract whose term ran out. An expired node freezes with its
+ * wiring intact, so the cheapest way back to delivering is always the renewal,
+ * never a fresh chassis — and `machinesOf` still counts the frozen node, so
+ * the sizing pass would not buy a replacement anyway.
+ */
+function renewContracts(s) {
+  for (const m of machines(s)) {
+    if (!F.isExpired(s, m)) continue;
+    const price = D.renewalCost(m.buildingId, s.priceIndex);
+    if (s.credits < price) { tally.renewalsUnaffordable += 1; continue; }
+    if (F.renewContract(s, m.id).ok) tally.renewals += 1;
+  }
+}
+
+// --- the feature addons ----------------------------------------------------
+/** What the addons did to this run, for the report. */
+const tally = {
+  renewals: 0, renewalsUnaffordable: 0,
+  raises: 0, raised: 0, loans: 0, borrowed: 0, loansRefused: 0,
+  churned: 0, agentRenewed: 0, runaways: 0, runawayLost: 0,
+  disclosures: 0, esgIncidents: {}, esgFines: 0, esgFined: 0, creditsBought: 0,
+  fines: 0, contractsLost: 0, breaches: 0, savedFor: [],
+};
+
+/** Bank what happened in one `advance()` batch. */
+function record(ev) {
+  tally.churned += ev.churned?.length ?? 0;
+  tally.agentRenewed += ev.agentRenewed?.length ?? 0;
+  tally.runaways += ev.runaways?.length ?? 0;
+  tally.runawayLost += (ev.runaways ?? []).reduce((a, n) => a + n, 0);
+  for (const i of ev.esgIncidents ?? []) tally.esgIncidents[i.kind] = (tally.esgIncidents[i.kind] ?? 0) + 1;
+  tally.esgFines += ev.esgFines?.length ?? 0;
+  tally.esgFined += (ev.esgFines ?? []).reduce((a, f) => a + f.amount, 0);
+  tally.fines += ev.fines?.length ?? 0;
+  tally.contractsLost += ev.contractsLost?.length ?? 0;
+  tally.breaches += ev.breaches?.length ?? 0;
+}
+
+/**
+ * Venture Capital: milestones pay nothing, so a round against each one is the
+ * only lump sum on offer. Take every milestone raise, fall back to an on-demand
+ * raise when the bank runs dry, and borrow only when equity is exhausted —
+ * a loan amortises on a clock the revenue share does not.
+ */
+function ensureFinance(s, completedIds) {
+  if (!AD.featureEnabled('ventureCapital', s.addons)) return;
+  for (const id of completedIds) {
+    const offer = V.raiseOfferFor(s, id);
+    if (offer && V.acceptRaise(s, offer).ok) { tally.raises += 1; tally.raised += offer.capital; }
+  }
+  if (s.credits >= reserve(s)) return;
+  const onDemand = V.onDemandRaiseOffer(s);
+  if (onDemand && V.acceptRaise(s, onDemand).ok) {
+    tally.raises += 1; tally.raised += onDemand.capital;
+    return;
+  }
+  if (s.loans.length) return;   // one at a time: stacking draws is how a run spirals
+  // A loan amortises over six sim-months whether or not the factory earns. Only
+  // borrow what operating income can service: the first all-addons run drew
+  // $23k at $0/min operating and paid $800/min for it into a bank at -$4k.
+  const cap = V.loanCap(s);
+  const perMin = (amount) =>
+    (amount / (D.BALANCE.bankLoanTermMonths * D.BALANCE.monthSeconds)) * 60 +
+    (amount * D.BALANCE.bankLoanRatePerMonth / D.BALANCE.monthSeconds) * 60;
+  const op = s.finance?.operatingPerMin ?? 0;
+  if (op <= 0) { tally.loansRefused += 1; return; }
+  const amount = Math.min(cap, Math.max(0, (op * 0.5) / perMin(1)));
+  if (amount < 500) { tally.loansRefused += 1; return; }
+  if (V.drawLoan(s, amount).ok) { tally.loans += 1; tally.borrowed += amount; }
+}
+
+/** Place one of `buildingId` if unlocked, absent, affordable and powerable. */
+function placeOnce(s, buildingId, note) {
+  const b = BUILDING_BY_ID[buildingId];
+  if (!b || !s.unlockedBuildings.includes(buildingId)) return false;
+  if (machines(s).some((m) => m.buildingId === buildingId)) return false;
+  if (s.credits < reserve(s) + D.buildingCostAt(b, s.priceIndex)) return false;
+  if (!fitsOnPool(s, b)) {
+    buyCapacityFor(s, poolOfBuilding(b), 1);
+    if (!fitsOnPool(s, b)) return false;
+  }
+  const res = place(s, buildingId, note);
+  if (!res.ok) return false;
+  if (!s.machines[res.id].recipeId) {
+    const r = (D.RECIPES_BY_BUILDING[buildingId] ?? []).find((x) => s.unlockedRecipes.includes(x.id));
+    if (r) F.setRecipe(s, res.id, r.id);
+  }
+  return true;
+}
+
+/**
+ * Agentic Ops: customers churn unless somebody watches them, so the sane
+ * hire is a Console, a Support Agent to hold the accounts, and a Reviewer to
+ * keep Drift down. The selling and building agents are left alone — this
+ * harness already does those jobs, and a Coding Agent laying cheapest-legal
+ * chains over the top of it would only muddy the diagnosis.
+ */
+function ensureAgents(s) {
+  if (!AD.featureEnabled('agentic', s.addons)) return;
+  if (!A.hasConsole(s)) { placeOnce(s, 'agent_console', 'agentic'); return; }
+  if (A.agentsPlaced(s) >= A.agentHeadcount(s)) return;
+  placeOnce(s, 'support_agent', 'agentic: hold customers');
+  if (A.agentsPlaced(s) < A.agentHeadcount(s)) placeOnce(s, 'review_agent', 'agentic: drift');
+}
+
+const DISCLOSURE_REFRESH = 600;   // re-file every 10 sim-minutes, so the number stays near the truth
+
+/**
+ * ESG: the big contracts will not run without a published Footprint, and some
+ * will not run above a ceiling. Hire the officer, self-certify the honest
+ * number, and when a signed contract's ceiling is still out of reach buy
+ * offsets — the cheapest lever, exactly as the tab says.
+ */
+function ensureEsg(s) {
+  if (!AD.featureEnabled('esg', s.addons)) return;
+  const signed = machines(s).map((m) => RECIPE_BY_ID[m.recipeId ?? '']).filter(Boolean);
+  const needsDisclosure = signed.some((r) => r.requiresDisclosure || r.maxFootprint !== undefined);
+  if (!needsDisclosure) return;
+  if (!placeOnce(s, 'sustainability_officer', 'esg: sign the disclosure') &&
+      !machines(s).some((m) => m.buildingId === 'sustainability_officer')) return;
+
+  const d = s.esg.disclosure;
+  const stale = !d || s.elapsed - d.publishedAt >= DISCLOSURE_REFRESH ||
+    s.esg.footprint < d.claimed - 2;    // the truth improved: publish it
+  if (stale && s.credits >= reserve(s) + D.BALANCE.esgSelfCertifyCost) {
+    if (E.publishDisclosure(s, 'self', s.esg.footprint).ok) tally.disclosures += 1;
+  }
+
+  const ceilings = signed.map((r) => r.maxFootprint).filter((c) => c != null);
+  if (!ceilings.length) return;
+  if (s.esg.footprint <= Math.min(...ceilings)) return;
+  placeOnce(s, 'carbon_desk', 'esg: offsets');
+  if (s.credits >= reserve(s) + D.BALANCE.carbonCreditCost && E.buyCarbonCredits(s).ok) {
+    tally.creditsBought += 1;
+  }
+}
+
 let lastPlanAt = -1e9;
 const PLAN_INTERVAL = 20;   // sim-seconds between (re)sizing passes
 
 /** One sizing pass for whatever the three tracks currently want. */
 function plan(s, targets) {
+  const free = Math.max(0, s.credits - reserve(s));
+  capexLeft = s.credits >= CAPEX_BUDGET_FROM ? free * CAPEX_FRACTION : Infinity;
+  renewContracts(s);
+  ensureFinance(s, []);
+  ensureAgents(s);
+  ensureEsg(s);
   ensureCapacity(s);
   ensureControls(s);
   if (s.elapsed - lastPlanAt < PLAN_INTERVAL) return;
@@ -440,20 +712,53 @@ function plan(s, targets) {
     for (const cat of r.catalysts ?? []) collect(s, cat.itemId, CATALYST_RATE, need);
   }
 
+  const needMain = {};
+  const unsignedMain = [];
   for (const ms of targets) {
     for (const [itemId, qty] of Object.entries(ms.requires)) {
       const left = qty - (s.delivered[itemId] ?? 0);
       if (left <= 0) continue;
       const c = ensureContractNodes(s, itemId, left / TARGET_MINUTES);
-      if (!c) continue;
+      if (!c) {
+        // No buyer signed. If that is because the chassis is out of reach, it is
+        // the main track's blocker as much as any producer behind it would be.
+        const r = (ms.track ?? 'main') === 'main' ? buyerFor(s, itemId) : null;
+        if (r) unsignedMain.push(r);
+        continue;
+      }
       for (const inp of inputsOf(c.recipe)) {
         collect(s, inp.itemId, c.machines.length * rateIn(c.recipe, inp.itemId), need);
+        if ((ms.track ?? 'main') === 'main') collect(s, inp.itemId, 1, needMain);
       }
       for (const cat of c.recipe.catalysts ?? []) collect(s, cat.itemId, CATALYST_RATE, need);
     }
   }
+  savingFor = blockerOf(s, needMain, unsignedMain);
   realize(s, need);
   lastNeed = need;
+}
+
+/** The dearest node the main track needs, has none of, and cannot afford right now. */
+function blockerOf(s, needMain, unsignedMain) {
+  let worst = null;
+  const consider = (b) => {
+    const cost = D.buildingCostAt(b, s.priceIndex);
+    if (cost <= Math.max(0, s.credits - reserve(s))) return;
+    if (!worst || cost > worst.cost) worst = { buildingId: b.id, name: b.name, cost };
+  };
+  for (const itemId of Object.keys(needMain)) {
+    const prod = bestProducer(s, itemId);
+    if (!prod || machinesOf(s, prod.id).length) continue;
+    consider(BUILDING_BY_ID[prod.buildingId]);
+  }
+  for (const r of unsignedMain) {
+    if (machinesOf(s, r.id).length) continue;
+    consider(BUILDING_BY_ID[r.buildingId]);
+  }
+  if (worst && (!savingFor || savingFor.buildingId !== worst.buildingId)) {
+    tally.savedFor.push(`${worst.name} (${money(worst.cost)}) at ${(s.elapsed / 60).toFixed(0)}m`);
+  }
+  return worst;
 }
 
 let lastNeed = {};
@@ -531,11 +836,16 @@ function diagnose(s, ms) {
 const problems = D.validateContent();
 const unreachable = D.unreachableMilestones();
 const s = F.createInitialState();
+s.addons = addonSettings();
 const rows = [];
 let stuck = null;
 
+const onAddons = AD.ADDONS.filter((a) => s.addons[a.id]).map((a) => a.name);
 console.log(`\nAIfor.study progression test — ${MILESTONES.length} milestones, ` +
-  `${BUDGET_MIN} sim-min cap each, STUCK after ${STALL_MIN} sim-min with no delivery\n`);
+  `${BUDGET_MIN} sim-min cap each, STUCK after ${STALL_MIN} sim-min with no delivery`);
+console.log(`addons on: ${onAddons.length ? onAddons.join(', ') : 'none'}`);
+if (tuned.length) console.log(`TUNED (not the shipped numbers): ${tuned.join(', ')}`);
+console.log('');
 
 while (!stuck) {
   const targets = TRACKS.map((t) => nextOf(s, t.id)).filter(Boolean);
@@ -551,7 +861,17 @@ while (!stuck) {
   let sinceGain = 0;
   for (let spent = 0; spent < BUDGET_SEC; spent += PLAN_EVERY) {
     plan(s, targets);
-    S.advance(s, PLAN_EVERY);
+    const ev = S.advance(s, PLAN_EVERY);
+    record(ev);
+    if (TRACE && Math.round(s.elapsed) % 60 === 0) {
+      const f = s.finance;
+      console.log(`  t=${(s.elapsed / 60).toFixed(0)}m cash ${money(s.credits)} nodes ${machines(s).length} ` +
+        `rev ${money(f.revenuePerMin)} cogs ${money(f.cogsPerMin)} rent ${money((f.burnPerMonth / D.BALANCE.monthSeconds) * 60)} ` +
+        `net ${money(f.netPerMin)} · delivered ${targets.map((m) => Object.keys(m.requires).map((id) => `${id} ${Math.floor(s.delivered[id] ?? 0)}`).join(' ')).join(' | ')}`);
+    }
+    // A round is offered against the milestone that just landed; take it now,
+    // before rent and the next sizing pass see a bank that has nothing in it.
+    if (ev.milestonesCompleted.length) ensureFinance(s, ev.milestonesCompleted);
     const got = targets.find((m) => s.completedMilestones.includes(m.id));
     if (got) { cleared = got; break; }
     const now = progressOf(s, targets);
@@ -623,8 +943,49 @@ if (stuck) {
     (atCap.length ? `, at the ${MAX_COPIES}-copy cap: ${atCap.join(', ')}` : ''));
   console.log(`\n  cash ${money(s.credits)} · exposure ${Math.round(s.exposure)} · ` +
     `${machines(s).length} nodes · ${s.breaches} breaches · ${money(s.breachLosses)} lost to breaches`);
+  const f = s.finance;
+  console.log(`  per minute: revenue ${money(f.revenuePerMin)} · api spend ${money(f.cogsPerMin)} · ` +
+    `rent ${money((f.burnPerMonth / D.BALANCE.monthSeconds) * 60)} · operating ${money(f.operatingPerMin)} · ` +
+    `financing ${money(f.financingPerMin)} · net ${money(f.netPerMin)}`);
   console.log('\n  A STUCK line means the greedy auto-player jammed — read the diagnosis');
   console.log('  before concluding the content is unwinnable.');
+}
+
+// --- what the addons did -------------------------------------------------
+{
+  const lines = [];
+  lines.push(`contract terms: ${tally.renewals} renewal(s)` +
+    (tally.renewalsUnaffordable ? `, ${tally.renewalsUnaffordable} pass(es) too broke to re-sign` : ''));
+  if (tally.savedFor.length) lines.push(`saved up for: ${tally.savedFor.join(' · ')}`);
+  if (savingFor) lines.push(`still saving for: ${savingFor.name} (${money(savingFor.cost)}) with ${money(s.credits)} in the bank`);
+  if (AD.featureEnabled('ventureCapital', s.addons)) {
+    const owed = s.vc.raises.reduce((a, r) => a + Math.max(0, r.owed - r.paid), 0);
+    lines.push(`venture capital: ${tally.raises} round(s) for ${money(tally.raised)}, ` +
+      `${Math.round(V.activeSharePct(s) * 100)}% of revenue committed, ${money(owed)} still owed; ` +
+      `${tally.loans} loan(s) for ${money(tally.borrowed)} (${tally.loansRefused} refused as unserviceable), ${s.loans.length} open ` +
+      `(${money(s.loans.reduce((a, l) => a + l.principal, 0))} principal); ` +
+      `financing ${money(s.finance.financingPerMin)}/min against revenue ${money(s.finance.revenuePerMin)}/min`);
+  }
+  if (AD.featureEnabled('agentic', s.addons)) {
+    const agents = machines(s).filter((m) => A.isAgent(m)).map((m) => BUILDING_BY_ID[m.buildingId]?.name);
+    lines.push(`agentic ops: ${agents.length ? agents.join(', ') : 'no agents hired'}; drift ${Math.round(s.agentDrift)}; ` +
+      `${tally.churned} customer(s) churned, ${tally.agentRenewed} re-signed by the Support Agent, ` +
+      `${tally.runaways} runaway(s) costing ${money(tally.runawayLost)}`);
+  }
+  if (AD.featureEnabled('esg', s.addons)) {
+    const d = s.esg.disclosure;
+    const inc = Object.entries(tally.esgIncidents).map(([k, n]) => `${n} ${k}`).join(', ') || 'none';
+    lines.push(`esg: footprint ${Math.round(s.esg.footprint)} (E ${Math.round(s.esg.environmental)} ` +
+      `S ${Math.round(s.esg.social)} G ${Math.round(s.esg.governance)}), ` +
+      `${Math.round(s.esg.powerKw)} kW, bill ${money(E.esgBillPerMonth(s))}/mo; ` +
+      `disclosure ${d ? `claimed ${Math.round(d.claimed)}${d.audited ? ' (audited)' : ''}` : 'none'} ` +
+      `after ${tally.disclosures} filing(s); incidents ${inc}; ${tally.esgFines} fine(s) for ${money(tally.esgFined)}; ` +
+      `${tally.creditsBought} credit block(s)`);
+  }
+  if (tally.fines || tally.contractsLost) {
+    lines.push(`also: ${tally.fines} IP/legal fine(s), ${tally.contractsLost} contract(s) lost to quality`);
+  }
+  console.log(`\naddons:\n  ${lines.join('\n  ')}`);
 }
 
 if (problems.length) console.log(`\nvalidateContent(): ${problems.length} problem(s)\n  ${problems.join('\n  ')}`);

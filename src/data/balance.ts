@@ -138,20 +138,53 @@ export const BALANCE = {
    * against future revenue. Milestone `reward` values are kept in the data
    * either way, both for display and as the input to that addon's math.
    */
-  milestoneRewardMultiplier: 0,
+  milestoneRewardMultiplier: 0.25,
 
   // --- Venture Capital addon -----------------------------------------------
   /** Capital offered on a raise = milestone.reward * this. Bigger than the old flat reward — that's the pitch, funded by giving something up. */
   vcCapitalMultiplier: 3,
-  /** Revenue share offered on the FIRST raise. Later raises offer less new share as the cap table fills — see vcMaxTotalSharePct. */
-  vcBaseSharePct: 0.08,
+  /**
+   * A round is priced against what the company is WORTH, not against which
+   * round it happens to be.
+   *
+   * The flat-percentage model this replaces charged the same 8% for a $4,500
+   * seed as for a $240,000 Series B, because share was decoupled from capital.
+   * Five small Act I rounds therefore spent the whole cap table before the two
+   * rounds that actually carry money were ever offered, and the run hit Act II
+   * with no way to fund a $30,000 compliance program. A headless playthrough
+   * stalled there permanently; cutting that program's price to $12,000 did not
+   * help, because the problem was never the price.
+   *
+   * Post-money, so a round can never sell more than 100% of anything:
+   *
+   *   valuation = max(vcFloorValuation, revenuePerMin * vcRevenueMultipleMinutes)
+   *   share     = capital / (valuation + capital)
+   *
+   * The multiple is quoted in MINUTES of revenue rather than as an ARR figure,
+   * because a sim-minute is the unit the rest of this file thinks in. 2,200 of
+   * them is about 7 sim-months, which lands each round near 4% — comparable to
+   * a real seed or Series A, and, more to the point, comparable to each OTHER,
+   * which is the property the old model lacked.
+   */
+  vcRevenueMultipleMinutes: 2_200,
+  /** What the company is worth before it earns anything. A pre-revenue round is still priced, not free. */
+  vcFloorValuation: 120_000,
   /**
    * Cumulative share across rounds still being repaid. Real revenue-based
    * financing takes 5-15% of monthly revenue, 25% at the extreme; 30% sits
-   * just past that, high enough to hurt. Retired rounds do not count, so this
-   * caps concurrent load, not a permanent tax.
+   * just past that, high enough to hurt. Retired rounds do not count.
+   *
+   * In practice, at these capital sizes, they retire slowly or not at all: a
+   * round hands over roughly ninety minutes of revenue and asks for twice that
+   * back out of a single-digit slice, which is thousands of sim-minutes. So the
+   * ceiling has to grow, or a company that raised five times in Act I could
+   * never raise again for the rest of the game — which is exactly what a
+   * headless playthrough found. It grows with completed milestones, because a
+   * bigger company genuinely can carry more investors than a smaller one.
    */
   vcMaxTotalSharePct: 0.3,
+  /** Added to that ceiling per completed milestone. Twelve milestones in, the company can carry a little over half its revenue in rounds. */
+  vcSharePctPerMilestone: 0.02,
   /**
    * A round stops charging once it has taken this multiple of its capital.
    * Real RBF caps repayment at 1.3-2.5x (1.5-2.0x is the common band). Without
@@ -177,8 +210,16 @@ export const BALANCE = {
   bankLoanRatePerMonth: 0.01,
   /** Deducted from the draw itself. Real venture debt charges 1-2% upfront, which is what makes debt costly to TAKE and cheap to HOLD — the opposite shape to the revenue share. */
   bankLoanOriginationPct: 0.015,
-  /** Sim-months a loan amortizes over. Short enough that a careless draw is felt before the next milestone, typically. */
-  bankLoanTermMonths: 6,
+  /**
+   * Sim-months a loan amortizes over.
+   *
+   * Six was unpayable and therefore never taken: principal alone on a $19,000
+   * draw came to $633 a sim-minute against an Act II operating income nearer
+   * $400, so the bank was decorative. Eighteen sim-months is an hour and a half
+   * of play, still short enough that a careless draw is felt within the act
+   * that took it, and it is the short end of real venture debt (24-48 months).
+   */
+  bankLoanTermMonths: 18,
   /** Size of any one new draw at milestone 0. Grows with progress — see bankLoanCapGrowthPerMilestone. Not a lifetime cap: multiple loans can be outstanding at once. */
   bankLoanCapBase: 5_000,
   /** Per completed milestone, the draw cap grows by this fraction of its base. */

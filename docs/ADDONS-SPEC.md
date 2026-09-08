@@ -52,7 +52,8 @@ the spine of this addon.
 Four beats:
 
 1. **Prebuilt.** Buy a machine, pull weights off Hugging Face, serve them. Per-token cost
-   goes to zero. Throughput is pitiful and the electricity bill never stops.
+   goes to zero. Throughput is pitiful, and with **ESG & Footprint** on, the electricity
+   bill never stops — the machines carry no rent of their own, only watts.
 2. **Parts.** Assemble your own for less per kTPM. The power supply is the cheapest
    component and the only one that can destroy every other component.
 3. **Customers.** SME B2B contracts that will only buy from a box in their own building.
@@ -245,18 +246,24 @@ All `kind: 'capacity'`, all feeding the **shared** pool, `computeSupply` set by 
 bandwidth rather than FLOPS — at batch size 1, bandwidth is what sets tokens per second,
 and a home lab is always batch size 1.
 
-`monthlyCost` is electricity at roughly $0.17/kWh at a realistic duty cycle. Base costs are
-at index 1.0; the "Sept 2026" column is what the player actually pays late in the run.
+These nodes carry **no `monthlyCost`**. They cost electricity, not rent, and electricity is
+metered by the **ESG & Footprint** addon off each node's `powerKw` at the live grid price —
+so billing it here as well would charge the player twice for the same watt. With ESG off,
+owned hardware has no recurring cost at all, and the trade is capex, the price index and
+the blowout risk. The `kW` column is what the meter reads; the old `$/mo` column is gone.
 
-| Node | Base | At index 4.2 | $/mo | kTPM | Memory | The real figure |
+Base costs are at index 1.0; the "Sept 2026" column is what the player actually pays late
+in the run.
+
+| Node | Base | At index 4.2 | kW | kTPM | Memory | The real figure |
 |---|---|---|---|---|---|---|
-| Gaming PC (used 3090) | $1,200 | $2,040 | $28 | 90 | 24GB | The cheapest way to run an 8B at speed. 24GB is the wall every hobbyist hits. |
-| Mac Mini M4 Pro 64GB | $2,199 | $3,430 | $9 | 70 | 64GB unified | 273 GB/s. Slow, silent, and it holds models the 5090 cannot. |
-| Framework Desktop 128GB | $1,999 | $3,120 | $14 | 95 | 128GB unified | Strix Halo, 96GB allocatable to the GPU, 256 GB/s. Best dollars-per-gigabyte on the list. |
-| DGX Spark | $3,999 | $5,600 | $16 | 130 | 128GB unified | Launched at $3,999; **repriced to $4,699 in February 2026** on memory supply alone. ~1 PFLOP of FP4 against 273 GB/s of feed. |
-| Mac Studio M3 Ultra 512GB | $9,499 | — | $22 | 420 | 512GB unified | 819 GB/s. Runs a 671B model in 4-bit off a wall socket. **Withdrawn at index 3.4.** |
-| Mac Studio M3 Ultra 256GB | $7,499 | $10,900 | $20 | 380 | 256GB unified | What is left after the withdrawal. The 96→256GB upgrade went $1,600 → $2,000 the same week. |
-| DGX Station GB300 | $79,000 est. | $118,000 | $340 | 3,400 | 784GB coherent | A datacenter node in a deskside box. Price is not officially published; treat it as an estimate. |
+| Gaming PC (used 3090) | $1,200 | $2,040 | 0.5 | 90 | 24GB | The cheapest way to run an 8B at speed. 24GB is the wall every hobbyist hits. |
+| Mac Mini M4 Pro 64GB | $2,199 | $3,430 | 0.15 | 70 | 64GB unified | 273 GB/s. Slow, silent, and it holds models the 5090 cannot. |
+| Framework Desktop 128GB | $1,999 | $3,120 | 0.25 | 95 | 128GB unified | Strix Halo, 96GB allocatable to the GPU, 256 GB/s. Best dollars-per-gigabyte on the list. |
+| DGX Spark | $3,999 | $5,600 | 0.24 | 130 | 128GB unified | Launched at $3,999; **repriced to $4,699 in February 2026** on memory supply alone. ~1 PFLOP of FP4 against 273 GB/s of feed. |
+| Mac Studio M3 Ultra 512GB | $9,499 | — | 0.27 | 420 | 512GB unified | 819 GB/s. Runs a 671B model in 4-bit off a wall socket. **Withdrawn at index 3.4.** |
+| Mac Studio M3 Ultra 256GB | $7,499 | $10,900 | 0.27 | 380 | 256GB unified | What is left after the withdrawal. The 96→256GB upgrade went $1,600 → $2,000 the same week. |
+| DGX Station GB300 | $79,000 est. | $118,000 | 1.6 | 3,400 | 784GB coherent | A datacenter node in a deskside box. Price is not officially published; treat it as an estimate. |
 
 Two pairings the build bar should place adjacently, because each is an argument:
 

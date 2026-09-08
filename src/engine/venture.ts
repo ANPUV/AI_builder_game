@@ -40,13 +40,53 @@ export function activeSharePct(state: GameState): number {
 }
 
 /**
+ * The most of its revenue this company may have committed to investors at once.
+ *
+ * Not a constant: it grows with completed milestones, because at these capital
+ * sizes a round takes thousands of sim-minutes to repay its cap and so barely
+ * ever retires. With a fixed ceiling the Act I rounds spent the cap table
+ * permanently and Act II had no way to fund itself at all.
+ */
+export function raiseCeiling(state: GameState): number {
+  return (
+    BALANCE.vcMaxTotalSharePct +
+    state.completedMilestones.length * BALANCE.vcSharePctPerMilestone
+  );
+}
+
+/**
+ * What the company is worth right now, for pricing a round against.
+ *
+ * A revenue multiple, floored so that a company with no revenue is still worth
+ * something rather than being unable to sell any share at any price.
+ */
+export function valuation(state: GameState): number {
+  return Math.max(
+    BALANCE.vcFloorValuation,
+    state.finance.revenuePerMin * BALANCE.vcRevenueMultipleMinutes,
+  );
+}
+
+/**
+ * Post-money share that `capital` buys at today's valuation, before the
+ * down-round penalty and before the ceiling is applied.
+ *
+ * Post-money rather than pre- so the arithmetic cannot sell more than 100% of
+ * the company however large the cheque is next to the business.
+ */
+function sharePriceFor(state: GameState, capital: number): number {
+  const v = valuation(state);
+  return capital / (v + capital);
+}
+
+/**
  * Whether the cap table has any room left for a new round right now — the
  * single check every UI surface (the tooltip, the on-demand dialog, the
  * milestone toast) shares, so "why can't I raise" always means the same
  * thing wherever the player runs into it.
  */
 export function raiseCapReached(state: GameState): boolean {
-  return activeSharePct(state) >= BALANCE.vcMaxTotalSharePct;
+  return activeSharePct(state) >= raiseCeiling(state);
 }
 
 /**
@@ -84,17 +124,14 @@ export function raiseOfferFor(state: GameState, milestoneId: string): RaiseOffer
   if (state.vc.raises.some((r) => r.milestoneId === milestoneId)) return null;
 
   const committed = activeSharePct(state);
-  const remaining = BALANCE.vcMaxTotalSharePct - committed;
+  const remaining = raiseCeiling(state) - committed;
   if (remaining <= 0) return null;
 
   const downRound = isDownRound(state);
   const capital = milestone.reward * BALANCE.vcCapitalMultiplier;
-  // Later rounds cost more capital for less new share — the cap table is
-  // running out — and no round ever pushes the total past the ceiling.
-  const asked =
-    BALANCE.vcBaseSharePct *
-    (1 - committed) *
-    (downRound ? BALANCE.vcDownRoundShareMult : 1);
+  // Priced against the company, so a bigger business sells less of itself for
+  // the same cheque. No round ever pushes the total past the ceiling.
+  const asked = sharePriceFor(state, capital) * (downRound ? BALANCE.vcDownRoundShareMult : 1);
   const sharePct = Math.min(asked, remaining);
   if (sharePct <= 0) return null;
 
@@ -119,7 +156,7 @@ export function acceptRaise(state: GameState, offer: RaiseOffer): Outcome {
   if (state.vc.raises.some((r) => r.milestoneId === milestoneId)) {
     return fail('That round has already closed');
   }
-  if (activeSharePct(state) + offer.sharePct > BALANCE.vcMaxTotalSharePct + 1e-9) {
+  if (activeSharePct(state) + offer.sharePct > raiseCeiling(state) + 1e-9) {
     return fail('Your investors have no room left on the cap table');
   }
 
@@ -161,13 +198,12 @@ export function onDemandRaiseOffer(state: GameState): RaiseOffer | null {
   if (!featureEnabled('ventureCapital', state.addons)) return null;
 
   const committed = activeSharePct(state);
-  const remaining = BALANCE.vcMaxTotalSharePct - committed;
+  const remaining = raiseCeiling(state) - committed;
   if (remaining <= 0) return null;
 
   const downRound = isDownRound(state);
   const capital = onDemandRaiseCapital(state);
-  const asked =
-    BALANCE.vcBaseSharePct * (1 - committed) * (downRound ? BALANCE.vcDownRoundShareMult : 1);
+  const asked = sharePriceFor(state, capital) * (downRound ? BALANCE.vcDownRoundShareMult : 1);
   const sharePct = Math.min(asked, remaining);
   if (sharePct <= 0) return null;
 

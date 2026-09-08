@@ -9,7 +9,7 @@ import {
 } from '../data';
 import { DEFAULT_ADDONS } from '../data/addons';
 import { HOTBAR_SLOTS, STATE_VERSION, createInitialState } from './factory';
-import { activeSharePct } from './venture';
+import { activeSharePct, raiseCeiling } from './venture';
 import type { GameState } from './types';
 
 const KEY = 'aifor-study/save/v1';
@@ -129,7 +129,7 @@ export function reviveState(parsed: GameState): GameState | null {
   // owed to have finished) until the live share is inside the new ceiling.
   if (migrated && state.vc) {
     for (const r of state.vc.raises) {
-      if (activeSharePct(state) <= BALANCE.vcMaxTotalSharePct) break;
+      if (activeSharePct(state) <= raiseCeiling(state)) break;
       r.paid = r.owed;
     }
   }

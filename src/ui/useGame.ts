@@ -24,6 +24,7 @@ import {
   loanProceeds,
   onDemandRaiseOffer,
   raiseCapReached,
+  raiseCeiling,
   raiseOfferFor,
   type RaiseOffer,
 } from '../engine/venture';
@@ -189,7 +190,7 @@ export function useGame() {
           // a fresh completion can silently skip the offer for — so say why,
           // or it just looks like the addon stopped working.
           toast(
-            `Investors are at their ${Math.round(BALANCE.vcMaxTotalSharePct * 100)}% cap — no funding offer for ${milestone.name}. A round has to repay before another opens.`,
+            `Investors are at their ${Math.round(raiseCeiling(stateRef.current!) * 100)}% cap — no funding offer for ${milestone.name}. A round has to repay, or the company has to grow, before another opens.`,
             'info',
           );
         }

@@ -10,7 +10,7 @@ Two other docs exist and are for designers, not players:
 [`CONTENT-SPEC.md`](CONTENT-SPEC.md) (the Act I–III design) and
 [`ADDONS-SPEC.md`](ADDONS-SPEC.md) (the Home Lab and AI Slop builds).
 
-**Current content:** 57 items, 124 buildings, 159 recipes, 24 milestones across
+**Current content:** 57 items, 125 buildings, 160 recipes, 24 milestones across
 3 tracks, 16 contract types, 5 optional addons.
 
 ---
@@ -334,6 +334,30 @@ up for should not evaporate while you are still wiring it.
 not a customer, it is you posting into the void, and putting that on a renewal
 clock would charge rent on a lesson.
 
+### Human Ops — the early answer to renewals
+
+Contracts start freezing about five minutes in, long before you can afford an
+agent to handle it. The **Human Ops Desk** ($1,200, $260/mo, unlocked at
+**First Users**) is a desk with people at it: every 90-second cycle it wins
+back whichever contract has been frozen longest, paying the same 25% fee you
+would pay by hand.
+
+It needs **no addon, no console and no agent runs** — just a salary. That is
+the whole comparison:
+
+| | Human Ops Desk | Support Agent |
+| --- | --- | --- |
+| Unlocks at | Milestone 1 | Act II, milestone 9 |
+| Costs | $1,200 + $260/mo | $8,000 + $1,400/mo |
+| Needs | nothing | Agentic Ops addon, a console, a headcount slot, agent runs |
+| Speed | one account per 90s | every eligible account, the tick a term ends |
+
+The desk carries a **labour load of 4**, so it is the first thing most players
+own that registers on the ESG addon's Social pillar — and a **labour dispute
+stops it dead** while your agents carry on working. The meter computes that
+number whether or not the addon is on, so switching ESG on later shows you
+something that was already true.
+
 **A frozen contract never disappears.** It sits on the canvas, wired as you
 left it, until you re-sign it or demolish it. A term ending is not the same
 event as a customer walking out — and not renewing already costs you
@@ -465,8 +489,15 @@ process packages the result.
 
 **The lesson:** buy the hardware instead of renting the rate limit, and
 discover that capex is not the same as free. Per-token cost goes to zero. What
-you bought instead is a fixed cost that never stops and a card whose
-replacement price is already climbing.
+you bought instead is a card whose replacement price is already climbing, a
+power supply that can take the rig down with it, and — with **ESG & Footprint**
+switched on — a metered electricity bill that arrives whether or not the
+machine is doing anything.
+
+Home lab machines carry **no `monthlyCost` of their own**. Their running cost
+is electricity, and electricity is the ESG addon's job: `powerKw` times the
+grid price, which climbs as you build out. With that addon off, hardware you
+own is genuinely free to keep — the trade is capex, breakage and the index.
 
 | # | Milestone | Requires | Opens |
 | --- | --- | --- | --- |
@@ -595,7 +626,7 @@ at $1,050 a delivery — and spend them acting on the game itself.
 | Sales Agent | $3,000 | $600 | Signs matching leads off the board by itself, with your money |
 | Marketing Agent | $2,200 | $450 | Skews *which* listings the board draws. Never the rate. |
 | Coding Agent | $6,000 | $900 | Builds the producer chain for a signed contract nobody wired up |
-| Support Agent | $8,000 | $1,400 | Keeps matching customers from churning — **and re-signs them when their term ends**, out of your cash, without asking |
+| Support Agent | $8,000 | $1,400 | Keeps matching customers from churning — **and re-signs them when their term ends**, out of your cash, without asking. The Human Ops Desk does the same job from milestone 1, slowly and without the addon |
 | Reviewer Agent | $10,000 | $1,800 | Oversight: negative Drift, and a veto on a sign you cannot afford |
 
 Senior variants of Sales, Marketing and Coding unlock at milestone 9 and cost
@@ -800,7 +831,7 @@ The answer ladder, in the order you will build it:
 | Local Models | 4 | Llama 8B, Qwen 32B, gpt-oss-120b, DeepSeek-R1 — all draw the shared pool |
 | Home Lab | 15 | Parts, PSUs, prebuilt machines, racks |
 | Retrieval | 7 | Chunker, embedder, four vector stores, prompt cache |
-| Agents | 7 | MCP, SaaS connectors, harness, multi-agent, evals, observability |
+| Agents | 8 | Human Ops Desk, MCP, SaaS connectors, harness, multi-agent, evals, observability |
 | Agent Ops | 9 | Console + 5 roles + 3 senior variants |
 | Slop | 8 | Prompt/text/image/video, packager, legal desk, abliteration, NSFW |
 | Compliance | 4 | SOC 2 → ISO 42001 → HIPAA → FedRAMP |

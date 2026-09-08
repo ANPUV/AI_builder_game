@@ -178,6 +178,12 @@ export const RECIPES: Recipe[] = [
   { id: 'verify',       name: 'Evaluate & Gate', buildingId: 'eval_gate',     seconds: 8, inputs: [i('answer', 5)], outputs: [i('verified_answer', 4)], cost: 6.0, note: 'Turns output into output you will sign a contract about. Also drops Exposure.' },
   { id: 'verify_sov',   name: 'Gate Sovereign',  buildingId: 'eval_gate',     seconds: 8, inputs: [i('sovereign_answer', 5)], outputs: [i('verified_answer', 5)], cost: 4.0 },
   { id: 'observe',      name: 'Trace Everything',buildingId: 'observability', seconds: 2, inputs: [], outputs: [], note: '68% of breached organisations had no AI governance at all; 92% of AI breaches lacked access controls.' },
+  // Consumes nothing and emits nothing: what it spends is 90 seconds and a
+  // salary. Every completed cycle re-signs whichever lapsed contract has been
+  // sitting frozen longest, at the same quarter-price fee you would pay by
+  // hand. A Support Agent does this the tick a term ends; a person takes a
+  // minute and a half and can only do one at a time.
+  { id: 'human_renew',  name: 'Win Them Back',   buildingId: 'human_ops', seconds: 90, inputs: [], outputs: [], note: 'Renewal is a phone call, an apology and a discount. Gainsight and its competitors sell software to make this faster; none of them make it instant.' },
 
   // ======================================================================
   // AGENT OPS — work cycles that produce nothing and pay nothing

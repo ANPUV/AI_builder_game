@@ -36,9 +36,10 @@ import {
   tickAgents,
   type AgentEvents,
 } from './agents';
+import { onOpsCraft, type HumanOpsEvents } from './humanOps';
 import type { ContractOffer, GameState, Machine, MachineStatus, PoolReport } from './types';
 
-export interface TickEvents extends AgentEvents, EsgEvents {
+export interface TickEvents extends AgentEvents, EsgEvents, HumanOpsEvents {
   /** Milestone ids completed during this batch of ticks. */
   milestonesCompleted: string[];
   /** One entry per breach suffered: the $ lost. */
@@ -545,6 +546,9 @@ export function step(state: GameState, dt: number, events: TickEvents): void {
       // An agent's whole output is what it DOES. The completed cycle is the
       // close attempt, or the chain it just wired.
       if (b.kind === 'agent') onAgentCraft(state, m, events);
+      // A desk of people finishing a ninety-second call. Ungated: no addon, no
+      // console, no agent runs — see engine/humanOps.ts.
+      if (b.opsRole === 'renewals') onOpsCraft(state, events);
 
       if (r.payout !== undefined) {
         let payout = r.payout;
@@ -803,6 +807,7 @@ export function advance(state: GameState, seconds: number): TickEvents {
     agentBuilt: [],
     agentVetoed: [],
     agentRenewed: [],
+    opsRenewed: [],
     churned: [],
     runaways: [],
     esgIncidents: [],

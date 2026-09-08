@@ -128,6 +128,20 @@ function rulesFor(b: Building): Rule[] {
     });
   }
 
+  if (b.opsRole === 'renewals') {
+    rules.push({
+      title: 'Re-signs lapsed contracts, slowly',
+      body: `Every completed cycle wins back whichever contract has been frozen longest, paying the same ${Math.round(BALANCE.contractRenewalFraction * 100)}% fee you would pay by hand. One at a time, and only when you can afford it. A Support Agent does the same job the tick a term ends and does every account at once — but it needs the Agentic Ops addon, a console, a headcount slot and a supply of agent runs. This needs a salary.`,
+    });
+  }
+
+  if (b.laborLoad && b.laborLoad > 0) {
+    rules.push({
+      title: 'People show up on the footprint',
+      body: `Adds ${b.laborLoad} to the labour load behind the ESG addon's Social pillar, and a labour dispute stops this node dead while it runs — anything staffed by people does. With the addon off the number is still computed, so switching it on later shows you something that was already true.`,
+    });
+  }
+
   if (b.kind === 'agent') {
     rules.push({
       title: 'Produces nothing, pays nothing',

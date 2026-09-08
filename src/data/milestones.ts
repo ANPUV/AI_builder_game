@@ -51,8 +51,8 @@ export const MILESTONES: Milestone[] = [
     name: 'First Users',
     blurb: 'A landing page, the cheapest model on the market, and a free tier. Ship ungraded output and see if anyone cares.',
     requires: { draft_answer: 40 },
-    unlocksBuildings: ['claude_haiku', 'qwen_flash', 'api_tier1', 'hf_hub', 'quant_bench', 'gpu_market', 'gaming_pc', 'llama_local'],
-    unlocksRecipes: ['d_haiku', 'd_qwen', 'j_luna', 'j_qwen', 'j_haiku', 'c_consumer', 'cap_t1', 'hf_pull', 'quantize', 'buy_3090', 'run_gaming_pc', 'l_llama'],
+    unlocksBuildings: ['claude_haiku', 'qwen_flash', 'api_tier1', 'human_ops', 'hf_hub', 'quant_bench', 'gpu_market', 'gaming_pc', 'llama_local'],
+    unlocksRecipes: ['d_haiku', 'd_qwen', 'j_luna', 'j_qwen', 'j_haiku', 'c_consumer', 'cap_t1', 'human_renew', 'hf_pull', 'quantize', 'buy_3090', 'run_gaming_pc', 'l_llama'],
     reward: 1500,
   },
   {

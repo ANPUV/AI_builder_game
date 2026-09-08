@@ -15,6 +15,7 @@
     "progression": "node tools/progression-test.mjs",
     "check:agents": "node tools/agent-test.mjs",
     "check:esg": "node tools/esg-test.mjs",
+    "check:ops": "node tools/human-ops-test.mjs",
     "cf:login": "wrangler login",
     "cf:whoami": "wrangler whoami",
     "deploy": "npm run check:secrets && npm run build && wrangler deploy",

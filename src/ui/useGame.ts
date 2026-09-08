@@ -268,6 +268,9 @@ export function useGame() {
           'bad',
         );
       }
+      for (const r of events.opsRenewed) {
+        toast(`Human Ops won ${r.buildingName} back for ${money(r.cost)}.`, 'good');
+      }
       for (const r of events.agentRenewed) {
         toast(`Support Agent re-signed ${r.buildingName} for ${money(r.cost)}.`, 'good');
       }

@@ -111,6 +111,14 @@ export interface Building {
    */
   addon?: 'homelab' | 'slop' | 'agentic' | 'esg';
 
+  /**
+   * A desk staffed by people that acts on the game the way an agent does —
+   * but with no addon, no console, no agent runs and no drift. It costs a
+   * salary and it costs time, which is the whole comparison the pair is for.
+   * Only 'renewals' exists so far.
+   */
+  opsRole?: 'renewals';
+
   // --- Agentic Ops ---------------------------------------------------------
   /** Which autonomous behaviour this node runs. Only 'agent'-kind nodes have one. */
   agentRole?: AgentRole;
@@ -219,6 +227,8 @@ export const BUILDINGS: Building[] = [
   // ======================================================================
   // AGENTS — orchestration, tools, evals
   // ======================================================================
+  B({ id: 'human_ops',     name: 'Human Ops Desk',  icon: '☏', kind: 'factory', tier: 'Agents', cost: 1200, monthlyCost: 260, computeDraw: 8,   computeSupply: 0, dataRisk: 0, laborLoad: 4, opsRole: 'renewals', color: '#6b9e8a', description: 'Two people who phone customers back. They re-sign a lapsed contract on their own — slowly, one at a time, at the same quarter-price fee — and they do it years before you can afford an agent that does it instantly. They are also the first payroll the footprint meter ever sees.' }),
+
   B({ id: 'mcp_server',    name: 'MCP Tool Server', icon: '⚙', kind: 'factory', tier: 'Agents', cost: 350,  monthlyCost: 0,   computeDraw: 40,  computeSupply: 0, dataRisk: 3, color: '#c49a3d', description: 'One socket for every SaaS system: N x M integrations become N + M. Open standard, no licence fee.' }),
   B({ id: 'saas_notion',   name: 'Notion + Slack',  icon: '▦', kind: 'factory', tier: 'Agents', cost: 400,  monthlyCost: 340, computeDraw: 30,  computeSupply: 0, dataRisk: 3, color: '#000000', description: 'Notion Plus $10/user/mo, Slack Pro $8.75. APIs are free with the seat — you pay per human, not per call.' }),
   B({ id: 'saas_stripe',   name: 'Stripe + Billing',icon: '▧', kind: 'factory', tier: 'Agents', cost: 300,  monthlyCost: 0,   computeDraw: 20,  computeSupply: 0, dataRisk: 4, color: '#635bff', description: '2.9% + $0.30 per charge, no monthly fee. Letting an agent touch money is where blast radius gets real.' }),

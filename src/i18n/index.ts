@@ -53,8 +53,8 @@ const en = {
 
   'side.nextStep': 'Next step',
   'side.inspector': 'Inspector',
-  'side.techTree': 'Tech era',
-  'side.showTechTree': 'Show the tech era',
+  'side.techTree': 'Tech tree',
+  'side.showTechTree': 'Show the tech tree',
   'side.close': 'Close',
 
   'inspector.empty':
@@ -249,8 +249,8 @@ const vi: Partial<Record<Key, string>> = {
 
   'side.nextStep': 'Bước tiếp theo',
   'side.inspector': 'Bảng chi tiết',
-  'side.techTree': 'Kỷ nguyên công nghệ',
-  'side.showTechTree': 'Hiện kỷ nguyên công nghệ',
+  'side.techTree': 'Cây công nghệ',
+  'side.showTechTree': 'Hiện cây công nghệ',
   'side.close': 'Đóng',
 
   'inspector.empty':

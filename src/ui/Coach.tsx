@@ -11,6 +11,7 @@ import {
   unlockedProducersOf,
   type Pool,
 } from '../data';
+import { countOf } from '../engine/factory';
 import { openOffers } from '../engine/market';
 import type { GameState, Machine } from '../engine/types';
 import { money, tpm } from './format';
@@ -128,7 +129,14 @@ export function nextStep(state: GameState): Step {
         state.unlockedBuildings.includes(b.id) &&
         b.computeSupply > 0 &&
         (wantsVendor ? b.vendorScoped : !b.vendorScoped) &&
-        b.computeSupply > worst.supplyKtpm,
+        b.computeSupply > worst.supplyKtpm &&
+        // Never suggest one the player may not place, or one whose own
+        // allowance would lapse the moment it arrived. A second Free Tier is
+        // both at once: capped at one, and covering fewer nodes than this pool
+        // already has. Suggesting it is the same dead loop the comment above
+        // is about, wearing a different hat.
+        (b.maxCount === undefined || countOf(state, b.id) < b.maxCount) &&
+        (b.servesNodes === undefined || worst.drawers <= b.servesNodes),
     ).sort((a, b) => a.computeSupply - b.computeSupply);
 
     const freeOnly = machines.some(

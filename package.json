@@ -16,6 +16,7 @@
     "check:agents": "node tools/agent-test.mjs",
     "check:esg": "node tools/esg-test.mjs",
     "check:ops": "node tools/human-ops-test.mjs",
+    "check:capacity": "node tools/capacity-test.mjs",
     "cf:login": "wrangler login",
     "cf:whoami": "wrangler whoami",
     "deploy": "npm run check:secrets && npm run build && wrangler deploy",

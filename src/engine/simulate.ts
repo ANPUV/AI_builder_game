@@ -67,6 +67,28 @@ export function machineComputeSupply(m: Machine): number {
 }
 
 /**
+ * What this capacity node is ACTUALLY putting into its pool right now.
+ *
+ * `machineComputeSupply` is the nameplate figure printed on the chassis. A
+ * free tier whose allowance has stopped counting is contributing nothing, and
+ * a node that keeps advertising +150k TPM while the pool receives zero is the
+ * whole reason "my capacity does not add up" is a reasonable thing for a
+ * player to say: they add the two cards together and the top bar disagrees.
+ *
+ * Reads `state.compute`, which the survey refreshed at the top of this tick,
+ * rather than re-deriving the pool — one definition of the rule, in survey().
+ */
+export function machineSupplyInEffect(state: GameState, m: Machine): number {
+  const b = building(m.buildingId);
+  if (!b || b.kind !== 'capacity') return 0;
+  const p = poolOf(m);
+  if (p === null) return 0;                       // no provider picked yet
+  if (b.servesNodes === undefined) return machineComputeSupply(m);
+  const drawers = state.compute.pools[p]?.drawers ?? 0;
+  return drawers <= b.servesNodes ? machineComputeSupply(m) : 0;
+}
+
+/**
  * How many working MACHINES of a tier are on the canvas.
  *
  * Capacity only: the customer is inspecting hardware that serves their model,

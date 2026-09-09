@@ -43,6 +43,7 @@ import {
   machineComputeDraw,
   machineDrawPerMin,
   machineRatePerMin,
+  machineSupplyInEffect,
   poolOf,
   statusLabel,
 } from '../engine/simulate';
@@ -246,6 +247,14 @@ export default function Inspector({ game, selection, setSelection }: Props) {
   const nodePool = poolOf(machine);
   const poolStat = nodePool ? state.compute.pools[nodePool] : undefined;
   const refund = currentCost(state, machine.buildingId) * BALANCE.refundRate;
+  /**
+   * What this capacity node is really contributing. Not always the nameplate:
+   * a free tier past its `servesNodes` cliff contributes nothing, and showing
+   * the nameplate anyway is why capacity appears not to add up.
+   */
+  const supplyNow = machineSupplyInEffect(state, machine);
+  const allowanceLapsed =
+    isCapacity && b.servesNodes !== undefined && supplyNow === 0 && b.computeSupply > 0;
   /** Seconds left on this contract's term. NaN-free: undefined term reads 0. */
   const termLeft = machine.termEndsAt === undefined ? 0 : machine.termEndsAt - state.elapsed;
   const reSignPrice = renewalCost(machine.buildingId, state.priceIndex);
@@ -294,10 +303,23 @@ export default function Inspector({ game, selection, setSelection }: Props) {
             <span className="k">Compute</span>
             <span className="mono">
               {isCapacity
-                ? `+${tpm(b.computeSupply * machine.clock)} TPM`
+                ? `+${tpm(supplyNow)} TPM`
                 : `−${tpm(machineComputeDraw(machine))} TPM`}
             </span>
           </div>
+          {/* The cliff, said out loud at the moment it bites. Without this the
+              node reads +0k TPM with no explanation, and the player is left
+              adding up two cards that disagree with the top bar. */}
+          {allowanceLapsed && (
+            <div className="tip-warn" style={{ margin: '6px 0' }}>
+              <b>Allowance not counting.</b> A {bName(b)} covers{' '}
+              {b.servesNodes} node{b.servesNodes === 1 ? '' : 's'} on its provider, and{' '}
+              {nodePool ? poolName(nodePool) : 'that provider'} has{' '}
+              {nodePool ? (state.compute.pools[nodePool]?.drawers ?? 0) : 0} drawing on it.
+              It contributes nothing until you are back under the limit — this is
+              the wall the first paid tier is for, and it does not stack past it.
+            </div>
+          )}
           {nodePool && (
             <div className="kv">
               <span className="k">{isCapacity ? 'Supplies' : 'Limited by'}</span>

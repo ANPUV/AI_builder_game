@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { machineSupplyInEffect } from '../engine/simulate';
 import {
   BUILDING_BY_ID,
   RECIPES_BY_BUILDING,
@@ -645,6 +646,7 @@ export default function Canvas({
             status={state.status[m.id] ?? 'idle'}
             selected={selectedSet.has(m.id)}
             pendingItemId={ghost?.itemId ?? null}
+            supplyInEffect={machineSupplyInEffect(state, m)}
             onGenerate={(id) => {
               const outcome = game.act((s) => triggerCraft(s, id));
               if (!outcome.ok) game.toast(outcome.reason, 'bad');

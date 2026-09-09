@@ -45,6 +45,11 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
 const VERBOSE = argv.includes('--verbose');
 const TRACE = argv.includes('--trace');   // cash, rent and delivery every sim-minute
+// Re-sign lapsed contracts by BUYING DESKS rather than by clicking, which is
+// what the base game actually offers a player who does not want to babysit a
+// renewal clock. Answers a question the desk's own unit tests cannot: whether
+// one desk at ninety seconds a call keeps up with a real factory's book.
+const HUMAN_OPS = argv.includes('--human-ops');
 const BUDGET_MIN = Number(argv[argv.indexOf('--budget') + 1]) || 90;
 const BUDGET_SEC = BUDGET_MIN * 60;
 const STALL_MIN = Number(argv[argv.indexOf('--stall') + 1]) || 12;
@@ -548,12 +553,48 @@ function trimOverdraw(s) {
  * the sizing pass would not buy a replacement anyway.
  */
 function renewContracts(s) {
+  if (HUMAN_OPS) return ensureRenewalDesks(s);
   for (const m of machines(s)) {
     if (!F.isExpired(s, m)) continue;
     const price = D.renewalCost(m.buildingId, s.priceIndex);
     if (s.credits < price) { tally.renewalsUnaffordable += 1; continue; }
     if (F.renewContract(s, m.id).ok) tally.renewals += 1;
   }
+}
+
+/**
+ * Staff the renewal desk instead of clicking.
+ *
+ * One desk clears a renewal every `seconds`, so the number of desks a factory
+ * needs is set by how fast its contracts lapse — the shortest term in the book
+ * against how many contracts are in it. Sized against that rather than against
+ * the current backlog, because a backlog that is already growing means the
+ * desks were under-staffed a term ago.
+ */
+function ensureRenewalDesks(s) {
+  const desk = BUILDINGS.find((b) => b.opsRole === 'renewals');
+  if (!desk || !s.unlockedBuildings.includes(desk.id)) return;
+  const recipe = (D.RECIPES_BY_BUILDING[desk.id] ?? []).find((r) => s.unlockedRecipes.includes(r.id));
+  if (!recipe) return;
+
+  const contracts = machines(s).filter((m) => BUILDING_BY_ID[m.buildingId]?.kind === 'contract');
+  const terms = contracts.map((m) => D.contractTermSeconds(m.buildingId)).filter((t) => t > 0);
+  if (!terms.length) return;
+  // Renewals per minute the book generates, versus the 60/seconds one desk clears.
+  const lapsesPerMin = terms.reduce((a, t) => a + 60 / t, 0);
+  const want = Math.max(1, Math.ceil(lapsesPerMin / (60 / recipe.seconds)));
+
+  const have = machinesOf(s, recipe.id);
+  tally.desks = have.length;
+  tally.desksWanted = Math.max(tally.desksWanted, want);
+  for (let i = have.length; i < Math.min(want, MAX_COPIES); i++) {
+    const res = place(s, desk.id, `renewal desk x${i + 1}`, true);
+    if (!res.ok) break;
+    F.setRecipe(s, res.id, recipe.id);
+  }
+  // What the desks cannot reach is the finding, so count the standing backlog.
+  const frozen = contracts.filter((m) => F.isExpired(s, m)).length;
+  tally.frozenPeak = Math.max(tally.frozenPeak, frozen);
 }
 
 // --- the feature addons ----------------------------------------------------
@@ -564,10 +605,13 @@ const tally = {
   churned: 0, agentRenewed: 0, runaways: 0, runawayLost: 0,
   disclosures: 0, esgIncidents: {}, esgFines: 0, esgFined: 0, creditsBought: 0,
   fines: 0, contractsLost: 0, breaches: 0, savedFor: [],
+  opsRenewed: 0, opsSpent: 0, desks: 0, desksWanted: 0, frozenPeak: 0,
 };
 
 /** Bank what happened in one `advance()` batch. */
 function record(ev) {
+  tally.opsRenewed += ev.opsRenewed?.length ?? 0;
+  tally.opsSpent += (ev.opsRenewed ?? []).reduce((a, r) => a + r.cost, 0);
   tally.churned += ev.churned?.length ?? 0;
   tally.agentRenewed += ev.agentRenewed?.length ?? 0;
   tally.runaways += ev.runaways?.length ?? 0;
@@ -954,8 +998,14 @@ if (stuck) {
 // --- what the addons did -------------------------------------------------
 {
   const lines = [];
-  lines.push(`contract terms: ${tally.renewals} renewal(s)` +
-    (tally.renewalsUnaffordable ? `, ${tally.renewalsUnaffordable} pass(es) too broke to re-sign` : ''));
+  if (HUMAN_OPS) {
+    lines.push(`human ops: ${tally.desks} desk(s) standing of ${tally.desksWanted} the book called for; ` +
+      `${tally.opsRenewed} renewal(s) for ${money(tally.opsSpent)}; ` +
+      `worst backlog ${tally.frozenPeak} contract(s) frozen at once`);
+  } else {
+    lines.push(`contract terms: ${tally.renewals} renewal(s)` +
+      (tally.renewalsUnaffordable ? `, ${tally.renewalsUnaffordable} pass(es) too broke to re-sign` : ''));
+  }
   if (tally.savedFor.length) lines.push(`saved up for: ${tally.savedFor.join(' · ')}`);
   if (savingFor) lines.push(`still saving for: ${savingFor.name} (${money(savingFor.cost)}) with ${money(s.credits)} in the bank`);
   if (AD.featureEnabled('ventureCapital', s.addons)) {

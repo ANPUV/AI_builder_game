@@ -51,6 +51,12 @@ interface Props {
   pendingItemId: string | null;
   /** Press Generate on a manual node. The click IS the mechanic. */
   onGenerate: (id: string) => void;
+  /**
+   * What this capacity node is really contributing, which is not always its
+   * nameplate — a free tier past its `servesNodes` cliff contributes nothing.
+   * Passed in because only the caller can see `state.compute`.
+   */
+  supplyInEffect?: number;
 }
 
 export default function MachineNode({
@@ -59,6 +65,7 @@ export default function MachineNode({
   selected,
   pendingItemId,
   onGenerate,
+  supplyInEffect,
 }: Props) {
   const { bName, iName, rName } = useContent();
   const focusLabel = useFocusLabel();
@@ -169,9 +176,19 @@ export default function MachineNode({
               </span>
             )}
           </span>
-          <span className="mono">
+          <span
+            className="mono"
+            style={
+              // Advertising throughput the pool is not receiving is what makes
+              // capacity look like it does not add up. Say zero, and say it in
+              // the colour that means "look at this".
+              isCapacity && supplyInEffect === 0 && machineComputeSupply(machine) > 0
+                ? { color: 'var(--warn)' }
+                : undefined
+            }
+          >
             {isCapacity
-              ? `+${tpm(machineComputeSupply(machine))}`
+              ? `+${tpm(supplyInEffect ?? machineComputeSupply(machine))}`
               : r?.payout
                 ? money(r.payout)
                 : `${Math.round(machine.clock * 100)}%`}

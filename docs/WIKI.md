@@ -815,6 +815,13 @@ growing 50% per milestone cleared.
 Comes back to zero, but interest accrues on a clock that does not pause for a
 bad quarter the way a revenue share does.
 
+**This is the one drain you cannot switch off.** A revenue share only charges
+while you are operating at a profit, so it pauses when the factory stops. A
+loan charges interest *and* principal every tick regardless — so switching your
+whole factory off to stop the bleeding leaves the loan running, and net stays
+negative with nothing left to turn off. If you are servicing debt, you have to
+earn through it rather than shut down.
+
 | Term | Value |
 | --- | --- |
 | Rate | 1% per month |

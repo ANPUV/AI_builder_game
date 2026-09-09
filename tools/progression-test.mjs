@@ -332,6 +332,8 @@ function fitsOnPool(s, b) {
  * for the stages the stuck milestone was actually short of.
  */
 const buildStops = {};
+/** pool -> why the last attempt to buy it throughput came back empty. */
+const capacityStops = {};
 function stopped(recipe, reason, want) {
   buildStops[recipe.id] = { reason, want, name: recipe.name };
   return stopState ? machinesOf(stopState, recipe.id) : [];
@@ -502,10 +504,28 @@ function buyCapacityFor(s, pool, extraDrawers = 0) {
       !(b.servesNodes != null &&
         machines(s).some((m) => m.buildingId === b.id && (m.vendor ?? 'shared') === pool)),
   ).sort((a, b) => (b.computeSupply ?? 0) - (a.computeSupply ?? 0));
-  if (!cands.length) return false;
+  if (!cands.length) {
+    // Nothing on the ladder qualifies. Say which test excluded everything,
+    // because "cannot afford the next tier" and "the tier that would fit is
+    // withdrawn" are different problems with different answers.
+    const unlocked = BUILDINGS.filter(
+      (b) => b.kind === 'capacity' && s.unlockedBuildings.includes(b.id) &&
+        !!b.vendorScoped === (pool !== 'shared') && (b.computeSupply ?? 0) > 0,
+    );
+    const affordable = unlocked.filter(
+      (b) => !D.isWithdrawn(b, s.priceIndex) &&
+        D.buildingCostAt(b, s.priceIndex) <= Math.max(0, s.credits - reserve(s)));
+    capacityStops[pool] = unlocked.length === 0
+      ? 'nothing unlocked supplies this pool'
+      : affordable.length === 0
+        ? `cheapest tier is ${money(Math.min(...unlocked.map((b) => D.buildingCostAt(b, s.priceIndex))))} ` +
+          `against ${money(Math.max(0, s.credits - reserve(s)))} spendable`
+        : `every tier covers fewer than the ${drawers} node(s) already drawing`;
+    return false;
+  }
 
-  const res = place(s, cands[0].id, `capacity for ${pool}`);
-  if (!res.ok) return false;
+  const res = place(s, cands[0].id, `capacity for ${pool}`, true);
+  if (!res.ok) { capacityStops[pool] = `placement refused: ${res.reason ?? 'unknown'}`; return false; }
   const m = s.machines[res.id];
   if (cands[0].vendorScoped) F.setVendor(s, m.id, pool);
   if (!m.recipeId) {
@@ -1050,6 +1070,9 @@ if (stuck) {
     for (const sh of d.shortages) console.log(`    short of    ${sh}`);
     for (const u of d.unwired) console.log(`    NOT WIRED   ${u}`);
     if (d.pools.length) console.log(`    throttled   ${d.pools.join(', ')}`);
+    for (const [pool, reason] of Object.entries(capacityStops)) {
+      console.log(`    no capacity ${pool}: ${reason}`);
+    }
     for (const st of d.statuses) console.log(`    nodes       ${st}`);
   }
   const hist = {};

@@ -154,6 +154,38 @@ export function nextStep(state: GameState): Step {
         ),
     };
   }
+  // "I switched everything off and I am still losing money."
+  //
+  // A revenue share stops taking when the factory stops earning — tickVenture
+  // gates it on operatingPerMin > 0. A bank loan does not: interest and
+  // principal come out every tick whether anything is running or not. So a
+  // player who switches the whole factory off to stop the bleeding watches the
+  // number stay negative and reasonably concludes the off switch is broken.
+  // Nothing said the drain had moved somewhere they cannot switch off.
+  if (state.finance.operatingPerMin <= 0.01 && state.finance.financingPerMin > 0.01) {
+    const owed = state.loans.reduce((n, l) => n + l.principal, 0);
+    const months = state.loans.reduce((n, l) => Math.max(n, l.monthsRemaining), 0);
+    return {
+      tone: 'warn',
+      title: 'That is the debt, not the factory',
+      body: (
+        <>
+          Your factory is operating at {money(state.finance.operatingPerMin)}/min, so switching
+          more of it off will not help — the {money(state.finance.financingPerMin)}/min still
+          going out is financing, and a loan is charged whether anything runs or not.
+          {owed > 0 && (
+            <>
+              {' '}
+              {money(owed)} of principal remains, about {months.toFixed(1)} months of it.
+            </>
+          )}{' '}
+          A revenue share pauses when you stop earning; debt does not. You have to earn through
+          it — switch the chain back on and sell something.
+        </>
+      ),
+    };
+  }
+
   if (state.compute.satisfaction < 0.999) {
     const worstId = state.compute.tight[0];
     const worst = state.compute.pools[worstId];

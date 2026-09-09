@@ -552,7 +552,7 @@ export default function Inspector({ game, selection, setSelection }: Props) {
       )}
 
       {true && (
-        <div className="field">
+        <div className="field" data-tour="recipe">
           <label>Recipe</label>
           {options.length === 0 ? (
             <p className="empty" style={{ padding: 0 }}>

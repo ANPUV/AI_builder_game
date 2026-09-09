@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { BUILDINGS, VENDORS, building, buildingCostAt, type Building } from '../data';
 import { buildingEnabled } from '../data/addons';
 import type { GameState } from '../engine/types';
@@ -108,6 +109,14 @@ function steps(state: GameState): TourStep[] {
   const isModel = (id: string) => building(state.machines[id]?.buildingId)?.vendor !== undefined;
   const isContract = (id: string) => building(state.machines[id]?.buildingId)?.kind === 'contract';
 
+  // Nodes on the canvas worth spotlighting for a step: the ones it is about.
+  const nodes = (pick: (id: string) => boolean) =>
+    machines.filter((m) => pick(m.id)).map((m) => `node-${m.id}`);
+  const unregistered = nodes(
+    (id) => Boolean(building(state.machines[id].buildingId)?.vendorScoped) && !state.machines[id].vendor,
+  );
+  const recipeless = nodes((id) => isModel(id) && !state.machines[id].recipeId);
+
   return [
     {
       id: 'account',
@@ -146,7 +155,7 @@ function steps(state: GameState): TourStep[] {
           )}
         </>
       ),
-      targets: ['provider'],
+      targets: ['provider', ...unregistered],
       available: (s) =>
         Object.values(s.machines).some((m) => building(m.buildingId)?.kind === 'capacity'),
       done: (s) =>
@@ -180,7 +189,7 @@ function steps(state: GameState): TourStep[] {
           Inspector. A node with no recipe has no inputs or outputs and does nothing.
         </>
       ),
-      targets: cardTargets(model),
+      targets: recipeless.length ? ['recipe', ...recipeless] : cardTargets(model),
       available: () => true,
       done: (s) =>
         Object.values(s.machines).some((m) => building(m.buildingId)?.vendor && m.recipeId),
@@ -195,7 +204,7 @@ function steps(state: GameState): TourStep[] {
           what it is coloured for.
         </>
       ),
-      targets: [],
+      targets: [...nodes(isSource), ...nodes(isModel)],
       available: () => true,
       done: (s) => Object.values(s.links).some((l) => isSource(l.fromId) && isModel(l.toId)),
     },
@@ -222,7 +231,7 @@ function steps(state: GameState): TourStep[] {
           <b>sell</b>, not what you produce — an answer sitting in a buffer advances nothing.
         </>
       ),
-      targets: [],
+      targets: [...nodes(isModel), ...nodes(isContract)],
       available: () => true,
       done: (s) => Object.values(s.links).some((l) => isContract(l.toId)),
     },
@@ -255,6 +264,48 @@ function steps(state: GameState): TourStep[] {
 const RUNNING = 'running';
 const COMPLETE = 'complete';
 
+interface Hole {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Breathing room around a spotlit control, in px. */
+const HOLE_PAD = 6;
+
+/**
+ * The dim layer: everything on screen goes dark except the card and the
+ * controls the step points at. It is a mask, not a blocker — pointer events
+ * pass straight through, so a player who wants to pan or read the top bar
+ * still can. Portalled to body because the card lives inside the canvas
+ * overlay, whose stacking context would otherwise put the shade over it.
+ */
+function Dim({ holes }: { holes: Hole[] }) {
+  return createPortal(
+    <svg className="tour-dim" aria-hidden="true">
+      <defs>
+        <mask id="tour-dim-mask">
+          <rect width="100%" height="100%" fill="white" />
+          {holes.map((h, i) => (
+            <rect
+              key={i}
+              x={h.x - HOLE_PAD}
+              y={h.y - HOLE_PAD}
+              width={h.w + HOLE_PAD * 2}
+              height={h.h + HOLE_PAD * 2}
+              rx={12}
+              fill="black"
+            />
+          ))}
+        </mask>
+      </defs>
+      <rect width="100%" height="100%" className="tour-dim-shade" mask="url(#tour-dim-mask)" />
+    </svg>,
+    document.body,
+  );
+}
+
 export default function Tutorial({ state }: { state: GameState }) {
   const { t } = useLang();
   const [progress, setProgress] = useState<Progress>(load);
@@ -286,15 +337,39 @@ export default function Tutorial({ state }: { state: GameState }) {
   const showComplete =
     !progress.hidden && !current && openingDone && settled(hire) && !dismissed.has(COMPLETE);
 
-  // Pulse the controls this step points at. Re-run after every render because
-  // the build dialog and the Inspector mount and unmount underneath us.
+  const showing = Boolean(current) || showRunning || showComplete;
+
+  // Pulse the controls this step points at, and cut the shade away from them
+  // and from the card. Re-run after every render because the build dialog and
+  // the Inspector mount and unmount underneath us. The hole list only changes
+  // state when the geometry actually moved, or this would re-render forever.
   const targets = current?.targets ?? [];
   const targetKey = targets.join('|');
+  const [holes, setHoles] = useState<Hole[]>([]);
+  const holeKey = useRef('');
+  const cardRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     document.querySelectorAll('.tour-target').forEach((el) => el.classList.remove('tour-target'));
-    if (!targets.length) return;
-    const selector = targets.map((id) => `[data-tour="${id}"]`).join(',');
-    document.querySelectorAll(selector).forEach((el) => el.classList.add('tour-target'));
+    const lit: Element[] = [];
+    if (targets.length) {
+      const selector = targets.map((id) => `[data-tour="${id}"]`).join(',');
+      document.querySelectorAll(selector).forEach((el) => {
+        el.classList.add('tour-target');
+        // Controls inside a modal sit above the shade already; a hole for
+        // them would punch through to whatever is behind the dialog.
+        if (!el.closest('.modal')) lit.push(el);
+      });
+    }
+    if (cardRef.current) lit.push(cardRef.current);
+    const next = lit
+      .map((el) => el.getBoundingClientRect())
+      .filter((r) => r.width > 0 && r.height > 0)
+      .map((r) => ({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) }));
+    const key = showing ? JSON.stringify(next) : '';
+    if (key !== holeKey.current) {
+      holeKey.current = key;
+      setHoles(showing ? next : []);
+    }
   });
   useEffect(
     () => () => {
@@ -302,6 +377,18 @@ export default function Tutorial({ state }: { state: GameState }) {
     },
     [targetKey],
   );
+  // The sim repaints us twenty times a second while it runs, which keeps the
+  // holes fresh; paused, a resize or a sidebar scroll would leave them stale.
+  const [, nudge] = useState(0);
+  useEffect(() => {
+    const bump = () => nudge((n) => n + 1);
+    window.addEventListener('resize', bump);
+    document.addEventListener('scroll', bump, true);
+    return () => {
+      window.removeEventListener('resize', bump);
+      document.removeEventListener('scroll', bump, true);
+    };
+  }, []);
 
   const update = (next: Progress) => {
     store(next);
@@ -312,7 +399,9 @@ export default function Tutorial({ state }: { state: GameState }) {
 
   if (current) {
     return (
-      <div className="tour" role="dialog" aria-label={t('tour.label')}>
+      <>
+      <Dim holes={holes} />
+      <div className="tour" role="dialog" aria-label={t('tour.label')} ref={cardRef}>
         <div className="tour-step">
           {t('tour.label')} · {t('tour.stepOf', { n: index + 1, total: all.length })}
         </div>
@@ -335,12 +424,15 @@ export default function Tutorial({ state }: { state: GameState }) {
           </button>
         </div>
       </div>
+      </>
     );
   }
 
   if (showRunning) {
     return (
-      <div className="tour" role="dialog" aria-label={t('tour.label')}>
+      <>
+      <Dim holes={holes} />
+      <div className="tour" role="dialog" aria-label={t('tour.label')} ref={cardRef}>
         <div className="tour-step">{t('tour.label')}</div>
         <div className="tour-title">Your chain is running</div>
         <div className="tour-body">
@@ -354,12 +446,15 @@ export default function Tutorial({ state }: { state: GameState }) {
           </button>
         </div>
       </div>
+      </>
     );
   }
 
   if (showComplete) {
     return (
-      <div className="tour" role="dialog" aria-label={t('tour.label')}>
+      <>
+      <Dim holes={holes} />
+      <div className="tour" role="dialog" aria-label={t('tour.label')} ref={cardRef}>
         <div className="tour-step">{t('tour.label')}</div>
         <div className="tour-title">That is the whole loop</div>
         <div className="tour-body">
@@ -373,6 +468,7 @@ export default function Tutorial({ state }: { state: GameState }) {
           </button>
         </div>
       </div>
+      </>
     );
   }
 

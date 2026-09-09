@@ -685,6 +685,13 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 .tour-skip:hover { color: var(--text); border-color: var(--line); }
 .tour-ok { margin-left: auto; padding: 5px 12px; font-size: 11px; }
 
+/* The shade behind a tutorial step: fixed, click-through, under every modal
+   (those start at z 300) and over everything else, with the card and the
+   spotlit controls masked out. */
+.tour-dim { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 250; pointer-events: none; }
+.tour-dim-shade { fill: rgba(8, 7, 15, 0.62); }
+:root[data-theme='light'] .tour-dim-shade { fill: rgba(24, 20, 48, 0.5); }
+
 .tour-target { animation: tourpulse 1.4s ease-out infinite; }
 .build-fab.tour-target { animation: tourpulse-round 1.4s ease-out infinite; }
 @keyframes tourpulse {

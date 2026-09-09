@@ -88,6 +88,7 @@ export default function MachineNode({
       }${machine.groupId ? ' grouped' : ''}`}
       style={{ left: machine.x, top: machine.y, width: NODE_W }}
       data-node-id={machine.id}
+      data-tour={`node-${machine.id}`}
     >
       {/* backgroundColor, not background: the shorthand would clear the sheen
           gradient the stylesheet paints on top of the building's colour. */}

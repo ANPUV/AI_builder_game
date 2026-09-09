@@ -3,7 +3,9 @@ import {
   BUILDINGS,
   BUILDING_BY_ID,
   MILESTONES,
+  VENDORS,
   building,
+  buildingCostAt,
   consumersOf,
   item,
   recipe,
@@ -87,11 +89,33 @@ export function nextStep(state: GameState): Step {
   const statuses = machines.map((m) => state.status[m.id]);
 
   // 1. Nothing placed at all.
+  //
+  // A "capacity node" means nothing to somebody who has never played a
+  // factory sim. What it models is a developer account with a provider: the
+  // rate limit belongs to the account, and the free tier is the account every
+  // provider hands out at signup. Say that, and name the card they must find.
   if (machines.length === 0) {
+    // The cheapest provider-scoped tier the player can place — the free
+    // account on a fresh game, whatever the data layer calls it.
+    const starter = BUILDINGS.filter(
+      (b) => b.kind === 'capacity' && b.vendorScoped && state.unlockedBuildings.includes(b.id),
+    ).sort((a, b) => a.cost - b.cost)[0];
     return {
       tone: 'do',
-      title: 'Place a Free Tier',
-      body: 'Every node burns throughput. With no capacity node, everything runs at a 429. Free Tier is $0 and gives you 150k TPM.',
+      title: 'Register a developer account',
+      body: starter ? (
+        <>
+          Every model call runs against an account with that model's provider, and the rate
+          limit comes with the account. Place a <b>{starter.name}</b> (the ＋ button, Capacity
+          tab) — that is the free developer account every provider hands out:{' '}
+          {money(starter.cost)}, {tpm(starter.computeSupply)} TPM
+          {starter.servesNodes !== undefined &&
+            `, enough for ${starter.servesNodes} node${starter.servesNodes === 1 ? '' : 's'}`}
+          .
+        </>
+      ) : (
+        'Every model call runs against an account with that model\'s provider, and the rate limit comes with the account. Place one from the Capacity tab of the ＋ button.'
+      ),
     };
   }
 
@@ -100,8 +124,8 @@ export function nextStep(state: GameState): Step {
   if (!hasCapacity) {
     return {
       tone: 'warn',
-      title: 'You have no capacity node',
-      body: 'Place a Free Tier (or an API tier). Without one, supply is zero and every node throttles.',
+      title: 'You have no developer account',
+      body: 'Nothing can call a model without one — supply is zero and every node throttles. Place a Free Tier, or a paid API tier if you have unlocked one.',
     };
   }
   // A vendor-scoped tier with no provider chosen buys nothing.
@@ -109,10 +133,28 @@ export function nextStep(state: GameState): Step {
     (m) => m.enabled && building(m.buildingId)?.vendorScoped && !m.vendor,
   );
   if (unset) {
+    // If a model is already on the canvas, its provider is the answer. Saying
+    // "pick one" to somebody who does not know the models are tied to a
+    // company is how the account ends up registered with the wrong one.
+    const model = machines
+      .map((m) => building(m.buildingId))
+      .find((b) => b?.vendor);
     return {
       tone: 'do',
-      title: `${building(unset.buildingId)?.name} has no provider`,
-      body: 'Rate limits are bought per provider. Pick one in the Inspector — until you do, this node supplies nothing to anybody.',
+      title: `${building(unset.buildingId)?.name} is not registered with a provider`,
+      body: (
+        <>
+          A developer account belongs to exactly one provider, and its rate limit only serves
+          models from that provider. Pick one in the Inspector.
+          {model?.vendor && (
+            <>
+              {' '}
+              Choose <b>{VENDORS[model.vendor].name}</b> — that is who {model.name} runs on.
+            </>
+          )}{' '}
+          Until you do, this account supplies nothing to anybody.
+        </>
+      ),
     };
   }
 
@@ -130,6 +172,15 @@ export function nextStep(state: GameState): Step {
       ...lapsed.map((m) => renewalCost(m.buildingId, state.priceIndex)),
     );
     const short = cheapest - state.credits;
+    // Re-signing by hand is the first answer. The second is a hire: the
+    // renewals desk is unlocked at the first milestone and is the earliest
+    // point the game asks the player to put a person on payroll, so say
+    // "hire" here or the word never appears before Act II.
+    const desk = BUILDINGS.find(
+      (b) => b.opsRole === 'renewals' && state.unlockedBuildings.includes(b.id),
+    );
+    const hired = machines.some((m) => building(m.buildingId)?.opsRole === 'renewals');
+    const offerHire = desk !== undefined && !hired;
     return {
       tone: 'warn',
       title:
@@ -145,12 +196,23 @@ export function nextStep(state: GameState): Step {
             expired contract earns nothing, so this does not recover on its own.
             <b> Demolish</b> a node to raise the cash; you get back{' '}
             {Math.round(BALANCE.refundRate * 100)}% of what it costs today.
+            {offerHire && desk && (
+              <> Once you have the cash, hiring a {desk.name} stops this happening by hand.</>
+            )}
           </>
         ) : (
           <>
             They have stopped delivering and stopped paying, and they keep their
             wiring and their buffers while frozen. Select one and re-sign it —
             the cheapest is {money(cheapest)}.
+            {offerHire && desk && (
+              <>
+                {' '}
+                Or <b>hire</b> a {desk.name} ({money(buildingCostAt(desk, state.priceIndex))} up
+                front, {money(desk.monthlyCost)}/mo in salary): two people who phone lapsed
+                customers and re-sign them for you, one at a time.
+              </>
+            )}
           </>
         ),
     };
@@ -226,9 +288,10 @@ export function nextStep(state: GameState): Step {
           {poolName(worstId as Pool)} wants {tpm(worst.demandKtpm)} but you have{' '}
           {tpm(worst.supplyKtpm)} TPM there — short by {tpm(over)} across {worst.drawers} node
           {worst.drawers === 1 ? '' : 's'}.
-          {freeOnly && ' A free tier only covers one node; a second one stops it counting.'}{' '}
+          {freeOnly &&
+            ' A free account covers one node; put a second on the same provider and the allowance stops counting.'}{' '}
           {wantsVendor
-            ? `Place one of these and set its provider to ${poolName(worstId as Pool)}:`
+            ? `Upgrade the account — place one of these and register it with ${poolName(worstId as Pool)}:`
             : 'Add hardware:'}
           <ul className="coach-list">
             {spare.slice(0, 3).map((b) => (

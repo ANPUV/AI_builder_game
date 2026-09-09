@@ -83,10 +83,12 @@ Free Tier  ──(supplies 150 kTPM to ONE provider)
 Landing Page ──user requests──> GPT-5.6 Luna ──draft answers──> Consumer App
 ```
 
-1. **Place the Free Tier first.** Every node draws throughput. With no
-   capacity node at all, everything runs at a 429 and nothing moves. After you
-   place it, **pick a provider** — a Free Tier supplies nothing until you do.
-   Choose **OpenAI**, because Luna is an OpenAI model.
+1. **Register a developer account first: place the Free Tier.** Every model
+   call runs against an account with that model's provider, and the rate limit
+   belongs to the account. With no account at all, everything runs at a 429 and
+   nothing moves. After you place it, **pick a provider** — the account is
+   registered with exactly one, and supplies nothing until you choose. Choose
+   **OpenAI**, because Luna is an OpenAI model.
 2. **Landing Page** ($120, no monthly). Runs `organic`: nothing in, 3 user
    requests out, every 6 seconds.
 3. **GPT-5.6 Luna** (free to place). Set its recipe to `d_luna`: 4 user
@@ -112,12 +114,14 @@ stall.
 them is not enough — milestone progress records contract **inputs**, so a
 thousand answers piling up in a buffer advance nothing. Sell them.
 
-It unlocks Claude Haiku 4.5, Qwen3.7-Flash, API Tier 1, and the entire Home
-Lab entry ramp.
+It unlocks Claude Haiku 4.5, Qwen3.7-Flash, API Tier 1, the Human Ops Desk
+(your first hire — two people on salary who re-sign lapsed contracts for you),
+and the entire Home Lab entry ramp.
 
 ### What to do with the next $200
 
-Buy **API Tier 1**. A Free Tier covers exactly **one node** (`servesNodes: 1`)
+Buy **API Tier 1** — the same developer account, upgraded by having spent
+money on it. A Free Tier covers exactly **one node** (`servesNodes: 1`)
 and you may only ever own one. Put a second node on the same provider and the
 allowance stops counting entirely. That cliff is what makes the first paid
 tier worth $200.

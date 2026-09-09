@@ -161,7 +161,7 @@ export function placementBlocker(state: GameState, buildingId: string): string |
   // Agents compound — marketing feeds sales feeds coding — so how many may run
   // at once is the addon's main brake, and it is the Console's to raise.
   if (b.kind === 'agent' && b.agentRole !== 'console') {
-    if (!hasConsole(state)) return 'Place an Agent Ops Console first — somebody has to own the agents';
+    if (!hasConsole(state)) return 'Hire an Agent Ops Console first — somebody has to manage the agents';
     const cap = agentHeadcount(state);
     if (agentsPlaced(state) >= cap) {
       return `Your Console manages ${cap} agents. Clear the next milestone to hire more.`;

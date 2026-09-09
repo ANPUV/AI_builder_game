@@ -85,7 +85,7 @@ The engine is a factory sim; the content maps it onto how AI companies work.
 | Engine concept | Means here |
 | --- | --- |
 | Power | **Compute** — thousands of tokens/min. Over-demand is a 429, not a brownout. |
-| Generator | **Capacity** — API tiers, rented GPUs, your own datacenter. |
+| Generator | **Capacity** — a developer account with a provider (free tier, API tiers), rented GPUs, your own datacenter. |
 | Extractor | **Demand** — landing page, ads, tickets, documents. |
 | Sink | **Contract** — a recipe with a payout and an exposure ceiling. The chassis comes off the marketplace board, not the build bar. |
 | Item value | **Reference price**, display only. All income comes from contracts. |

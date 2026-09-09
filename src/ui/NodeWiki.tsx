@@ -50,14 +50,14 @@ function rulesFor(b: Building): Rule[] {
   if (b.vendor) {
     rules.push({
       title: 'Rate limits do not pool',
-      body: `This node draws on ${VENDORS[b.vendor].name}'s own rate limit. Capacity you bought from any other provider does nothing for it, so it needs a Free Tier, API Tier or Batch Lane scoped to ${VENDORS[b.vendor].name}.`,
+      body: `This node draws on ${VENDORS[b.vendor].name}'s own rate limit. Capacity you bought from any other provider does nothing for it, so it needs a Free Tier, API Tier or Batch Lane registered with ${VENDORS[b.vendor].name}.`,
     });
   }
 
   if (b.vendorScoped) {
     rules.push({
-      title: 'Pick a provider',
-      body: 'This supplies nothing until you choose which provider it buys a rate limit from, and it only ever serves model nodes on that one provider.',
+      title: 'A developer account with one provider',
+      body: 'This is a developer account, and it is registered with exactly one provider. It supplies nothing until you choose which, and it only ever serves model nodes on that provider.',
     });
   } else if (b.kind === 'capacity') {
     rules.push({
@@ -69,7 +69,7 @@ function rulesFor(b: Building): Rule[] {
   if (b.servesNodes) {
     rules.push({
       title: `Covers ${b.servesNodes} node${b.servesNodes === 1 ? '' : 's'}`,
-      body: `Put more than ${b.servesNodes} node on this provider and the allowance stops counting entirely — not partially. That cliff is the reason the first paid tier is worth buying.`,
+      body: `A free account covers ${b.servesNodes} node. Put more on this provider and the allowance stops counting entirely — not partially. That cliff is why the first paid tier is worth buying.`,
     });
   }
 
@@ -138,8 +138,8 @@ function rulesFor(b: Building): Rule[] {
 
   if (b.laborLoad && b.laborLoad > 0) {
     rules.push({
-      title: 'People show up on the footprint',
-      body: `Adds ${b.laborLoad} to the labour load behind the ESG addon's Social pillar, and a labour dispute stops this node dead while it runs — anything staffed by people does. With the addon off the number is still computed, so switching it on later shows you something that was already true.`,
+      title: 'This is a hire, not a licence',
+      body: `Placing this is hiring: the monthly cost is salary. It adds ${b.laborLoad} to the labour load behind the ESG addon's Social pillar, and a labour dispute stops this node dead while it runs — anything staffed by people does. With the addon off the number is still computed, so switching it on later shows you something that was already true.`,
     });
   }
 

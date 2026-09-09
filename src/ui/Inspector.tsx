@@ -517,7 +517,7 @@ export default function Inspector({ game, selection, setSelection }: Props) {
         <div className="field">
           <label>
             Provider
-            {!machine.vendor && <span style={{ color: 'var(--warn)' }}> — pick one</span>}
+            {!machine.vendor && <span style={{ color: 'var(--warn)' }}> — register with one</span>}
           </label>
           <select
             value={machine.vendor ?? ''}
@@ -534,10 +534,11 @@ export default function Inspector({ game, selection, setSelection }: Props) {
             ))}
           </select>
           <div className="hintline">
-            Rate limits do not pool across providers. This buys throughput for{' '}
+            This is the account's provider. A rate limit belongs to the account, so it buys
+            throughput for{' '}
             {machine.vendor ? VENDORS[machine.vendor as Vendor].name : 'whichever you choose'} only.
             {b.servesNodes !== undefined &&
-              ` A free tier covers ${b.servesNodes} node; a second on the same provider stops it counting.`}
+              ` A free account covers ${b.servesNodes} node; a second on the same provider stops it counting.`}
           </div>
         </div>
       )}

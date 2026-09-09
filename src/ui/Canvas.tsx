@@ -665,8 +665,9 @@ export default function Canvas({
         <div className="hint">
           <b>Getting started</b>
           <br />
-          Place a <b>Free Tier</b> first — every node draws throughput, and without capacity
-          everything runs at a 429.
+          Register a free developer account first: place a <b>Free Tier</b> and pick its
+          provider in the Inspector. Every model call runs against an account's rate limit,
+          and without one everything runs at a 429.
           <br />
           Then <b>Landing Page</b> → <b>GPT-5.6 Luna</b> → a customer. Everything is behind
           the <b>＋</b> button, top left. Customers are not on the shelf — open its{' '}

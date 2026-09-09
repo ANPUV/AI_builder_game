@@ -13,6 +13,7 @@ import {
   type Pool,
 } from '../data';
 import { countOf } from '../engine/factory';
+import { effectiveFootprint, hasOfficer } from '../engine/esgRules';
 import { openOffers } from '../engine/market';
 import type { GameState, Machine } from '../engine/types';
 import { money, tpm } from './format';
@@ -290,6 +291,39 @@ export function nextStep(state: GameState): Step {
       body: 'A node cannot afford its per-call API spend, so it has stopped. Sell what you have buffered, or switch off your most expensive model.',
     };
   }
+  // A contract reading "Disclosure required" had no guidance anywhere. The gate
+  // is two-sided — no filing at all, or a Footprint over the ceiling — and the
+  // fix differs, so say which one is shut and what opens it.
+  if (statuses.includes('disclosed')) {
+    const officer = hasOfficer(state);
+    const filed = state.esg.disclosure !== null;
+    const fp = Math.round(effectiveFootprint(state));
+    return {
+      tone: 'warn',
+      title: filed ? 'A contract is over its Footprint ceiling' : 'A contract wants a published ESG number',
+      body: filed ? (
+        <>
+          You have published {state.esg.disclosure}, and your Footprint reads {fp}. The customers
+          that are stopped gate on the number you PUBLISHED, so bring the estate down — cleaner
+          cooling, a renewable PPA, fewer racks — and publish again.
+        </>
+      ) : !officer ? (
+        <>
+          These customers will not run without a disclosure on file, and nobody can sign one yet.
+          Place a <b>Sustainability Officer</b> first — it is the node that makes the ESG report
+          publishable at all.
+        </>
+      ) : (
+        <>
+          Open the <b>ESG report</b> (the ⚘ button in the top bar) and publish. Self-certifying
+          costs {money(BALANCE.esgSelfCertifyCost)} and lands immediately; a commissioned audit
+          costs {money(BALANCE.esgAuditCost)} and takes an observation window. Your Footprint is
+          currently {fp}. Publishing under it is available, and is what the audit rolls against.
+        </>
+      ),
+    };
+  }
+
   if (statuses.includes('audited')) {
     return {
       tone: 'warn',

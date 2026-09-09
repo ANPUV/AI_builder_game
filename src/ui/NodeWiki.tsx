@@ -13,6 +13,7 @@ import {
   type Item,
   type Recipe,
 } from '../data';
+import { featureEnabled } from '../data/addons';
 import type { GameState } from '../engine/types';
 import { money, recipeFlow, tpm } from './format';
 import { useContent, useLang } from '../i18n/useLang';
@@ -213,6 +214,7 @@ export default function NodeWiki({
   const { t } = useLang();
   const { bName, bDesc, iName, rName } = useContent();
 
+  const esgOn = featureEnabled('esg', state.addons);
   const recipes = RECIPES_BY_BUILDING[b.id] ?? [];
   const cost = buildingCostAt(b, state.priceIndex);
   const opener = MILESTONE_BY_BUILDING[b.id];
@@ -347,16 +349,27 @@ export default function NodeWiki({
                   <span className="mono">{r.maxExposure}</span>
                 </div>
               )}
+              {/* Footprint and disclosure are ESG-addon rules. With the addon
+                  off they are not in force at all — `simulate` gates the whole
+                  check on it — so stating them flat would send a player hunting
+                  for a requirement their game does not have. Shown either way,
+                  because a wiki should explain what the addon would add, but
+                  never as though it applied. */}
               {r.maxFootprint !== undefined && (
                 <div className="kv">
                   <span className="k">Refuses above Footprint</span>
-                  <span className="mono">{r.maxFootprint}</span>
+                  <span className="mono" style={esgOn ? undefined : { opacity: 0.55 }}>
+                    {r.maxFootprint}
+                    {esgOn ? '' : ' · ESG addon off'}
+                  </span>
                 </div>
               )}
               {r.requiresDisclosure && (
                 <div className="kv">
                   <span className="k">Needs a valid ESG disclosure</span>
-                  <span className="mono">yes</span>
+                  <span className="mono" style={esgOn ? undefined : { opacity: 0.55 }}>
+                    {esgOn ? 'yes' : 'only with the ESG addon on'}
+                  </span>
                 </div>
               )}
               {r.requiresOnSite && (

@@ -299,7 +299,13 @@ Footprint ceiling and only applies with that addon on.
 | Hyperscaler (racks) | 1 NVL72 rack | 30s | $3,100,000 | — | — |
 | API Platform | 1 frontier model ‡ + 300 sovereign answers | 60s | $11,000,000 | 20 | 50 † |
 
-† also requires a currently-valid ESG disclosure on file.
+† **Only with the ESG addon on**, and only then: requires a currently-valid
+disclosure on file, and refuses above the Footprint ceiling shown. With the
+addon off — which is the default — neither the ceiling nor the disclosure
+applies, and these contracts run on Exposure alone. Publishing needs a
+**Sustainability Officer** placed first; it unlocks at milestone 5, two
+milestones ahead of Enterprise, so the door is always openable before you
+reach it.
 ‡ the frontier model is a catalyst — it comes back out.
 
 Home Lab and AI Slop have their own ladders; see those sections.

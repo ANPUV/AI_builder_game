@@ -651,18 +651,32 @@ export default function Inspector({ game, selection, setSelection }: Props) {
               today, and switching one off stops its rent.
             </div>
           )}
-          <button
-            className="primary"
-            style={{ width: '100%', marginTop: 8 }}
-            disabled={state.credits < reSignPrice}
-            onClick={() => {
-              const outcome = act((s) => renewContract(s, machine.id));
-              if (!outcome.ok) toast(outcome.reason, 'bad');
-              else toast(`Re-signed ${bName(b)} for ${money(reSignPrice)}`, 'good');
-            }}
+          {/* The title sits on a wrapper, not the button: a disabled button
+              fires no pointer events, so a tooltip on it never appears — which
+              is exactly when the player most needs to be told why. */}
+          <span
+            title={
+              state.credits < reSignPrice
+                ? `You are out of money. Re-signing ${bName(b)} costs ${money(reSignPrice)} and you have ${money(state.credits)} — short by ${money(reSignPrice - state.credits)}. Switch a node off to stop its rent, or demolish one for ${Math.round(BALANCE.refundRate * 100)}% back.`
+                : `Re-sign ${bName(b)} for another full term`
+            }
+            style={{ display: 'block', marginTop: 8 }}
           >
-            Re-sign for {money(reSignPrice)}
-          </button>
+            <button
+              className="primary"
+              style={{ width: '100%' }}
+              disabled={state.credits < reSignPrice}
+              onClick={() => {
+                const outcome = act((s) => renewContract(s, machine.id));
+                if (!outcome.ok) toast(outcome.reason, 'bad');
+                else toast(`Re-signed ${bName(b)} for ${money(reSignPrice)}`, 'good');
+              }}
+            >
+              {state.credits < reSignPrice
+                ? `Out of money — need ${money(reSignPrice)}`
+                : `Re-sign for ${money(reSignPrice)}`}
+            </button>
+          </span>
         </div>
       )}
 

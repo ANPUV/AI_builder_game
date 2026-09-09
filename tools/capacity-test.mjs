@@ -113,5 +113,43 @@ console.log('\n— an unconfigured tier supplies nobody —');
   check('no provider picked: contributes zero', S.machineSupplyInEffect(s, s.machines[c.id]) === 0);
 }
 
+console.log('\n— a free node is the way back from the bottom —');
+{
+  // The whole point: a factory that has run itself negative can still stand up
+  // capacity, because capacity that costs nothing cannot be unaffordable.
+  for (const cash of [2000, 0, -0.01, -152, -50000]) {
+    const s = F.createInitialState();
+    s.credits = cash;
+    const r = F.placeMachine(s, 'free_tier', 0, 0);
+    check(`cash ${cash}: a $0 Free Tier can still be placed`, r.ok, r.ok ? '' : r.reason);
+  }
+  const s = F.createInitialState();
+  s.credits = -152;
+  const r = F.placeMachine(s, 'consumer_app', 0, 0);
+  check('cash -152: a $0 Consumer App can still be signed', r.ok, r.ok ? '' : r.reason);
+  check('Consumer App is free to stand up', D.BUILDING_BY_ID.consumer_app.cost === 0);
+  check('...and bills a subscription instead', D.BUILDING_BY_ID.consumer_app.monthlyCost > 0,
+    `$${D.BUILDING_BY_ID.consumer_app.monthlyCost}/mo`);
+
+  // Anything with a real price is still refused when you cannot pay for it.
+  const t = F.createInitialState();
+  t.credits = -152;
+  if (!t.unlockedBuildings.includes('api_tier1')) t.unlockedBuildings.push('api_tier1');
+  const paid = F.placeMachine(t, 'api_tier1', 0, 0);
+  check('but a priced node is still refused when broke', !paid.ok, paid.ok ? 'placed!' : paid.reason);
+}
+
+console.log('\n— one at a time, not once per game —');
+{
+  const s = F.createInitialState();
+  const a = F.placeMachine(s, 'free_tier', 0, 0);
+  const b = F.placeMachine(s, 'free_tier', 100, 0);
+  check('only one Free Tier at a time', !b.ok, b.ok ? 'placed a second!' : b.reason);
+  F.removeMachine(s, a.id);
+  s.credits = -500;
+  const c = F.placeMachine(s, 'free_tier', 200, 0);
+  check('and a new one can replace it, even underwater', c.ok, c.ok ? '' : c.reason);
+}
+
 console.log(`\n${fails} failure(s)`);
 process.exit(fails ? 1 : 0);

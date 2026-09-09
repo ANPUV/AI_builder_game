@@ -50,6 +50,10 @@ const TRACE = argv.includes('--trace');   // cash, rent and delivery every sim-m
 // renewal clock. Answers a question the desk's own unit tests cannot: whether
 // one desk at ninety seconds a call keeps up with a real factory's book.
 const HUMAN_OPS = argv.includes('--human-ops');
+// `--desk-rent N` overrides the renewal desk's monthlyCost for one run, to
+// separate "the desk is too slow" from "the desk is too expensive" without
+// editing content anybody else is working in.
+const DESK_RENT = argv.includes('--desk-rent') ? Number(argv[argv.indexOf('--desk-rent') + 1]) : null;
 const BUDGET_MIN = Number(argv[argv.indexOf('--budget') + 1]) || 90;
 const BUDGET_SEC = BUDGET_MIN * 60;
 const STALL_MIN = Number(argv[argv.indexOf('--stall') + 1]) || 12;
@@ -83,6 +87,10 @@ const { data: D, factory: F, simulate: S, venture: V, agents: A, esg: E, addons:
 rmSync(tmp, { recursive: true, force: true });
 
 const { BUILDINGS, RECIPES, MILESTONES, RECIPE_BY_ID, BUILDING_BY_ID, TRACKS } = D;
+
+if (DESK_RENT !== null) {
+  for (const b of BUILDINGS) if (b.opsRole === 'renewals') b.monthlyCost = DESK_RENT;
+}
 
 /**
  * Balance experiments without editing the data.
@@ -183,8 +191,11 @@ function place(s, buildingId, note, priority = false) {
   return res;
 }
 
-const MAX_COPIES = 40;        // per recipe — a safety valve, reported when it binds
-const MAX_NODES = 500;
+// Safety valves, reported when they bind, and raisable when they are what is
+// binding: at Act III rates the graph legitimately wants hundreds of copies of
+// a demand source, and a cap tuned for Act I reads as a content wall.
+const MAX_COPIES = Number(argv[argv.indexOf('--max-copies') + 1]) || 40;
+const MAX_NODES = Number(argv[argv.indexOf('--max-nodes') + 1]) || 500;
 const CASH_RESERVE = 400;     // keep at least this much banked for API spend
 const RENT_MIN = 3;           // plus this many minutes of rent...
 const RUNWAY_MIN = 8;         // ...and never build past this many minutes of net burn
@@ -233,6 +244,15 @@ function bestProducer(s, itemId) {
   return cands.sort((a, b) => {
     const srcA = (a.inputs ?? []).length === 0, srcB = (b.inputs ?? []).length === 0;
     if (srcA !== srcB) return srcA ? -1 : 1;
+    // Between two SOURCES, take the fastest, not the cheapest. Demand is the
+    // one stage nothing feeds, so its rate is the ceiling on everything
+    // downstream — and picking the $120 Landing Page over Ad Spend is how the
+    // planner ended up asking for 287 of them to hit a rate two nodes could
+    // have carried. Below, for stages that ARE fed, cheapest still wins.
+    if (srcA && srcB) {
+      const rA = rateOut(a, itemId), rB = rateOut(b, itemId);
+      if (rA !== rB) return rB - rA;
+    }
     const manA = a.manual ? 1 : 0, manB = b.manual ? 1 : 0;   // avoid click-to-craft
     if (manA !== manB) return manA - manB;
     // Exposure is architectural: wiring a risky provider in costs you contracts
@@ -302,28 +322,62 @@ function fitsOnPool(s, b) {
   return true;
 }
 
+/**
+ * Why a stage never reached the size the rate math asked for.
+ *
+ * "Six nodes waiting on an item with one producer placed" is the signature of a
+ * jam, but it does not say whose fault it is: the harness's own copy cap and
+ * the game's compute ceiling look identical from the outside, and they need
+ * opposite fixes. Recorded per recipe, latest reason wins, and reported only
+ * for the stages the stuck milestone was actually short of.
+ */
+const buildStops = {};
+function stopped(recipe, reason, want) {
+  buildStops[recipe.id] = { reason, want, name: recipe.name };
+  return stopState ? machinesOf(stopState, recipe.id) : [];
+}
+let stopState = null;
+
 /** Bring the node count for `recipe` up to `want`, and return what we have. */
 function stockTo(s, recipe, want, why) {
+  stopState = s;
   // Something we deliberately unplugged for Exposure must not be rebought on the
   // next pass: place -> shed -> place is an infinite money fire, and the run that
   // found this burned $1.5M cycling 203 NSFW Studios through the same decision.
-  if ((shedCount[recipe.buildingId] ?? 0) >= 2) return machinesOf(s, recipe.id);
+  // A node unplugged for Exposure is refused only while putting it back would
+  // breach the ceiling again — not forever. The permanent blacklist this
+  // replaces was what actually ended a 17-milestone run: four stages shed
+  // during one tight Federal contract stayed banned for the rest of the game,
+  // long after controls had brought Exposure back to 4 against a ceiling of 4.
+  // Headroom is self-limiting, so it cannot reopen the place/shed/place money
+  // fire the blacklist was defending against.
+  if ((shedCount[recipe.buildingId] ?? 0) >= 2) {
+    const risk = BUILDING_BY_ID[recipe.buildingId]?.dataRisk ?? 0;
+    if (risk > 0 && s.exposure + risk > tightestCeiling(s)) {
+      return stopped(recipe, 'would breach the tightest contract ceiling', want);
+    }
+  }
   const have = machinesOf(s, recipe.id);
+  if (want > MAX_COPIES) stopped(recipe, `harness ${MAX_COPIES}-copy cap`, want);
   const target = Math.min(want, MAX_COPIES);
   for (let i = have.length; i < target; i++) {
-    if (machines(s).length >= MAX_NODES) break;
-    if (s.credits < reserve(s) + D.buildingCostAt(BUILDING_BY_ID[recipe.buildingId], s.priceIndex)) break;
+    if (machines(s).length >= MAX_NODES) return stopped(recipe, `harness ${MAX_NODES}-node cap`, want);
+    if (s.credits < reserve(s) + D.buildingCostAt(BUILDING_BY_ID[recipe.buildingId], s.priceIndex)) {
+      return stopped(recipe, 'cannot afford it', want);
+    }
     // Buy the rate limit BEFORE the node that will draw on it. A pool sitting at
     // exactly 100% is not reported `tight` — nothing is being throttled yet — so
     // waiting for that signal deadlocks: no headroom, so no node; no node, so no
     // throttle; no throttle, so no tier ever gets bought.
     if (!fitsOnPool(s, BUILDING_BY_ID[recipe.buildingId])) {
       buyCapacityFor(s, poolOfBuilding(BUILDING_BY_ID[recipe.buildingId]), 1);
-      if (!fitsOnPool(s, BUILDING_BY_ID[recipe.buildingId])) break;
+      if (!fitsOnPool(s, BUILDING_BY_ID[recipe.buildingId])) {
+        return stopped(recipe, `no ${poolOfBuilding(BUILDING_BY_ID[recipe.buildingId])} compute for it`, want);
+      }
     }
     const res = place(s, recipe.buildingId, `${recipe.name} x${i + 1} — ${why}`,
       savingFor?.buildingId === recipe.buildingId);
-    if (!res.ok) break;
+    if (!res.ok) return stopped(recipe, res.reason ?? 'placement refused', want);
     everPlaced[recipe.id] = (everPlaced[recipe.id] ?? 0) + 1;
     F.setRecipe(s, res.id, recipe.id);
     const b = BUILDING_BY_ID[recipe.buildingId];
@@ -493,15 +547,25 @@ function ensureControls(s) {
     machines(s).some((m) => s.status[m.id] === 'audited');
   if (!pressed) return;
 
+  // Controls STACK. Only `provenance_ledger` carries a maxCount, and the engine
+  // enforces that itself, so refusing to buy a second Observability was purely
+  // this harness's invention — and an expensive one: a run sitting on $24M shed
+  // its entire retrieval chain to satisfy a Federal ceiling of 4 rather than
+  // spend $600 on the −5 node it already owned one of.
+  //
+  // Ranked by exposure bought per dollar, so the cheap repeatable control is
+  // preferred over the $900k programme that happens to have a bigger number.
   const control = BUILDINGS.filter(
     (b) => (b.dataRisk ?? 0) < 0 && s.unlockedBuildings.includes(b.id) &&
       !D.isWithdrawn(b, s.priceIndex) &&
       D.buildingCostAt(b, s.priceIndex) <= Math.max(0, s.credits - reserve(s)) &&
-      !machines(s).some((m) => m.buildingId === b.id),
-  ).sort((a, b) => (a.dataRisk ?? 0) - (b.dataRisk ?? 0))[0];
+      (b.maxCount == null || F.countOf(s, b.id) < b.maxCount),
+  ).sort((a, b) =>
+    -(a.dataRisk ?? 0) / Math.max(1, D.buildingCostAt(a, s.priceIndex)) <
+    -(b.dataRisk ?? 0) / Math.max(1, D.buildingCostAt(b, s.priceIndex)) ? 1 : -1)[0];
 
   if (control) {
-    const res = place(s, control.id, 'exposure control');
+    const res = place(s, control.id, 'exposure control', true);
     if (res.ok && !s.machines[res.id].recipeId) {
       const r = (D.RECIPES_BY_BUILDING[control.id] ?? []).find((x) => s.unlockedRecipes.includes(x.id));
       if (r) F.setRecipe(s, res.id, r.id);
@@ -587,14 +651,20 @@ function ensureRenewalDesks(s) {
   const have = machinesOf(s, recipe.id);
   tally.desks = have.length;
   tally.desksWanted = Math.max(tally.desksWanted, want);
+  const frozen = contracts.filter((m) => F.isExpired(s, m)).length;
+  tally.frozenPeak = Math.max(tally.frozenPeak, frozen);
+
+  // Hire against demonstrated need, not against the org chart. Staffing a desk
+  // the minute the first contract is signed spends a quarter of the opening
+  // bank on a phone that has nothing to answer, and the factory never recovers
+  // — which measures the harness's impatience rather than the desk's price.
+  if (!have.length && frozen === 0) return;
   for (let i = have.length; i < Math.min(want, MAX_COPIES); i++) {
+    if (s.credits < reserve(s) + D.buildingCostAt(desk, s.priceIndex)) break;
     const res = place(s, desk.id, `renewal desk x${i + 1}`, true);
     if (!res.ok) break;
     F.setRecipe(s, res.id, recipe.id);
   }
-  // What the desks cannot reach is the finding, so count the standing backlog.
-  const frozen = contracts.filter((m) => F.isExpired(s, m)).length;
-  tally.frozenPeak = Math.max(tally.frozenPeak, frozen);
 }
 
 // --- the feature addons ----------------------------------------------------
@@ -864,8 +934,13 @@ function diagnose(s, ms) {
       const prod = bestProducer(s, id);
       const made = machines(s).filter((m) => RECIPE_BY_ID[m.recipeId ?? '']?.outputs
         ?.some((o) => o.itemId === id)).length;
+      // The size the planner wanted, and what stopped it getting there. Without
+      // this, "1 producer placed" reads as a content dead end when it is just as
+      // often the harness's own cap or a compute ceiling.
+      const stop = prod ? buildStops[prod.id] : null;
       return `${id} → ${v.count} node(s) waiting (${[...v.into].slice(0, 3).join(', ')}); ` +
-        (prod ? `${made} producer(s) placed` : 'NOTHING UNLOCKED PRODUCES IT');
+        (prod ? `${made} producer(s) placed` : 'NOTHING UNLOCKED PRODUCES IT') +
+        (stop ? `; wanted ${Math.round(stop.want)}x ${stop.name} — ${stop.reason}` : '');
     });
 
   const buyers = Object.keys(ms.requires).map((id) => {

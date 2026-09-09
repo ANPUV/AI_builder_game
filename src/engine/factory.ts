@@ -167,7 +167,13 @@ export function placeMachine(
     }
   }
   const price = buildingCostAt(b, state.priceIndex);
-  if (state.credits < price) return fail(`Need ${price} credits for a ${b.name}`);
+  // A free node stays free when you are underwater. `credits < price` was
+  // refusing a $0 Free Tier at -$0.01 with the message "Need 0 credits for a
+  // Free Tier", which took away the one thing that can restart a factory that
+  // has run itself into the ground: capacity that costs nothing to place.
+  if (price > 0 && state.credits < price) {
+    return fail(`Need ${Math.ceil(price)} credits for a ${b.name}`);
+  }
 
   const id = nextId('m');
   state.credits -= price;

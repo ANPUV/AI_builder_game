@@ -143,7 +143,7 @@ export const VI_BUILDINGS: Record<string, ContentText> = {
   hbm_stacker: { name: 'Xếp chồng HBM', description: "HBM4 xếp 12 lớp có giá khoảng $550 mỗi chồng và SK hynix thu khoảng $560/thiết bị từ NVIDIA. Nguồn cung năm 2026 đã bán hết." },
   cowos_pack: { name: 'Đóng gói CoWoS', description: "Trần thật sự của nguồn cung GPU. Thời gian đặt chỗ 52-78 tuần; hơn 85% công suất 2026-27 đã bị giữ chỗ." },
   rack_integrator: { name: 'Tích hợp rack', description: "72 bộ tăng tốc, khoảng 120kW, khoảng $3M một rack. NVIDIA giữ khoảng 90% giá trị hệ thống; bên tích hợp nhặt phần thừa." },
-  consumer_app: { name: 'Ứng dụng tiêu dùng', description: "Thuê bao cá nhân. Trả rất ít cho mỗi câu trả lời, không bao giờ rà soát bảo mật, và rời bỏ liên tục." },
+  consumer_app: { name: 'Ứng dụng tiêu dùng', description: "Thuê bao cá nhân. Dựng lên miễn phí — một biểu mẫu đăng ký không phải là dự án đầu tư — rồi tính phí mỗi tháng bạn còn giữ nó. Trả rất ít cho mỗi câu trả lời, không bao giờ rà soát bảo mật, và rời bỏ liên tục." },
   smb_pilot: { name: 'Dự án thử SMB', description: "ACV dưới $15k, chốt trong 14-30 ngày. Chỉ khoảng 10-15% dự án thử đi được tới vận hành thật." },
   midmarket: { name: 'SaaS tầm trung', description: "ACV $50-100k, chu kỳ 60-90 ngày. Sẽ không ký nếu chưa có SOC 2, và sẽ hỏi bạn dùng những nhà thầu phụ nào." },
   enterprise: { name: 'Doanh nghiệp lớn', description: "ACV từ $100k, kéo dài 90-180 ngày trở lên. Chu kỳ B2B trung vị là 84 ngày và đang dài thêm, do khâu thẩm định bảo mật." },

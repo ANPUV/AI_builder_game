@@ -92,7 +92,7 @@ Landing Page ──user requests──> GPT-5.6 Luna ──draft answers──> 
 3. **GPT-5.6 Luna** (free to place). Set its recipe to `d_luna`: 4 user
    requests in, 4 draft answers out, 5 seconds, **$1.76 of API spend per
    craft**.
-4. **Consumer App** ($100). Runs `c_consumer_raw`: 8 draft answers in, nothing
+4. **Consumer App** (free to stand up, then $20/mo). Runs `c_consumer_raw`: 8 draft answers in, nothing
    out, **$9 paid** every 12 seconds. Exposure ceiling 90 — very forgiving,
    which is the point of a consumer product.
 
@@ -357,6 +357,23 @@ own that registers on the ESG addon's Social pillar — and a **labour dispute
 stops it dead** while your agents carry on working. The meter computes that
 number whether or not the addon is on, so switching ESG on later shows you
 something that was already true.
+
+### When you cannot afford to re-sign
+
+An expired contract earns nothing, so a factory that lapses its whole book can
+fall below the price of restarting it — rent keeps billing while revenue is
+zero. Two things are always available at the bottom:
+
+- **Anything that costs $0 stays placeable however negative you are.** The Free
+  Tier and the Consumer App are both free to stand up, so capacity and a
+  customer can always be rebuilt. (A node with a real price is still refused.)
+- **Switching a node off stops its rent immediately**, and is reversible.
+  Demolishing also hands back 50% of what it costs today, which is usually the
+  fastest way to raise the fee.
+
+A recipe that costs nothing per craft also never reads *Out of cash* — local
+models and contracts keep running while you are underwater. Only paid API calls
+stop.
 
 **A frozen contract never disappears.** It sits on the canvas, wired as you
 left it, until you re-sign it or demolish it. A term ending is not the same

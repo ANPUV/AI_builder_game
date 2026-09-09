@@ -216,6 +216,7 @@ export default function BuildDialog({
             <button
               key={t}
               className={`tab${t === active ? ' active' : ''}`}
+              data-tour={`tab-${t}`}
               onClick={() => setTab(t)}
             >
               <span className="tab-label">{t}</span>
@@ -269,6 +270,7 @@ export default function BuildDialog({
                     <Tip key={b.id} content={<BuildTip b={b} state={state} />} width={290}>
                       <div
                         className={`build-card${isNew ? ' fresh' : ''}${capped || blocked ? ' capped' : ''}`}
+                        data-tour={`card-${b.id}`}
                         title={blocked ?? undefined}
                       >
                         <button

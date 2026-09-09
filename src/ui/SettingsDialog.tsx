@@ -8,6 +8,7 @@ import { LANGUAGES, type Lang } from '../i18n';
 import { useLang } from '../i18n/useLang';
 import type { Key } from '../i18n';
 import type { Game } from './useGame';
+import { resetTutorial } from './Tutorial';
 
 /**
  * Settings.
@@ -155,6 +156,18 @@ export default function SettingsDialog({
               <button onClick={onToggleTheme}>{theme === 'dark' ? '☀' : '☾'}</button>
             </div>
 
+            <div className="settings-row-line">
+              <span className="settings-row-name">{t('settings.tutorial')}</span>
+              <button
+                onClick={() => {
+                  resetTutorial();
+                  onClose();
+                }}
+              >
+                {t('settings.tutorialRestart')}
+              </button>
+            </div>
+
             <div className="section-title">{t('settings.othersSave')}</div>
             <div className="settings-actions">
               <button onClick={save}>{t('top.save')}</button>
@@ -185,6 +198,8 @@ export default function SettingsDialog({
               onClick={() => {
                 if (confirm(t('top.resetConfirm'))) {
                   reset();
+                  // A fresh factory is a fresh player as far as the opening goes.
+                  resetTutorial();
                   onClose();
                 }
               }}

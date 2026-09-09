@@ -253,8 +253,16 @@ export default function Inspector({ game, selection, setSelection }: Props) {
    * the nameplate anyway is why capacity appears not to add up.
    */
   const supplyNow = machineSupplyInEffect(state, machine);
+  // Zero supply on an account with no provider yet is "not registered", not
+  // "over the limit" — the provider field below says so, and blaming the
+  // node cliff with nobody drawing sent the tutorial's second step straight
+  // into a warning about a wall the player had not reached.
   const allowanceLapsed =
-    isCapacity && b.servesNodes !== undefined && supplyNow === 0 && b.computeSupply > 0;
+    isCapacity &&
+    b.servesNodes !== undefined &&
+    supplyNow === 0 &&
+    b.computeSupply > 0 &&
+    (!b.vendorScoped || Boolean(machine.vendor));
   /** Seconds left on this contract's term. NaN-free: undefined term reads 0. */
   const termLeft = machine.termEndsAt === undefined ? 0 : machine.termEndsAt - state.elapsed;
   const reSignPrice = renewalCost(machine.buildingId, state.priceIndex);
@@ -514,7 +522,7 @@ export default function Inspector({ game, selection, setSelection }: Props) {
       )}
 
       {b.vendorScoped && (
-        <div className="field">
+        <div className="field" data-tour="provider">
           <label>
             Provider
             {!machine.vendor && <span style={{ color: 'var(--warn)' }}> — register with one</span>}

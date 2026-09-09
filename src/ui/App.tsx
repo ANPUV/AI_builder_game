@@ -20,6 +20,7 @@ import Inspector from './Inspector';
 import Hotbar from './Hotbar';
 import TechTree from './TechTree';
 import TopBar from './TopBar';
+import Tutorial from './Tutorial';
 import UnlockPanel from './UnlockPanel';
 import VentureCapitalOffer from './VentureCapitalOffer';
 import { money } from './format';
@@ -149,7 +150,12 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
                 {t('vc.openBank')}
               </button>
             )}
-            <button className="build-fab" onClick={() => openDialog()} title={t('build.openTitle')}>
+            <button
+              className="build-fab"
+              data-tour="build"
+              onClick={() => openDialog()}
+              title={t('build.openTitle')}
+            >
               <span>＋</span>
               {hasUnseenOffers(game.state) && <span className="reddot" />}
             </button>
@@ -173,6 +179,7 @@ function GameShell({ onSignOut }: { onSignOut?: () => void }) {
           {treeOpen && (
             <TechTree state={game.state} onClose={() => setTreeOpen(false)} />
           )}
+          <Tutorial state={game.state} />
           <Hotbar
             state={game.state}
             pendingBuilding={pending?.offerId ? null : (pending?.buildingId ?? null)}

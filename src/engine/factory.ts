@@ -125,6 +125,51 @@ export function countOf(state: GameState, buildingId: string): number {
   return n;
 }
 
+/**
+ * Why this building cannot be placed right now, or null when it can — every
+ * rule except the price, which the build bar prices separately.
+ *
+ * Extracted so the bar and the engine cannot disagree. They did: the bar greyed
+ * a card out only when it was unaffordable or at its cap, so an agent with no
+ * Ops Console looked perfectly available, armed on click, and then failed on the
+ * canvas. The comment below used to say "the build bar greys these out" about a
+ * rule the build bar had never heard of.
+ */
+export function placementBlocker(state: GameState, buildingId: string): string | null {
+  const b = BUILDING_BY_ID[buildingId];
+  if (!b) return `No such building "${buildingId}"`;
+  if (!state.unlockedBuildings.includes(buildingId)) return `${b.name} is not unlocked yet`;
+  // Withdrawn from sale. Apple pulled the 512GB Mac Studio in March 2026
+  // rather than reprice it; anyone who already owns one keeps theirs.
+  if (isWithdrawn(b, state.priceIndex)) return `${b.name} is no longer sold`;
+  if (!buildingEnabled(buildingId, state.addons)) return `${b.name} is switched off in settings`;
+  if (b.maxCount !== undefined && countOf(state, buildingId) >= b.maxCount) {
+    return b.maxCount === 1
+      ? `You only get one ${b.name}`
+      : `You may only have ${b.maxCount} of the ${b.name}`;
+  }
+  // A planning moratorium stops anything that takes up land. Cash does not fix
+  // this one, which is the entire point of it: the expansion you had already
+  // budgeted for simply cannot be built this minute.
+  if (permitBlocked(state, buildingId)) {
+    return `Planning moratorium — no new ${b.tier} sites until it lifts`;
+  }
+  // Somebody has to own the footprint before you can start managing it.
+  if (b.tier === 'Sustainability' && b.id !== 'sustainability_officer' && !hasOfficer(state)) {
+    return 'Place a Sustainability Officer first — somebody has to sign for this';
+  }
+  // Agents compound — marketing feeds sales feeds coding — so how many may run
+  // at once is the addon's main brake, and it is the Console's to raise.
+  if (b.kind === 'agent' && b.agentRole !== 'console') {
+    if (!hasConsole(state)) return 'Place an Agent Ops Console first — somebody has to own the agents';
+    const cap = agentHeadcount(state);
+    if (agentsPlaced(state) >= cap) {
+      return `Your Console manages ${cap} agents. Clear the next milestone to hire more.`;
+    }
+  }
+  return null;
+}
+
 export function placeMachine(
   state: GameState,
   buildingId: string,
@@ -133,39 +178,9 @@ export function placeMachine(
 ): Outcome & { id?: string } {
   const b = BUILDING_BY_ID[buildingId];
   if (!b) return fail(`No such building "${buildingId}"`);
-  if (!state.unlockedBuildings.includes(buildingId)) return fail(`${b.name} is not unlocked yet`);
-  // Withdrawn from sale. Apple pulled the 512GB Mac Studio in March 2026
-  // rather than reprice it; anyone who already owns one keeps theirs.
-  if (isWithdrawn(b, state.priceIndex)) return fail(`${b.name} is no longer sold`);
-  // The build bar greys these out, but the quick-build keys do not go through
-  // it — so the rule lives here, where every path has to pass.
-  if (!buildingEnabled(buildingId, state.addons)) return fail(`${b.name} is switched off in settings`);
-  if (b.maxCount !== undefined && countOf(state, buildingId) >= b.maxCount) {
-    return fail(
-      b.maxCount === 1
-        ? `You only get one ${b.name}`
-        : `You may only have ${b.maxCount} of the ${b.name}`,
-    );
-  }
-  // A planning moratorium stops anything that takes up land. Cash does not fix
-  // this one, which is the entire point of it: the expansion you had already
-  // budgeted for simply cannot be built this minute.
-  if (permitBlocked(state, buildingId)) {
-    return fail(`Planning moratorium — no new ${b.tier} sites until it lifts`);
-  }
-  // Somebody has to own the footprint before you can start managing it.
-  if (b.tier === 'Sustainability' && b.id !== 'sustainability_officer' && !hasOfficer(state)) {
-    return fail('Place a Sustainability Officer first — somebody has to sign for this');
-  }
-  // Agents compound — marketing feeds sales feeds coding — so how many may run
-  // at once is the addon's main brake, and it is the Console's to raise.
-  if (b.kind === 'agent' && b.agentRole !== 'console') {
-    if (!hasConsole(state)) return fail('Place an Agent Ops Console first — somebody has to own the agents');
-    const cap = agentHeadcount(state);
-    if (agentsPlaced(state) >= cap) {
-      return fail(`Your Console manages ${cap} agents. Clear the next milestone to hire more.`);
-    }
-  }
+  // One definition of the rules, shared with the build bar.
+  const blocked = placementBlocker(state, buildingId);
+  if (blocked) return fail(blocked);
   const price = buildingCostAt(b, state.priceIndex);
   // A free node stays free when you are underwater. `credits < price` was
   // refusing a $0 Free Tier at -$0.01 with the message "Need 0 credits for a

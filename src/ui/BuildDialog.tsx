@@ -15,7 +15,7 @@ import {
   type Pool,
   type Vendor,
 } from '../data';
-import { HOTBAR_KEYS, countOf } from '../engine/factory';
+import { HOTBAR_KEYS, countOf, placementBlocker } from '../engine/factory';
 import { hasUnseenOffers } from '../engine/market';
 import type { GameState } from '../engine/types';
 import type { Pending } from './Canvas';
@@ -255,6 +255,11 @@ export default function BuildDialog({
                   // Kept in the list rather than hidden: a card that vanishes
                   // reads as a bug, a dead one reads as a rule.
                   const capped = b.maxCount !== undefined && countOf(state, b.id) >= b.maxCount;
+                  // Every other reason the engine would refuse this — no Ops
+                  // Console, no Sustainability Officer, a permit freeze. Asked
+                  // of the engine rather than restated here, so the card and the
+                  // canvas cannot disagree about what is placeable.
+                  const blocked = placementBlocker(state, b.id);
                   const makes = makesItems(b.id, state.unlockedRecipes);
                   const isNew = freshUnlocks.includes(b.id);
                   const wouldThrottle = b.kind !== 'capacity' && b.computeDraw > headroom;
@@ -262,10 +267,13 @@ export default function BuildDialog({
 
                   return (
                     <Tip key={b.id} content={<BuildTip b={b} state={state} />} width={290}>
-                      <div className={`build-card${isNew ? ' fresh' : ''}${capped ? ' capped' : ''}`}>
+                      <div
+                        className={`build-card${isNew ? ' fresh' : ''}${capped || blocked ? ' capped' : ''}`}
+                        title={blocked ?? undefined}
+                      >
                         <button
                           className="build-card-main"
-                          disabled={!affordable || capped}
+                          disabled={!affordable || capped || blocked !== null}
                           onClick={() => {
                             onPick(b.id);
                             onClose();
@@ -280,6 +288,7 @@ export default function BuildDialog({
                                 <span className="warn-badge" title="Not enough spare capacity">!</span>
                               )}
                               {capped && <span className="cap-badge">{t('build.built')}</span>}
+                              {!capped && blocked && <span className="cap-badge">LOCKED</span>}
                             </span>
                             <span className="sub mono">
                               {money(price)}

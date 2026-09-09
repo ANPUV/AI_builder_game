@@ -7,6 +7,7 @@ import {
   consumersOf,
   item,
   recipe,
+  renewalCost,
   poolName,
   unlockedProducersOf,
   type Pool,
@@ -114,6 +115,45 @@ export function nextStep(state: GameState): Step {
     };
   }
 
+  // Ahead of both the throttling and the broke branches, on purpose.
+  //
+  // When contracts have lapsed, revenue is zero BECAUSE of that. Un-throttling
+  // the pool earns nothing while every customer is frozen, and the broke branch
+  // would tell the player to demolish their biggest subscription — which in a
+  // factory built around renewals is the Human Ops Desk, the one node that can
+  // dig them out. Both are right answers to a question that is not the one
+  // being asked.
+  if (statuses.includes('expired')) {
+    const lapsed = machines.filter((m) => state.status[m.id] === 'expired');
+    const cheapest = Math.min(
+      ...lapsed.map((m) => renewalCost(m.buildingId, state.priceIndex)),
+    );
+    const short = cheapest - state.credits;
+    return {
+      tone: 'warn',
+      title:
+        lapsed.length === 1
+          ? 'A contract has run out its term'
+          : `${lapsed.length} contracts have run out their term`,
+      body:
+        short > 0 ? (
+          <>
+            They have stopped delivering and stopped paying, which is why revenue
+            is {money(state.finance.revenuePerMin)}/min. Re-signing the cheapest
+            costs {money(cheapest)} and you are short by {money(short)} — and an
+            expired contract earns nothing, so this does not recover on its own.
+            <b> Demolish</b> a node to raise the cash; you get back{' '}
+            {Math.round(BALANCE.refundRate * 100)}% of what it costs today.
+          </>
+        ) : (
+          <>
+            They have stopped delivering and stopped paying, and they keep their
+            wiring and their buffers while frozen. Select one and re-sign it —
+            the cheapest is {money(cheapest)}.
+          </>
+        ),
+    };
+  }
   if (state.compute.satisfaction < 0.999) {
     const worstId = state.compute.tight[0];
     const worst = state.compute.pools[worstId];
@@ -173,10 +213,14 @@ export function nextStep(state: GameState): Step {
 
   // 3. Hard stops on individual nodes.
   if (statuses.includes('broke')) {
-    // Rent is charged whether or not a node is working, so an over-subscribed
+    // Rent is charged whether or not a node is WORKING, so an over-subscribed
     // factory bleeds even while everything sits idle — and because paid recipes
     // stop below their cost, revenue goes to zero while the rent does not.
-    // Switching a node off does NOT stop its subscription; only demolishing does.
+    //
+    // It is not charged on a node that is switched OFF: `machineBurn` returns 0
+    // for a disabled node and the survey skips it before adding its monthlyCost.
+    // This used to advise demolishing instead, which sent players to do the
+    // irreversible thing when the reversible one is enough.
     const rentPerMin = (state.finance.burnPerMonth / BALANCE.monthSeconds) * 60;
     const revenuePerMin = state.finance.revenuePerMin;
     const worst = machines
@@ -192,9 +236,10 @@ export function nextStep(state: GameState): Step {
         title: 'Out of cash — subscriptions are outrunning revenue',
         body: (
           <>
-            Rent is {money(rentPerMin)}/min against {money(revenuePerMin)}/min of revenue, and it
-            is charged whether a node works or not. Switching a node off does not stop its
-            subscription — <b>demolish</b> it. Biggest drains:
+            Rent is {money(rentPerMin)}/min against {money(revenuePerMin)}/min of revenue, and
+            an idle node bills exactly like a busy one. <b>Switching one off</b> stops its rent
+            at once and can be undone; demolishing also hands back{' '}
+            {Math.round(BALANCE.refundRate * 100)}%. Biggest drains:
             <ul className="coach-list">
               {worst.slice(0, 3).map((m) => (
                 <li key={m.id}>

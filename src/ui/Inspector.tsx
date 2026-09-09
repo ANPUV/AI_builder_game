@@ -638,6 +638,19 @@ export default function Inspector({ game, selection, setSelection }: Props) {
           <b>Term ended.</b> {bName(b)} has stopped delivering and stopped
           paying. Its links and buffers are intact — re-sign it and it picks up
           where it left off.
+          {/* A greyed-out button that will not say why is the worst version of
+              this screen: an expired contract earns nothing, so the cash to
+              restart it cannot arrive on its own, and a player who cannot see
+              the way out has no way to find it. Name the shortfall and name
+              the exit. */}
+          {state.credits < reSignPrice && (
+            <div style={{ marginTop: 8, color: 'var(--bad)' }}>
+              Short by {money(reSignPrice - state.credits)}. An expired contract
+              earns nothing, so this will not fix itself — demolishing any node
+              refunds {Math.round(BALANCE.refundRate * 100)}% of what it costs
+              today, and switching one off stops its rent.
+            </div>
+          )}
           <button
             className="primary"
             style={{ width: '100%', marginTop: 8 }}

@@ -366,7 +366,7 @@ export function nextStep(state: GameState): Step {
       title: filed ? 'A contract is over its Footprint ceiling' : 'A contract wants a published ESG number',
       body: filed ? (
         <>
-          You have published {state.esg.disclosure}, and your Footprint reads {fp}. The customers
+          You have published {Math.round(state.esg.disclosure!.claimed)}, and your Footprint reads {fp}. The customers
           that are stopped gate on the number you PUBLISHED, so bring the estate down — cleaner
           cooling, a renewable PPA, fewer racks — and publish again.
         </>
@@ -380,7 +380,8 @@ export function nextStep(state: GameState): Step {
         <>
           Open the <b>ESG report</b> (the ⚘ button in the top bar) and publish. Self-certifying
           costs {money(BALANCE.esgSelfCertifyCost)} and lands immediately; a commissioned audit
-          costs {money(BALANCE.esgAuditCost)} and takes an observation window. Your Footprint is
+          costs {money(BALANCE.esgAuditCost)} and takes an observation window, unless an{' '}
+          <b>ESG Audit</b> node has a report waiting, which publishes at once. Your Footprint is
           currently {fp}. Publishing under it is available, and is what the audit rolls against.
         </>
       ),
